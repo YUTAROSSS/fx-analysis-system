@@ -188,6 +188,19 @@
             color: white;
         }
 
+        .force-save-btn {
+            background: #6f42c1;
+            color: white;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
         /* 通貨ペアタブ */
         .currency-tabs {
             display: flex;
@@ -786,7 +799,7 @@
                     <div>
                         <button class="mgmt-btn add-btn" onclick="showAddImageModal()">➕ チャート画像追加</button>
                         <button class="mgmt-btn delete-btn" onclick="showDeleteImageModal()">🗑️ シナリオ削除</button>
-                        <button class="mgmt-btn test-save" onclick="manualSave()">💾 手動保存</button>
+                        <button class="mgmt-btn force-save-btn" onclick="forceFirebaseSave()">🔥 Firebase強制保存</button>
                     </div>
                 </div>
                 <div class="image-buttons" id="imageButtons"></div>
@@ -894,7 +907,7 @@
                 <div class="section-title">🔧 テスト機能</div>
                 <div class="test-buttons">
                     <button class="test-btn test-firebase" onclick="testFirebaseConnection()">Firebase接続テスト</button>
-                    <button class="test-btn test-save" onclick="manualSave()">手動保存</button>
+                    <button class="test-btn force-save-btn" onclick="forceFirebaseSave()">🔥 Firebase強制保存</button>
                     <button class="test-btn test-debug" onclick="mobileDebug()">📱 スマホデバッグ</button>
                     <button class="test-btn" style="background: #ffc107; color: #212529;" onclick="showFirebaseData()">🔍 Firebase確認</button>
                     <button class="test-btn test-reset" onclick="resetAllData()">完全リセット</button>
@@ -1147,6 +1160,40 @@
             isConnected = (status === 'connected' || status === 'listening');
         }
 
+        // 🔥 Firebase強制保存機能
+        function forceFirebaseSave() {
+            console.log('🔥 Firebase強制保存開始...');
+            updateSyncStatus('syncing', '🔥 強制保存中...');
+            
+            if (!window.firebaseDatabase) {
+                alert('❌ Firebase未初期化です');
+                updateSyncStatus('disconnected', 'Firebase未初期化');
+                return;
+            }
+
+            // 最新データで更新
+            appState.lastUpdate = Date.now();
+            appState.version = '2.0';
+
+            const dataRef = window.firebaseRef(window.firebaseDatabase, FIREBASE_PATH);
+            
+            window.firebaseSet(dataRef, appState)
+                .then(() => {
+                    console.log('✅ Firebase強制保存成功');
+                    updateSyncStatus('connected', '🔥 強制保存完了');
+                    
+                    // ローカルストレージも更新
+                    localStorage.setItem('fxAppState', JSON.stringify(appState));
+                    
+                    alert('✅ Firebase強制保存が完了しました！\n\nデータがFirebaseに確実に保存されました。');
+                })
+                .catch(error => {
+                    console.error('❌ Firebase強制保存失敗:', error);
+                    updateSyncStatus('disconnected', '強制保存失敗');
+                    alert(`❌ Firebase強制保存に失敗しました:\n${error.message}\n\nネットワーク接続を確認してください。`);
+                });
+        }
+
         // Firebase接続テスト
         function testFirebaseConnection() {
             console.log('🔧 Firebase接続テスト開始...');
@@ -1207,10 +1254,12 @@
                         message += `🔧 バージョン: ${data.version || '旧形式'}\n`;
                         message += `💱 現在通貨: ${data.currentCurrency}\n`;
                         message += `📊 現在シナリオ: ${data.currentScenario || '不明'}\n`;
+                        message += `⏰ 最終更新: ${new Date(data.lastUpdate).toLocaleString('ja-JP')}\n`;
                         
                         if (data.version === '2.0') {
                             message += `📊 総シナリオ数: ${Object.values(data.scenarios || {}).flat().length}個\n`;
-                            message += `🏷️ ラベル数: ${Object.keys(data.scenarioLabels || {}).length}個`;
+                            message += `🏷️ ラベル数: ${Object.keys(data.scenarioLabels || {}).length}個\n`;
+                            message += `📝 メモ数: ${Object.keys(data.scenarioMemos || {}).length}個`;
                         } else {
                             message += `⚠️ 旧形式のデータです`;
                         }
@@ -1218,7 +1267,7 @@
                         alert(message);
                     } else {
                         console.log('❌ Firebaseデータなし');
-                        alert('❌ Firebaseにデータがありません');
+                        alert('❌ Firebaseにデータがありません\n\n「🔥 Firebase強制保存」を実行してください。');
                     }
                 })
                 .catch(error => {
@@ -1243,7 +1292,8 @@
                     通貨ペア数: Object.keys(appState.currencies).length,
                     総シナリオ数: Object.values(appState.scenarios).flat().length,
                     現在通貨のシナリオ数: appState.scenarios[appState.currentCurrency]?.length || 0,
-                    シナリオラベル数: Object.keys(appState.scenarioLabels).length
+                    シナリオラベル数: Object.keys(appState.scenarioLabels).length,
+                    メモ数: Object.keys(appState.scenarioMemos || {}).length
                 }
             };
 
@@ -1254,7 +1304,8 @@
             alertMessage += `⏰ 最終更新: ${debugInfo.基本情報.最終更新}\n`;
             alertMessage += `🔧 バージョン: ${debugInfo.基本情報.バージョン}\n`;
             alertMessage += `💱 現在通貨: ${debugInfo.基本情報.現在通貨}\n`;
-            alertMessage += `📊 シナリオ数: ${debugInfo.データ状況.現在通貨のシナリオ数}個`;
+            alertMessage += `📊 シナリオ数: ${debugInfo.データ状況.現在通貨のシナリオ数}個\n`;
+            alertMessage += `📝 メモ数: ${debugInfo.データ状況.メモ数}個`;
 
             alert(alertMessage);
         }
@@ -1313,11 +1364,10 @@
             console.log('✅ リアルタイム同期開始');
         }
 
-        // データ保存（自動保存を削除）
+        // データ保存（通常の保存機能）
         function saveData() {
             return new Promise((resolve, reject) => {
                 console.log('💾 データ保存開始...');
-                updateSyncStatus('syncing', '保存中...');
 
                 appState.lastUpdate = Date.now();
                 appState.version = '2.0';
@@ -1327,7 +1377,6 @@
                     console.log('✅ ローカル保存完了');
                 } catch (error) {
                     console.error('❌ ローカル保存失敗:', error);
-                    updateSyncStatus('disconnected', 'ローカル保存失敗');
                     reject(error);
                     return;
                 }
@@ -1338,17 +1387,14 @@
                     window.firebaseSet(dataRef, appState)
                         .then(() => {
                             console.log('✅ Firebase保存完了');
-                            updateSyncStatus('connected', '保存完了');
                             resolve();
                         })
                         .catch(error => {
                             console.error('❌ Firebase保存失敗:', error);
-                            updateSyncStatus('connected', 'ローカル保存のみ完了');
-                            resolve();
+                            resolve(); // ローカル保存は成功しているので resolve
                         });
                 } else {
                     console.log('⚠️ Firebase未接続 - ローカルのみ保存');
-                    updateSyncStatus('disconnected', 'ローカルのみ保存');
                     resolve();
                 }
             });
@@ -1691,7 +1737,7 @@
                     saveData();
                     closeAddImageModal();
                     
-                    alert(`✅ "${scenarioName}" を画像付きで追加しました！`);
+                    alert(`✅ "${scenarioName}" を画像付きで追加しました！\n\n「🔥 Firebase強制保存」で確実に保存することをお勧めします。`);
                 };
                 
                 reader.readAsDataURL(file);
@@ -1704,7 +1750,7 @@
                 saveData();
                 closeAddImageModal();
                 
-                alert(`✅ "${scenarioName}" を追加しました！\n画像は後で追加できます。`);
+                alert(`✅ "${scenarioName}" を追加しました！\n画像は後で追加できます。\n\n「🔥 Firebase強制保存」で確実に保存することをお勧めします。`);
             }
         }
 
@@ -1755,7 +1801,7 @@
             saveData();
             closeAddCurrencyModal();
             
-            alert(`✅ "${currencyName}" を追加しました！`);
+            alert(`✅ "${currencyName}" を追加しました！\n\n「🔥 Firebase強制保存」で確実に保存することをお勧めします。`);
         }
 
         function showDeleteCurrencyModal() {
@@ -1801,7 +1847,7 @@
                 saveData();
                 closeDeleteCurrencyModal();
                 
-                alert('✅ 通貨ペアを削除しました');
+                alert('✅ 通貨ペアを削除しました\n\n「🔥 Firebase強制保存」で確実に保存することをお勧めします。');
             }
         }
 
@@ -1858,7 +1904,7 @@
                 saveData();
                 closeDeleteScenarioModal();
                 
-                alert('✅ シナリオを削除しました');
+                alert('✅ シナリオを削除しました\n\n「🔥 Firebase強制保存」で確実に保存することをお勧めします。');
             }
         }
 
@@ -2074,17 +2120,6 @@ ${currentMemo}
                 navigator.clipboard.writeText(shareText);
                 alert('分析内容をクリップボードにコピーしました');
             }
-        }
-
-        // 手動保存
-        function manualSave() {
-            saveData()
-                .then(() => {
-                    alert('✅ データを手動保存しました！');
-                })
-                .catch(error => {
-                    alert('❌ 保存に失敗しました: ' + error.message);
-                });
         }
 
         // 完全リセット
