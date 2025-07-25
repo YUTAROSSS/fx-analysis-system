@@ -8,7 +8,7 @@
     <!-- Firebase SDK -->
     <script type="module">
       import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-      import { getDatabase, ref, set, get, onValue, off } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+      import { getDatabase, ref, set, get, onValue, off, update } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
       const firebaseConfig = {
         apiKey: "AIzaSyBMwI1i8DSnFYSBhz_zv80oGYaRmqvXEzA",
@@ -30,6 +30,7 @@
         window.firebaseGet = get;
         window.firebaseOnValue = onValue;
         window.firebaseOff = off;
+        window.firebaseUpdate = update;
         console.log('✅ Firebase初期化成功');
       } catch (error) {
         console.error('❌ Firebase初期化エラー:', error);
@@ -86,8 +87,8 @@
         
         .last-sync-info { position: fixed; bottom: 10px; right: 10px; padding: 5px 10px; background: rgba(0,0,0,0.7); color: white; border-radius: 5px; font-size: 10px; z-index: 1000; }
         
-        /* 強制同期ボタンを目立たせる */
-        .force-sync-btn { background: #ff6b35 !important; color: white !important; font-weight: bold !important; animation: pulse 2s infinite; }
+        /* データ変換ボタンを目立たせる */
+        .convert-btn { background: #6f42c1 !important; color: white !important; font-weight: bold !important; animation: pulse 2s infinite; }
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
@@ -148,11 +149,11 @@
                 </div>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <button class="mgmt-btn" style="background: #17a2b8; color: white;" onclick="testFirebaseConnection()">Firebase接続テスト</button>
+                    <button class="mgmt-btn convert-btn" onclick="convertOldData()">🔄 データ変換</button>
                     <button class="mgmt-btn" style="background: #28a745; color: white;" onclick="manualSave()">手動保存</button>
                     <button class="mgmt-btn" style="background: #6f42c1; color: white;" onclick="addTestScenario()">テストシナリオ追加</button>
-                    <button class="mgmt-btn force-sync-btn" onclick="superForceSync()">🚀 超強制同期</button>
                     <button class="mgmt-btn" style="background: #e83e8c; color: white;" onclick="mobileDebug()">📱 スマホデバッグ</button>
-                    <button class="mgmt-btn" style="background: #ffc107; color: #212529;" onclick="showCurrentData()">現在データ表示</button>
+                    <button class="mgmt-btn" style="background: #ffc107; color: #212529;" onclick="showFirebaseData()">🔍 Firebase確認</button>
                     <button class="mgmt-btn" style="background: #dc3545; color: white;" onclick="resetAllData()">完全リセット</button>
                 </div>
             </div>
@@ -172,7 +173,10 @@
     </div>
 
     <script>
-        // アプリ状態
+        // 既存のFirebaseパスを使用
+        const FIREBASE_PATH = 'appData';
+        
+        // 新しいアプリ状態
         let appState = {
             currentCurrency: "USDJPY",
             currentScenario: "scenario1",
@@ -199,32 +203,19 @@
                 scenario4: "シナリオ4"
             },
             lastUpdate: Date.now(),
-            deviceId: 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+            deviceId: 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+            version: '2.0'
         };
 
         let isConnected = false;
         let realtimeListener = null;
         let lastSyncTimestamp = 0;
-        let debugLog = [];
-
-        function logDebug(message, data = null) {
-            const timestamp = new Date().toLocaleTimeString();
-            const logEntry = { timestamp, message, data };
-            debugLog.push(logEntry);
-            console.log(`[${timestamp}] ${message}`, data || '');
-            
-            if (debugLog.length > 100) {
-                debugLog.shift();
-            }
-        }
 
         function updateSyncStatus(status, message) {
             const statusDiv = document.getElementById('syncStatus');
             statusDiv.textContent = message;
             statusDiv.className = `sync-status ${status}`;
             isConnected = (status === 'connected' || status === 'listening');
-            
-            logDebug(`同期ステータス更新: ${status} - ${message}`);
             
             if (status === 'connected') {
                 updateLastSyncInfo();
@@ -236,18 +227,221 @@
             const timeString = now.toLocaleTimeString('ja-JP');
             document.getElementById('lastSyncInfo').textContent = `最終同期: ${timeString}`;
             lastSyncTimestamp = Date.now();
-            logDebug('最終同期時刻更新', timeString);
         }
 
-        // 📱 スマホデバッグ機能
-        function mobileDebug() {
-            logDebug('スマホデバッグ開始');
+        // 🔄 データ変換機能（旧形式→新形式）
+        function convertOldData() {
+            console.log('🔄 データ変換開始...');
+            updateSyncStatus('syncing', '🔄 データ変換中...');
             
+            if (!window.firebaseDatabase) {
+                alert('❌ Firebase未初期化です');
+                updateSyncStatus('disconnected', 'Firebase未初期化');
+                return;
+            }
+
+            const dataRef = window.firebaseRef(window.firebaseDatabase, FIREBASE_PATH);
+            
+            window.firebaseGet(dataRef)
+                .then(snapshot => {
+                    if (snapshot.exists()) {
+                        const oldData = snapshot.val();
+                        console.log('📥 旧データ取得:', oldData);
+                        
+                        // 旧形式から新形式に変換
+                        const convertedData = convertOldFormatToNew(oldData);
+                        console.log('🔄 変換後データ:', convertedData);
+                        
+                        // アプリ状態を更新
+                        appState = convertedData;
+                        
+                        // Firebaseに新形式で保存
+                        window.firebaseSet(dataRef, convertedData)
+                            .then(() => {
+                                console.log('✅ 変換データ保存完了');
+                                
+                                // ローカルストレージも更新
+                                localStorage.setItem('fxAppState', JSON.stringify(convertedData));
+                                
+                                // UI更新
+                                updateUI();
+                                updateSyncStatus('connected', '🔄 データ変換完了');
+                                
+                                // リアルタイム同期開始
+                                setupRealtimeSync();
+                                
+                                const scenarioCount = Object.values(convertedData.scenarios).flat().length;
+                                alert(`✅ データ変換完了！\n\n旧形式から新形式に変換しました\n総シナリオ数: ${scenarioCount}個\n\nこれで同期が正常に動作します！`);
+                                
+                            })
+                            .catch(error => {
+                                console.error('❌ 変換データ保存失敗:', error);
+                                updateSyncStatus('disconnected', 'データ保存失敗');
+                                alert(`❌ 変換データ保存失敗: ${error.message}`);
+                            });
+                        
+                    } else {
+                        console.log('❌ Firebaseにデータなし');
+                        alert('❌ Firebaseにデータがありません');
+                        updateSyncStatus('disconnected', 'Firebaseデータなし');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ データ変換失敗:', error);
+                    updateSyncStatus('disconnected', 'データ変換失敗');
+                    alert(`❌ データ変換失敗: ${error.message}`);
+                });
+        }
+
+        // 旧形式から新形式への変換関数
+        function convertOldFormatToNew(oldData) {
+            const newData = {
+                currentCurrency: oldData.currentCurrency || "USDJPY",
+                currentScenario: "scenario1",
+                currencies: {},
+                scenarios: {},
+                scenarioLabels: {},
+                lastUpdate: Date.now(),
+                deviceId: appState.deviceId,
+                version: '2.0'
+            };
+
+            // 通貨データを変換
+            if (oldData.currencies) {
+                Object.keys(oldData.currencies).forEach(currencyKey => {
+                    const oldCurrency = oldData.currencies[currencyKey];
+                    
+                    // 通貨表示名を設定
+                    newData.currencies[currencyKey] = oldCurrency.pair || currencyKey;
+                    
+                    // シナリオを変換
+                    if (oldCurrency.labels && oldCurrency.labels.length > 0) {
+                        newData.scenarios[currencyKey] = [];
+                        
+                        oldCurrency.labels.forEach((label, index) => {
+                            const scenarioKey = `scenario${currencyKey}${index + 1}`;
+                            newData.scenarios[currencyKey].push(scenarioKey);
+                            newData.scenarioLabels[scenarioKey] = label;
+                        });
+                    } else {
+                        // ラベルがない場合はデフォルト
+                        newData.scenarios[currencyKey] = ["scenario1"];
+                        newData.scenarioLabels["scenario1"] = "シナリオ1";
+                    }
+                });
+            }
+
+            // 不足している通貨を追加
+            const defaultCurrencies = {
+                USDJPY: "USD/JPY",
+                EURUSD: "EUR/USD", 
+                GBPUSD: "GBP/USD",
+                AUDUSD: "AUD/USD",
+                SILVER: "SILVER",
+                GOLD: "GOLD"
+            };
+
+            Object.keys(defaultCurrencies).forEach(currencyKey => {
+                if (!newData.currencies[currencyKey]) {
+                    newData.currencies[currencyKey] = defaultCurrencies[currencyKey];
+                    newData.scenarios[currencyKey] = ["scenario1"];
+                    if (!newData.scenarioLabels["scenario1"]) {
+                        newData.scenarioLabels["scenario1"] = "シナリオ1";
+                    }
+                }
+            });
+
+            console.log('🔄 変換結果:', newData);
+            return newData;
+        }
+
+        // Firebase接続テスト
+        function testFirebaseConnection() {
+            console.log('🔧 Firebase接続テスト開始...');
+            updateSyncStatus('syncing', 'テスト中...');
+            
+            if (!window.firebaseDatabase) {
+                console.error('❌ Firebase未初期化');
+                updateSyncStatus('disconnected', 'Firebase未初期化');
+                return;
+            }
+
+            const testRef = window.firebaseRef(window.firebaseDatabase, 'connectionTest');
+            const testData = {
+                status: "connected",
+                time: Date.now(),
+                deviceId: appState.deviceId,
+                message: "接続テスト成功"
+            };
+
+            window.firebaseSet(testRef, testData)
+                .then(() => {
+                    console.log('✅ Firebase書き込み成功');
+                    return window.firebaseGet(testRef);
+                })
+                .then(snapshot => {
+                    if (snapshot.exists()) {
+                        console.log('✅ Firebase読み込み成功:', snapshot.val());
+                        updateSyncStatus('connected', 'Firebase接続OK');
+                        setupRealtimeSync();
+                    } else {
+                        console.log('❌ データ読み込み失敗');
+                        updateSyncStatus('disconnected', '読み込み失敗');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Firebase操作失敗:', error);
+                    updateSyncStatus('disconnected', '接続エラー: ' + error.message);
+                });
+        }
+
+        // Firebase データ確認
+        function showFirebaseData() {
+            if (!window.firebaseDatabase) {
+                alert('❌ Firebase未初期化です');
+                return;
+            }
+
+            const dataRef = window.firebaseRef(window.firebaseDatabase, FIREBASE_PATH);
+            
+            window.firebaseGet(dataRef)
+                .then(snapshot => {
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        console.log('🔍 Firebaseデータ:', data);
+                        
+                        let message = '🔍 Firebase データ確認\n\n';
+                        message += `✅ データ存在: あり\n`;
+                        message += `🔧 バージョン: ${data.version || '旧形式'}\n`;
+                        message += `💱 現在通貨: ${data.currentCurrency}\n`;
+                        
+                        if (data.version === '2.0') {
+                            message += `📊 総シナリオ数: ${Object.values(data.scenarios || {}).flat().length}個\n`;
+                            message += `🏷️ ラベル数: ${Object.keys(data.scenarioLabels || {}).length}個`;
+                        } else {
+                            message += `⚠️ 旧形式のデータです\n「🔄 データ変換」ボタンで変換してください`;
+                        }
+                        
+                        alert(message);
+                    } else {
+                        console.log('❌ Firebaseデータなし');
+                        alert('❌ Firebaseにデータがありません');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Firebase確認失敗:', error);
+                    alert(`❌ Firebase確認失敗: ${error.message}`);
+                });
+        }
+
+        // スマホデバッグ
+        function mobileDebug() {
             const debugInfo = {
                 基本情報: {
                     Firebase接続: isConnected ? '✅ 接続中' : '❌ 未接続',
                     デバイスID: appState.deviceId.substr(-8),
                     最終更新: new Date(appState.lastUpdate).toLocaleString('ja-JP'),
+                    バージョン: appState.version || '不明',
                     現在通貨: appState.currentCurrency,
                     現在シナリオ: appState.currentScenario
                 },
@@ -257,191 +451,62 @@
                     現在通貨のシナリオ数: appState.scenarios[appState.currentCurrency]?.length || 0,
                     シナリオラベル数: Object.keys(appState.scenarioLabels).length
                 },
-                技術情報: {
-                    Firebase利用可能: !!window.firebaseDatabase ? '✅' : '❌',
-                    リアルタイム同期: !!realtimeListener ? '✅' : '❌',
-                    ローカルストレージ: localStorage.getItem('fxAppState') ? '✅' : '❌',
-                    最終同期: lastSyncTimestamp ? new Date(lastSyncTimestamp).toLocaleTimeString() : '未実行'
-                },
                 現在のシナリオ一覧: appState.scenarios[appState.currentCurrency]?.map(key => 
                     appState.scenarioLabels[key] || key
                 ) || []
             };
 
-            // アラートで基本情報を表示
             let alertMessage = '=== 📱 スマホデバッグ情報 ===\n\n';
             alertMessage += `🔗 Firebase: ${debugInfo.基本情報.Firebase接続}\n`;
             alertMessage += `📱 デバイス: ...${debugInfo.基本情報.デバイスID}\n`;
             alertMessage += `⏰ 最終更新: ${debugInfo.基本情報.最終更新}\n`;
+            alertMessage += `🔧 バージョン: ${debugInfo.基本情報.バージョン}\n`;
             alertMessage += `💱 現在通貨: ${debugInfo.基本情報.現在通貨}\n`;
             alertMessage += `📊 シナリオ数: ${debugInfo.データ状況.現在通貨のシナリオ数}個\n\n`;
-            alertMessage += `🔧 技術状況:\n`;
-            alertMessage += `Firebase: ${debugInfo.技術情報.Firebase利用可能}\n`;
-            alertMessage += `リアルタイム: ${debugInfo.技術情報.リアルタイム同期}\n`;
-            alertMessage += `ローカル: ${debugInfo.技術情報.ローカルストレージ}\n\n`;
             alertMessage += `📋 現在のシナリオ:\n${debugInfo.現在のシナリオ一覧.join(', ')}`;
 
             alert(alertMessage);
         }
 
-        // 🚀 超強制同期（スマホ専用）
-        function superForceSync() {
-            logDebug('超強制同期開始');
-            updateSyncStatus('syncing', '🚀 超強制同期中...');
-            
-            if (!window.firebaseDatabase) {
-                alert('❌ Firebase未初期化です');
-                updateSyncStatus('disconnected', 'Firebase未初期化');
-                return;
-            }
-
-            // ステップ1: リアルタイムリスナーを停止
-            if (realtimeListener) {
-                const rootRef = window.firebaseRef(window.firebaseDatabase, 'fxApp');
-                window.firebaseOff(rootRef, 'value', realtimeListener);
-                realtimeListener = null;
-                logDebug('リアルタイムリスナー停止');
-            }
-
-            // ステップ2: Firebaseから最新データを取得
-            const rootRef = window.firebaseRef(window.firebaseDatabase, 'fxApp');
-            window.firebaseGet(rootRef)
-                .then(snapshot => {
-                    if (snapshot.exists()) {
-                        const remoteData = snapshot.val();
-                        logDebug('リモートデータ取得成功', {
-                            remoteDeviceId: remoteData.deviceId?.substr(-8),
-                            remoteLastUpdate: new Date(remoteData.lastUpdate).toLocaleTimeString(),
-                            remoteScenarioCount: Object.values(remoteData.scenarios || {}).flat().length
-                        });
-                        
-                        // ステップ3: データを強制上書き（デバイスIDチェックなし）
-                        if (remoteData.scenarios) {
-                            appState.scenarios = JSON.parse(JSON.stringify(remoteData.scenarios));
-                            logDebug('シナリオデータ上書き', Object.keys(remoteData.scenarios));
-                        }
-                        if (remoteData.scenarioLabels) {
-                            appState.scenarioLabels = JSON.parse(JSON.stringify(remoteData.scenarioLabels));
-                            logDebug('シナリオラベル上書き', Object.keys(remoteData.scenarioLabels));
-                        }
-                        if (remoteData.currentCurrency) appState.currentCurrency = remoteData.currentCurrency;
-                        if (remoteData.currentScenario) appState.currentScenario = remoteData.currentScenario;
-                        if (remoteData.lastUpdate) appState.lastUpdate = remoteData.lastUpdate;
-                        
-                        // ステップ4: ローカルストレージを強制更新
-                        try {
-                            localStorage.removeItem('fxAppState'); // 一度削除
-                            localStorage.setItem('fxAppState', JSON.stringify(appState));
-                            logDebug('ローカルストレージ強制更新完了');
-                        } catch (error) {
-                            logDebug('ローカルストレージ更新失敗', error);
-                        }
-                        
-                        // ステップ5: UI強制更新
-                        updateUI();
-                        updateSyncStatus('connected', '🚀 超強制同期完了');
-                        
-                        // ステップ6: リアルタイム同期を再開
-                        setTimeout(() => {
-                            setupRealtimeSync();
-                        }, 1000);
-                        
-                        // 成功メッセージ
-                        const newScenarioCount = appState.scenarios[appState.currentCurrency]?.length || 0;
-                        alert(`✅ 超強制同期完了！\n\n現在のシナリオ数: ${newScenarioCount}個\n最終更新: ${new Date(appState.lastUpdate).toLocaleTimeString()}`);
-                        
-                    } else {
-                        logDebug('リモートデータなし');
-                        updateSyncStatus('disconnected', 'リモートデータなし');
-                        alert('❌ Firebaseにデータがありません');
-                    }
-                })
-                .catch(error => {
-                    logDebug('超強制同期失敗', error);
-                    updateSyncStatus('disconnected', '超強制同期失敗');
-                    alert(`❌ 同期失敗: ${error.message}`);
-                });
-        }
-
-        // Firebase接続テスト
-        function testFirebaseConnection() {
-            logDebug('Firebase接続テスト開始');
-            updateSyncStatus('syncing', 'テスト中...');
-            
-            if (!window.firebaseDatabase) {
-                logDebug('Firebase未初期化');
-                updateSyncStatus('disconnected', 'Firebase未初期化');
-                return;
-            }
-
-            const testRef = window.firebaseRef(window.firebaseDatabase, 'connectionTest');
-            const testData = {
-                status: "connected",
-                time: Date.now(),
-                deviceId: appState.deviceId
-            };
-
-            window.firebaseSet(testRef, testData)
-                .then(() => {
-                    logDebug('Firebase書き込み成功');
-                    return window.firebaseGet(testRef);
-                })
-                .then(snapshot => {
-                    if (snapshot.exists()) {
-                        logDebug('Firebase読み込み成功', snapshot.val());
-                        updateSyncStatus('connected', 'Firebase接続OK');
-                        setupRealtimeSync();
-                    } else {
-                        logDebug('データ読み込み失敗');
-                        updateSyncStatus('disconnected', '読み込み失敗');
-                    }
-                })
-                .catch(error => {
-                    logDebug('Firebase操作失敗', error);
-                    updateSyncStatus('disconnected', '接続エラー: ' + error.message);
-                });
-        }
-
-        // リアルタイム同期の設定（改良版）
+        // リアルタイム同期の設定
         function setupRealtimeSync() {
             if (!window.firebaseDatabase || !isConnected) {
-                logDebug('Firebase未接続 - リアルタイム同期をスキップ');
+                console.log('⚠️ Firebase未接続 - リアルタイム同期をスキップ');
                 return;
             }
 
             // 既存のリスナーを削除
             if (realtimeListener) {
-                const rootRef = window.firebaseRef(window.firebaseDatabase, 'fxApp');
-                window.firebaseOff(rootRef, 'value', realtimeListener);
-                logDebug('既存のリスナーを削除');
+                const dataRef = window.firebaseRef(window.firebaseDatabase, FIREBASE_PATH);
+                window.firebaseOff(dataRef, 'value', realtimeListener);
+                console.log('📴 既存のリスナーを削除');
             }
 
-            const rootRef = window.firebaseRef(window.firebaseDatabase, 'fxApp');
+            const dataRef = window.firebaseRef(window.firebaseDatabase, FIREBASE_PATH);
             
-            realtimeListener = window.firebaseOnValue(rootRef, (snapshot) => {
+            realtimeListener = window.firebaseOnValue(dataRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const remoteData = snapshot.val();
-                    logDebug('リアルタイム更新受信', {
+                    console.log('🔄 リアルタイム更新受信:', {
+                        remoteVersion: remoteData.version,
                         remoteDeviceId: remoteData.deviceId?.substr(-8),
                         remoteLastUpdate: new Date(remoteData.lastUpdate).toLocaleTimeString(),
                         currentDeviceId: appState.deviceId.substr(-8),
-                        currentLastUpdate: new Date(appState.lastUpdate).toLocaleTimeString(),
                         shouldUpdate: remoteData.deviceId !== appState.deviceId && remoteData.lastUpdate > appState.lastUpdate
                     });
                     
-                    // より積極的な同期条件
-                    if (remoteData.deviceId !== appState.deviceId && 
-                        (remoteData.lastUpdate > appState.lastUpdate || 
-                         JSON.stringify(remoteData.scenarios) !== JSON.stringify(appState.scenarios))) {
+                    // バージョン2.0以上で、他のデバイスからの更新の場合のみ適用
+                    if (remoteData.version === '2.0' && 
+                        remoteData.deviceId !== appState.deviceId && 
+                        remoteData.lastUpdate > appState.lastUpdate) {
                         
-                        logDebug('他デバイスからの更新を適用（条件拡張）');
+                        console.log('📥 他デバイスからの更新を適用');
                         
                         // データを更新
-                        if (remoteData.scenarios) appState.scenarios = JSON.parse(JSON.stringify(remoteData.scenarios));
-                        if (remoteData.scenarioLabels) appState.scenarioLabels = JSON.parse(JSON.stringify(remoteData.scenarioLabels));
-                        if (remoteData.currentCurrency) appState.currentCurrency = remoteData.currentCurrency;
-                        if (remoteData.currentScenario) appState.currentScenario = remoteData.currentScenario;
-                        appState.lastUpdate = remoteData.lastUpdate;
+                        appState = {
+                            ...remoteData,
+                            deviceId: appState.deviceId // デバイスIDは保持
+                        };
                         
                         // UI更新
                         updateUI();
@@ -451,59 +516,54 @@
                         localStorage.setItem('fxAppState', JSON.stringify(appState));
                     }
                 } else {
-                    logDebug('Firebaseデータなし');
+                    console.log('📭 Firebaseデータなし');
                 }
             }, (error) => {
-                logDebug('リアルタイム同期エラー', error);
+                console.error('❌ リアルタイム同期エラー:', error);
                 updateSyncStatus('disconnected', 'リアルタイム同期エラー');
             });
 
             updateSyncStatus('listening', 'リアルタイム同期中');
-            logDebug('リアルタイム同期開始（改良版）');
+            console.log('✅ リアルタイム同期開始');
         }
 
         // データ保存
         function saveData() {
             return new Promise((resolve, reject) => {
-                logDebug('データ保存開始');
+                console.log('💾 データ保存開始...');
                 updateSyncStatus('syncing', '保存中...');
 
                 appState.lastUpdate = Date.now();
+                appState.version = '2.0'; // バージョンを確実に設定
 
+                // ローカル保存
                 try {
                     localStorage.setItem('fxAppState', JSON.stringify(appState));
-                    logDebug('ローカル保存完了');
+                    console.log('✅ ローカル保存完了');
                 } catch (error) {
-                    logDebug('ローカル保存失敗', error);
+                    console.error('❌ ローカル保存失敗:', error);
                     updateSyncStatus('disconnected', 'ローカル保存失敗');
                     reject(error);
                     return;
                 }
 
+                // Firebase保存
                 if (window.firebaseDatabase && isConnected) {
-                    const updates = {
-                        currentCurrency: appState.currentCurrency,
-                        currentScenario: appState.currentScenario,
-                        lastUpdate: appState.lastUpdate,
-                        deviceId: appState.deviceId,
-                        scenarios: appState.scenarios,
-                        scenarioLabels: appState.scenarioLabels
-                    };
-
-                    const rootRef = window.firebaseRef(window.firebaseDatabase, 'fxApp');
-                    window.firebaseSet(rootRef, updates)
+                    const dataRef = window.firebaseRef(window.firebaseDatabase, FIREBASE_PATH);
+                    
+                    window.firebaseSet(dataRef, appState)
                         .then(() => {
-                            logDebug('Firebase保存完了');
+                            console.log('✅ Firebase保存完了');
                             updateSyncStatus('connected', '保存完了');
                             resolve();
                         })
                         .catch(error => {
-                            logDebug('Firebase保存失敗', error);
+                            console.error('❌ Firebase保存失敗:', error);
                             updateSyncStatus('connected', 'ローカル保存のみ完了');
                             resolve();
                         });
                 } else {
-                    logDebug('Firebase未接続 - ローカルのみ保存');
+                    console.log('⚠️ Firebase未接続 - ローカルのみ保存');
                     updateSyncStatus('disconnected', 'ローカルのみ保存');
                     resolve();
                 }
@@ -522,12 +582,13 @@
                         appState.deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                     }
                     
-                    logDebug('ローカルデータ読み込み完了', {
+                    console.log('✅ ローカルデータ読み込み完了:', {
                         deviceId: appState.deviceId.substr(-8),
+                        version: appState.version,
                         scenarioCount: Object.values(appState.scenarios).flat().length
                     });
                 } catch (error) {
-                    logDebug('ローカルデータ読み込み失敗', error);
+                    console.error('❌ ローカルデータ読み込み失敗:', error);
                 }
             }
             updateUI();
@@ -629,7 +690,7 @@
             
             appState.currentScenario = scenarioKey;
             
-            logDebug('新しいシナリオ追加', {
+            console.log('新しいシナリオ追加:', {
                 name: scenarioName,
                 key: scenarioKey,
                 currency: appState.currentCurrency
@@ -653,20 +714,13 @@
                 });
         }
 
-        // 現在データ表示
-        function showCurrentData() {
-            console.log('=== 現在のアプリ状態 ===');
-            console.log(JSON.stringify(appState, null, 2));
-            alert('現在のデータをコンソールに表示しました。F12で確認してください。');
-        }
-
         // 完全リセット
         function resetAllData() {
             if (confirm('全てのデータをリセットしますか？この操作は取り消せません。')) {
                 localStorage.clear();
                 if (window.firebaseDatabase) {
-                    const rootRef = window.firebaseRef(window.firebaseDatabase, 'fxApp');
-                    window.firebaseSet(rootRef, null);
+                    const dataRef = window.firebaseRef(window.firebaseDatabase, FIREBASE_PATH);
+                    window.firebaseSet(dataRef, null);
                 }
                 location.reload();
             }
@@ -687,39 +741,24 @@
 
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
-            logDebug('FXアプリ初期化開始', { deviceId: appState.deviceId.substr(-8) });
+            console.log('🚀 FXアプリ初期化開始', { 
+                deviceId: appState.deviceId.substr(-8),
+                firebasePath: FIREBASE_PATH
+            });
             
             loadData();
             
             setTimeout(() => {
                 testFirebaseConnection();
             }, 1000);
-            
-            // スマホでは積極的な同期チェック（10秒ごと）
-            setInterval(() => {
-                if (isConnected && Date.now() - lastSyncTimestamp > 10000) {
-                    logDebug('定期同期チェック実行（スマホ版）');
-                    superForceSync();
-                }
-            }, 10000);
         });
 
         // ページが非表示になる前にリスナーをクリーンアップ
         window.addEventListener('beforeunload', function() {
             if (realtimeListener && window.firebaseDatabase) {
-                const rootRef = window.firebaseRef(window.firebaseDatabase, 'fxApp');
-                window.firebaseOff(rootRef, 'value', realtimeListener);
-                logDebug('ページ終了時にリスナーをクリーンアップ');
-            }
-        });
-
-        // ページが再表示された時に超強制同期
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden && isConnected) {
-                logDebug('ページが再表示 - 超強制同期実行');
-                setTimeout(() => {
-                    superForceSync();
-                }, 500);
+                const dataRef = window.firebaseRef(window.firebaseDatabase, FIREBASE_PATH);
+                window.firebaseOff(dataRef, 'value', realtimeListener);
+                console.log('📴 ページ終了時にリスナーをクリーンアップ');
             }
         });
     </script>
