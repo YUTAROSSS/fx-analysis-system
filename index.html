@@ -173,86 +173,6 @@
             color: #721c24;
         }
 
-        /* 現在の通貨ペア用の画像ボタンのスタイル */
-        .image-buttons[data-currency="USDJPY"][data-status="skip"] .image-btn,
-        .image-buttons[data-currency="USDJPY"][data-status="missed"] .image-btn,
-        .image-buttons[data-currency="USDJPY"][data-status="completed"] .image-btn {
-            background: #6c757d;
-            color: white;
-            border-color: #6c757d;
-        }
-
-        .image-buttons[data-currency="USDJPY"][data-status="skip"] .image-btn.active,
-        .image-buttons[data-currency="USDJPY"][data-status="missed"] .image-btn.active,
-        .image-buttons[data-currency="USDJPY"][data-status="completed"] .image-btn.active {
-            background: #495057;
-            border-color: #495057;
-        }
-
-        .image-buttons[data-currency="USDJPY"][data-status="pending"] .image-btn,
-        .image-buttons[data-currency="USDJPY"][data-status="holding"] .image-btn {
-            background: #dc3545;
-            color: white;
-            border-color: #dc3545;
-        }
-
-        .image-buttons[data-currency="USDJPY"][data-status="pending"] .image-btn.active,
-        .image-buttons[data-currency="USDJPY"][data-status="holding"] .image-btn.active {
-            background: #c82333;
-            border-color: #c82333;
-        }
-
-        .image-buttons[data-currency="USDJPY"][data-status="considering"] .image-btn {
-            background: #007bff;
-            color: white;
-            border-color: #007bff;
-        }
-
-        .image-buttons[data-currency="USDJPY"][data-status="considering"] .image-btn.active {
-            background: #0056b3;
-            border-color: #0056b3;
-        }
-
-        /* 他の通貨ペアにも同様のスタイルを適用 */
-        .image-buttons[data-status="skip"] .image-btn,
-        .image-buttons[data-status="missed"] .image-btn,
-        .image-buttons[data-status="completed"] .image-btn {
-            background: #6c757d;
-            color: white;
-            border-color: #6c757d;
-        }
-
-        .image-buttons[data-status="skip"] .image-btn.active,
-        .image-buttons[data-status="missed"] .image-btn.active,
-        .image-buttons[data-status="completed"] .image-btn.active {
-            background: #495057;
-            border-color: #495057;
-        }
-
-        .image-buttons[data-status="pending"] .image-btn,
-        .image-buttons[data-status="holding"] .image-btn {
-            background: #dc3545;
-            color: white;
-            border-color: #dc3545;
-        }
-
-        .image-buttons[data-status="pending"] .image-btn.active,
-        .image-buttons[data-status="holding"] .image-btn.active {
-            background: #c82333;
-            border-color: #c82333;
-        }
-
-        .image-buttons[data-status="considering"] .image-btn {
-            background: #007bff;
-            color: white;
-            border-color: #007bff;
-        }
-
-        .image-buttons[data-status="considering"] .image-btn.active {
-            background: #0056b3;
-            border-color: #0056b3;
-        }
-
         /* 通貨ペア名表示 */
         .currency-info {
             text-align: center;
@@ -556,6 +476,116 @@
             line-height: 1.4;
         }
 
+        /* 固定プロンプト設定 */
+        .prompt-settings {
+            background: #e8f4fd;
+            border: 2px solid #007bff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+        }
+
+        .prompt-textarea {
+            width: 100%;
+            height: 120px;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            resize: vertical;
+            font-size: 12px;
+            line-height: 1.4;
+            background: white;
+        }
+
+        .prompt-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .prompt-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .save-prompt-btn {
+            background: #007bff;
+            color: white;
+        }
+
+        .reset-prompt-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        /* テキストコピーエリア */
+        .copy-text-area {
+            background: #f8f9fa;
+            border: 2px solid #28a745;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 12px;
+            display: none;
+        }
+
+        .copy-text-area.active {
+            display: block;
+        }
+
+        .copy-textarea {
+            width: 100%;
+            height: 300px;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            resize: vertical;
+            font-size: 12px;
+            line-height: 1.4;
+            background: white;
+            font-family: monospace;
+        }
+
+        .copy-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .copy-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .copy-all-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .copy-memo-btn {
+            background: #007bff;
+            color: white;
+        }
+
+        .copy-scenarios-btn {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .close-copy-btn {
+            background: #6c757d;
+            color: white;
+        }
+
         /* 管理セクション - 最下部 */
         .management-sections {
             margin-top: 40px;
@@ -827,6 +857,15 @@
             .memo-scenario-area {
                 grid-template-columns: 1fr;
             }
+
+            .copy-controls, .prompt-controls {
+                flex-direction: column;
+            }
+
+            .copy-btn, .prompt-btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
         }
     </style>
 </head>
@@ -843,6 +882,39 @@
 
         <!-- メインコンテンツ -->
         <div class="main-content">
+            <!-- 固定プロンプト設定 -->
+            <div class="prompt-settings">
+                <h3>🔧 ChatGPT用固定プロンプト設定</h3>
+                <textarea class="prompt-textarea" id="fixedPrompt" placeholder="ChatGPTに送信する際の固定プロンプトを設定してください...">あなたは経験豊富なFXトレーダーです。以下のチャート分析データを評価し、実用的なアドバイスを提供してください。
+
+特に以下の観点から分析をお願いします：
+1. テクニカル分析の妥当性
+2. リスク管理の観点
+3. エントリー・エグジット戦略
+4. 市場環境との整合性
+
+具体的で実践的なアドバイスをお願いします。</textarea>
+                <div class="prompt-controls">
+                    <button class="prompt-btn save-prompt-btn" onclick="saveFixedPrompt()">💾 プロンプト保存</button>
+                    <button class="prompt-btn reset-prompt-btn" onclick="resetFixedPrompt()">🔄 デフォルトに戻す</button>
+                </div>
+            </div>
+
+            <!-- テキストコピーエリア -->
+            <div class="copy-text-area" id="copyTextArea">
+                <h3>📋 ChatGPT用テキスト</h3>
+                <p style="font-size: 12px; color: #6c757d; margin-bottom: 10px;">
+                    以下のテキストをコピーしてChatGPTに貼り付けてください
+                </p>
+                <textarea class="copy-textarea" id="copyTextarea" readonly></textarea>
+                <div class="copy-controls">
+                    <button class="copy-btn copy-all-btn" onclick="copyAllText()">📋 全文コピー</button>
+                    <button class="copy-btn copy-memo-btn" onclick="copyMemoOnly()">📝 分析メモのみコピー</button>
+                    <button class="copy-btn copy-scenarios-btn" onclick="copyScenariosOnly()">🎯 シナリオのみコピー</button>
+                    <button class="copy-btn close-copy-btn" onclick="closeCopyArea()">✕ 閉じる</button>
+                </div>
+            </div>
+
             <!-- 通貨ペア選択 -->
             <div class="currency-selector">
                 <div class="section-title">通貨ペア選択</div>
@@ -1131,6 +1203,17 @@
         let uploadedImages = {};
         let imageStatusMap = {};
 
+        // 固定プロンプトのデフォルト値
+        const defaultFixedPrompt = `あなたは経験豊富なFXトレーダーです。以下のチャート分析データを評価し、実用的なアドバイスを提供してください。
+
+特に以下の観点から分析をお願いします：
+1. テクニカル分析の妥当性
+2. リスク管理の観点
+3. エントリー・エグジット戦略
+4. 市場環境との整合性
+
+具体的で実践的なアドバイスをお願いします。`;
+
         // 動的に総ページ数を計算
         function getTotalPages() {
             return allImages.length;
@@ -1144,6 +1227,29 @@
             updateImageButtons();
             loadCurrentImage();
             checkAllImageStatus();
+            loadFixedPrompt();
+        }
+
+        // 固定プロンプトの読み込み
+        function loadFixedPrompt() {
+            const savedPrompt = localStorage.getItem('fx_fixed_prompt');
+            if (savedPrompt) {
+                document.getElementById('fixedPrompt').value = savedPrompt;
+            }
+        }
+
+        // 固定プロンプトの保存
+        function saveFixedPrompt() {
+            const prompt = document.getElementById('fixedPrompt').value;
+            localStorage.setItem('fx_fixed_prompt', prompt);
+            showStatus('固定プロンプトを保存しました', 'success');
+        }
+
+        // 固定プロンプトのリセット
+        function resetFixedPrompt() {
+            document.getElementById('fixedPrompt').value = defaultFixedPrompt;
+            localStorage.removeItem('fx_fixed_prompt');
+            showStatus('固定プロンプトをデフォルトに戻しました', 'info');
         }
 
         // 通貨ペアタブの動的生成
@@ -1210,21 +1316,45 @@
             }
         }
 
-        // 画像ボタンの更新（現在の通貨ペアのみ色変更）
+        // 画像ボタンの更新（現在の通貨ペアのシナリオボタンのみ色変更）
         function updateImageButtons() {
             const data = currencyData[currentCurrency];
             const container = document.getElementById('imageButtons');
             container.innerHTML = '';
-            
-            // 現在の通貨ペアと分析ステータスを data 属性に設定
-            container.setAttribute('data-currency', currentCurrency);
-            container.setAttribute('data-status', data.status);
             
             data.images.forEach((image, index) => {
                 const btn = document.createElement('div');
                 btn.className = 'image-btn' + (image === currentImage ? ' active' : '');
                 btn.textContent = data.imageLabels[index];
                 btn.onclick = function() { selectImage(this, image); };
+                
+                // 分析ステータスに応じて色を変更（現在の通貨ペアのみ）
+                const status = data.status;
+                if (status === 'skip' || status === 'missed' || status === 'completed') {
+                    btn.style.backgroundColor = '#6c757d';
+                    btn.style.color = 'white';
+                    btn.style.borderColor = '#6c757d';
+                    if (btn.classList.contains('active')) {
+                        btn.style.backgroundColor = '#495057';
+                        btn.style.borderColor = '#495057';
+                    }
+                } else if (status === 'pending' || status === 'holding') {
+                    btn.style.backgroundColor = '#dc3545';
+                    btn.style.color = 'white';
+                    btn.style.borderColor = '#dc3545';
+                    if (btn.classList.contains('active')) {
+                        btn.style.backgroundColor = '#c82333';
+                        btn.style.borderColor = '#c82333';
+                    }
+                } else if (status === 'considering') {
+                    btn.style.backgroundColor = '#007bff';
+                    btn.style.color = 'white';
+                    btn.style.borderColor = '#007bff';
+                    if (btn.classList.contains('active')) {
+                        btn.style.backgroundColor = '#0056b3';
+                        btn.style.borderColor = '#0056b3';
+                    }
+                }
                 
                 if (imageStatusMap[image] === 'missing') {
                     btn.classList.add('missing');
@@ -1483,8 +1613,31 @@
             });
         }
 
-        // ChatGPT ブラウザ版への半自動送信
+        // ChatGPT ブラウザ版への送信とテキストコピーエリア表示
         function sendToChatGPTBrowser() {
+            // ChatGPT を新しいタブで開く
+            window.open('https://chat.openai.com/', '_blank');
+            
+            // テキストコピーエリアを表示
+            showCopyTextArea();
+            
+            showStatus('ChatGPTが新しいタブで開かれました。下記のテキストをコピーして貼り付けてください。', 'success');
+        }
+
+        // テキストコピーエリアを表示
+        function showCopyTextArea() {
+            const copyArea = document.getElementById('copyTextArea');
+            copyArea.classList.add('active');
+            
+            // 全文を生成
+            generateCopyText();
+            
+            // スクロールしてコピーエリアを表示
+            copyArea.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // コピー用テキストを生成
+        function generateCopyText() {
             const data = currencyData[currentCurrency];
             const statusText = {
                 'considering': '🤔 検討中', 'skip': '⏭️ 見送り', 'missed': '😞 見逃し',
@@ -1495,8 +1648,13 @@
                 'unselected': '未選択', '1h': '1時間足', '4h': '4時間足', '1d': '日足'
             };
 
+            // 固定プロンプトを取得
+            const fixedPrompt = document.getElementById('fixedPrompt').value || defaultFixedPrompt;
+
             // 分析データを整形
-            let message = `【FX分析データ】チャート画像分析をお願いします
+            let message = `${fixedPrompt}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📊 **基本情報**
 ・通貨ペア: ${data.pair}
@@ -1518,127 +1676,64 @@ ${document.getElementById('analysisMemo').value || '記載なし'}
                 });
             }
 
-            message += `\n📈 **分析依頼内容**
-上記のチャート画像と分析データについて、以下の観点から評価・アドバイスをお願いします：
+            message += `\n**注意**: この後にチャート画像をアップロードしますので、画像と合わせて総合的な分析をお願いします。`;
 
-1. **テクニカル分析の妥当性**
-   - チャートパターンの評価
-   - サポート・レジスタンスレベルの妥当性
-   - トレンドラインの精度
+            document.getElementById('copyTextarea').value = message;
+        }
 
-2. **リスク管理の観点**
-   - エントリーポイントの適切性
-   - 損切りレベルの設定
-   - リスクリワード比の評価
+        // テキストコピーエリアを閉じる
+        function closeCopyArea() {
+            document.getElementById('copyTextArea').classList.remove('active');
+        }
 
-3. **改善提案**
-   - より良いエントリータイミング
-   - 追加で確認すべき指標
-   - シナリオの改善点
+        // 全文コピー
+        function copyAllText() {
+            const textarea = document.getElementById('copyTextarea');
+            textarea.select();
+            document.execCommand('copy');
+            showStatus('全文をクリップボードにコピーしました', 'success');
+        }
 
-4. **市場環境の考慮**
-   - 現在の市場トレンド
-   - 経済指標の影響
-   - 時間軸の適切性
+        // 分析メモのみコピー
+        function copyMemoOnly() {
+            const memo = document.getElementById('analysisMemo').value || '記載なし';
+            const fixedPrompt = document.getElementById('fixedPrompt').value || defaultFixedPrompt;
+            const data = currencyData[currentCurrency];
+            
+            const memoText = `${fixedPrompt}
 
-**注意**: この後にチャート画像をアップロードしますので、画像と合わせて総合的な分析をお願いします。`;
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-            // クリップボードにコピー
-            navigator.clipboard.writeText(message).then(() => {
-                // ChatGPT を新しいタブで開く
-                window.open('https://chat.openai.com/', '_blank');
-                
-                // 画像準備の案内を表示
-                showChatGPTInstructions();
-                
-                showStatus('分析データをクリップボードにコピーしました', 'success');
-            }).catch(() => {
-                showStatus('コピーに失敗しました', 'error');
+📝 **${data.pair} 分析メモ**
+${memo}`;
+
+            navigator.clipboard.writeText(memoText).then(() => {
+                showStatus('分析メモをクリップボードにコピーしました', 'success');
             });
         }
 
-        // ChatGPT 使用方法の案内を表示
-        function showChatGPTInstructions() {
-            const modal = document.createElement('div');
-            modal.className = 'management-modal active';
-            modal.innerHTML = `
-                <div class="management-modal-content" style="max-width: 600px;">
-                    <h3>🤖 ChatGPT での分析手順</h3>
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
-                        <h4>📋 手順1: テキストを貼り付け</h4>
-                        <p>ChatGPTが新しいタブで開かれました。<br>
-                        <strong>Ctrl+V</strong> で分析データを貼り付けてください。</p>
-                        
-                        <h4>📷 手順2: 画像をアップロード</h4>
-                        <p>ChatGPT Plus（有料版）をお使いの場合：<br>
-                        1. 📎 クリップアイコンをクリック<br>
-                        2. 現在表示中のチャート画像をアップロード<br>
-                        3. 送信ボタンをクリック</p>
-                        
-                        <h4>💡 手順3: 画像の取得方法</h4>
-                        <p>チャート画像の取得方法：<br>
-                        • 画面上のチャートを右クリック → 「画像を保存」<br>
-                        • またはスクリーンショットを撮影</p>
-                        
-                        <div style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-top: 10px;">
-                            <strong>⚠️ 注意事項</strong><br>
-                            • 画像認識にはChatGPT Plus（月額$20）が必要です<br>
-                            • 無料版では画像分析はできません<br>
-                            • 現在の画像: <code>${currentImage}</code>
-                        </div>
-                    </div>
-                    <div class="management-buttons">
-                        <button class="mgmt-btn" style="background: #28a745; color: white;" onclick="downloadCurrentChart()">📷 画像をダウンロード</button>
-                        <button class="mgmt-btn" style="background: #6c757d; color: white;" onclick="closeChatGPTInstructions()">閉じる</button>
-                    </div>
-                </div>
-            `;
+        // シナリオのみコピー
+        function copyScenariosOnly() {
+            const data = currencyData[currentCurrency];
+            const fixedPrompt = document.getElementById('fixedPrompt').value || defaultFixedPrompt;
             
-            document.body.appendChild(modal);
-        }
+            let scenarioText = `${fixedPrompt}
 
-        // ChatGPT案内モーダルを閉じる
-        function closeChatGPTInstructions() {
-            const modal = document.querySelector('.management-modal.active');
-            if (modal) {
-                modal.remove();
-            }
-        }
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        // 現在のチャート画像をダウンロード
-        function downloadCurrentChart() {
-            const chartImage = document.getElementById('chartImage');
-            
-            if (chartImage.style.display === 'none' || !chartImage.src) {
-                alert('表示できるチャート画像がありません');
-                return;
+🎯 **${data.pair} カスタムシナリオ**\n`;
+
+            if (data.customScenarios.length > 0) {
+                data.customScenarios.forEach((scenario, index) => {
+                    scenarioText += `${index + 1}. **${scenario.title}**: ${scenario.desc}\n`;
+                });
+            } else {
+                scenarioText += '設定されたカスタムシナリオはありません。';
             }
-            
-            // Canvas を使用して画像をダウンロード
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // 画像が読み込まれるまで待機
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = function() {
-                canvas.width = img.naturalWidth;
-                canvas.height = img.naturalHeight;
-                ctx.drawImage(img, 0, 0);
-                
-                // ダウンロードリンクを作成
-                canvas.toBlob(function(blob) {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${currentCurrency}_${currentImage}_${new Date().toISOString().split('T')[0]}.png`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    
-                    showStatus('チャート画像をダウンロードしました', 'success');
-                }, 'image/png');
-            };
-            img.src = chartImage.src;
+
+            navigator.clipboard.writeText(scenarioText).then(() => {
+                showStatus('カスタムシナリオをクリップボードにコピーしました', 'success');
+            });
         }
 
         // 通貨ペア管理機能
