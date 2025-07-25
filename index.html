@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FX通貨ペア分析システム</title>
+    <title>FX通貨ペア分析管理システム</title>
     
     <!-- Firebase SDK -->
     <script type="module">
@@ -40,77 +40,705 @@
     </script>
     
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; }
-        .container { max-width: 1280px; margin: 0 auto; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 12px; overflow: hidden; }
-        
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-        .header h1 { font-size: 20px; font-weight: 600; }
-        .btn { padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.3s ease; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); }
-        .btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.2); }
-        
-        .main-content { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
-        .section { background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #e9ecef; }
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .section-title { font-size: 14px; font-weight: 600; color: #495057; }
-        .mgmt-btn { padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; margin: 0 4px; }
-        .add-btn { background: #28a745; color: white; }
-        .delete-btn { background: #dc3545; color: white; }
-        
-        .currency-tabs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-        .currency-tab { padding: 8px 16px; background: white; border: 2px solid #dee2e6; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.3s ease; }
-        .currency-tab.active { background: #4285f4; color: white; border-color: #4285f4; }
-        
-        .image-buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-        .scenario-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .image-btn { padding: 8px 16px !important; border: 2px solid #4285f4 !important; border-radius: 8px !important; cursor: pointer !important; font-size: 11px !important; text-align: center !important; min-width: 80px !important; font-weight: 600 !important; background: #4285f4 !important; color: white !important; transition: box-shadow 0.3s ease, transform 0.3s ease !important; }
-        .image-btn.selected { box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important; transform: translateY(-3px) !important; }
-        .image-btn:hover { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important; transform: translateY(-1px) !important; }
-        
-        .status-label { padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; white-space: nowrap; }
-        .status-considering { background: #007bff; color: white; }
-        
-        .sync-status { position: fixed; top: 10px; right: 20px; padding: 8px 12px; border-radius: 6px; font-size: 12px; z-index: 1000; }
-        .sync-status.connected { background: #28a745; color: white; }
-        .sync-status.disconnected { background: #dc3545; color: white; }
-        .sync-status.syncing { background: #ffc107; color: #212529; }
-        .sync-status.listening { background: #17a2b8; color: white; }
-        
-        .currency-display { text-align: center; margin: 20px 0; font-size: 24px; font-weight: 700; color: #2c3e50; }
-        
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
-        .modal.active { display: flex; }
-        .modal-content { background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 100%; }
-        .modal h3 { margin-bottom: 20px; color: #2c3e50; }
-        .modal input { width: 100%; padding: 12px; border: 1px solid #dee2e6; border-radius: 6px; margin-bottom: 15px; font-size: 14px; }
-        .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-        
-        .last-sync-info { position: fixed; bottom: 10px; right: 10px; padding: 5px 10px; background: rgba(0,0,0,0.7); color: white; border-radius: 5px; font-size: 10px; z-index: 1000; }
-        
-        .path-fix-btn { background: #6f42c1 !important; color: white !important; font-weight: bold !important; animation: pulse 2s infinite; }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* 同期ステータス */
+        .sync-status {
+            position: fixed;
+            top: 10px;
+            right: 20px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+
+        .sync-status.connected {
+            background: #28a745;
+            color: white;
+        }
+
+        .sync-status.disconnected {
+            background: #dc3545;
+            color: white;
+        }
+
+        .sync-status.syncing {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .sync-status.listening {
+            background: #17a2b8;
+            color: white;
+        }
+
+        /* ヘッダー */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #4285f4;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        /* メインコンテンツ */
+        .main-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .mgmt-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            margin: 0 4px;
+        }
+
+        .add-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        /* 通貨ペアタブ */
+        .currency-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .currency-tab {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .currency-tab.active {
+            background: #4285f4;
+            color: white;
+            border-color: #4285f4;
+        }
+
+        /* シナリオボタン */
+        .image-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .scenario-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .image-btn {
+            padding: 8px 16px !important;
+            border: 2px solid #4285f4 !important;
+            border-radius: 8px !important;
+            cursor: pointer !important;
+            font-size: 11px !important;
+            text-align: center !important;
+            min-width: 80px !important;
+            font-weight: 600 !important;
+            background: #4285f4 !important;
+            color: white !important;
+            transition: box-shadow 0.3s ease, transform 0.3s ease !important;
+        }
+
+        .image-btn.selected {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+            transform: translateY(-3px) !important;
+        }
+
+        .image-btn:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        .status-label {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-considering {
+            background: #007bff;
+            color: white;
+        }
+
+        /* 通貨ペア表示 */
+        .currency-display {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        /* チャートエリア */
+        .chart-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .chart-container {
+            width: 100%;
+            max-width: 800px;
+            height: 60vh;
+            min-height: 400px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .chart-container:hover {
+            transform: scale(1.01);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        .chart-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .chart-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #f8f9fa 25%, transparent 25%), 
+                        linear-gradient(-45deg, #f8f9fa 25%, transparent 25%);
+            background-size: 20px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 16px;
+            font-weight: 600;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* チャートナビゲーション */
+        .chart-navigation {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .chart-nav-btn {
+            padding: 10px 20px;
+            background: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-nav-btn:hover {
+            background: #3367d6;
+            transform: translateY(-2px);
+        }
+
+        .chart-nav-btn:disabled {
+            background: #dee2e6;
+            color: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .return-top-btn {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .return-top-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        /* 分析コントロール */
+        .analysis-controls {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .analysis-controls {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .control-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        .status-buttons, .wave-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .status-btn, .wave-btn {
+            padding: 10px 12px;
+            border: 2px solid #dee2e6;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .status-btn.active {
+            border-color: #4285f4;
+            background: #4285f4;
+            color: white;
+        }
+
+        .wave-btn.active {
+            border-color: #4285f4;
+            background: #4285f4;
+            color: white;
+        }
+
+        /* 分析メモ */
+        .analysis-memo {
+            height: 200px;
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            resize: vertical;
+            font-size: 12px;
+            line-height: 1.4;
+            background: white;
+        }
+
+        /* ChatGPTプロンプト */
+        .prompt-settings {
+            background: #e8f4fd;
+            border: 2px solid #007bff;
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .prompt-textarea {
+            width: 100%;
+            height: 180px;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            resize: vertical;
+            font-size: 12px;
+            line-height: 1.4;
+            background: white;
+        }
+
+        .prompt-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .prompt-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .save-prompt-btn {
+            background: #007bff;
+            color: white;
+        }
+
+        .reset-prompt-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .chatgpt-analysis-btn {
+            background: #28a745;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 20px;
+        }
+
+        /* コピーエリア */
+        .copy-text-toggle {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 15px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .copy-text-area {
+            background: #f8f9fa;
+            border: 2px solid #28a745;
+            padding: 20px;
+            margin-top: 15px;
+            border-radius: 12px;
+            display: none;
+        }
+
+        .copy-text-area.active {
+            display: block;
+        }
+
+        .copy-textarea {
+            width: 100%;
+            height: 300px;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            resize: vertical;
+            font-size: 12px;
+            line-height: 1.4;
+            background: white;
+            font-family: monospace;
+        }
+
+        .copy-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .copy-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .copy-all-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .copy-memo-btn {
+            background: #007bff;
+            color: white;
+        }
+
+        .copy-scenarios-btn {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .close-copy-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* テスト機能 */
+        .test-section {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .test-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .test-firebase {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .test-save {
+            background: #28a745;
+            color: white;
+        }
+
+        .test-debug {
+            background: #e83e8c;
+            color: white;
+        }
+
+        .test-reset {
+            background: #dc3545;
+            color: white;
+        }
+
+        /* スマホ対応 */
         @media (max-width: 767px) {
-            .header h1 { font-size: 16px; }
-            .btn { font-size: 11px; padding: 5px 10px; }
-            .main-content { padding: 15px; }
-            .currency-pair { font-size: 22px; }
-            .mgmt-btn { font-size: 10px; padding: 5px 8px; margin: 2px; }
+            .header h1 {
+                font-size: 16px;
+            }
+            
+            .btn {
+                font-size: 11px;
+                padding: 5px 10px;
+            }
+            
+            .main-content {
+                padding: 15px;
+            }
+            
+            .chart-container {
+                height: 50vh;
+                min-height: 300px;
+            }
+            
+            .currency-display {
+                font-size: 22px;
+            }
+
+            .analysis-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .copy-controls, .prompt-controls {
+                flex-direction: column;
+            }
+
+            .copy-btn, .prompt-btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+
+            .chart-navigation {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .chart-nav-btn, .return-top-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .test-buttons {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .test-btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="sync-status" id="syncStatus">接続確認中...</div>
-        <div class="last-sync-info" id="lastSyncInfo">最終同期: 未実行</div>
         
         <div class="header">
             <h1>🔍 FX通貨ペア分析システム</h1>
-            <button class="btn" onclick="shareAnalysis()">📤 共有</button>
+            <div class="header-controls">
+                <button class="btn btn-secondary" onclick="shareAnalysis()">📤 共有</button>
+            </div>
         </div>
 
         <div class="main-content">
@@ -141,19 +769,108 @@
             <!-- 通貨ペア表示 -->
             <div class="currency-display" id="currencyDisplay">USD/JPY</div>
             
-            <!-- テスト機能 -->
-            <div class="section">
-                <div class="section-header">
-                    <div class="section-title">🔧 テスト機能</div>
+            <!-- チャートエリア -->
+            <div class="chart-area">
+                <div class="chart-container" onclick="openChartModal()">
+                    <div class="chart-placeholder" id="chartDisplay">
+                        📈 USD/JPY チャート
+                        <small style="margin-top: 10px; display: block;">
+                            画像ファイルを配置してください<br>
+                            タップで拡大表示
+                        </small>
+                    </div>
+                    <img id="chartImage" class="chart-image" style="display: none;" alt="チャート画像">
                 </div>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="mgmt-btn" style="background: #17a2b8; color: white;" onclick="testFirebaseConnection()">Firebase接続テスト</button>
-                    <button class="mgmt-btn path-fix-btn" onclick="fixFirebasePath()">🔧 パス統一</button>
-                    <button class="mgmt-btn" style="background: #28a745; color: white;" onclick="manualSave()">手動保存</button>
-                    <button class="mgmt-btn" style="background: #6f42c1; color: white;" onclick="addTestScenario()">テストシナリオ追加</button>
-                    <button class="mgmt-btn" style="background: #e83e8c; color: white;" onclick="mobileDebug()">📱 スマホデバッグ</button>
-                    <button class="mgmt-btn" style="background: #ffc107; color: #212529;" onclick="showFirebaseData()">🔍 Firebase確認</button>
-                    <button class="mgmt-btn" style="background: #dc3545; color: white;" onclick="resetAllData()">完全リセット</button>
+                
+                <div class="chart-navigation">
+                    <button class="chart-nav-btn" onclick="previousPage()" id="prevBtn" disabled>
+                        ← 前のチャート
+                    </button>
+                    <button class="chart-nav-btn" onclick="nextPage()" id="nextBtn">
+                        次のチャート →
+                    </button>
+                    <button class="return-top-btn" onclick="returnToTop()">
+                        🏠 トップへ戻る
+                    </button>
+                </div>
+            </div>
+
+            <!-- 分析コントロール -->
+            <div class="analysis-controls">
+                <div class="control-section">
+                    <div class="section-title">分析ステータス</div>
+                    <div class="status-buttons">
+                        <div class="status-btn active" onclick="setStatus(this, 'considering')">🤔 検討中</div>
+                        <div class="status-btn" onclick="setStatus(this, 'skip')">⏭️ 見送り</div>
+                        <div class="status-btn" onclick="setStatus(this, 'missed')">😞 見逃し</div>
+                        <div class="status-btn" onclick="setStatus(this, 'pending')">📋 指値逆指値中</div>
+                        <div class="status-btn" onclick="setStatus(this, 'holding')">💼 保持中</div>
+                        <div class="status-btn" onclick="setStatus(this, 'completed')">✅ 完了</div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <div class="section-title">狙う波</div>
+                    <div class="wave-buttons">
+                        <div class="wave-btn active" onclick="setWave(this, 'unselected')">未選択</div>
+                        <div class="wave-btn" onclick="setWave(this, '1h')">1時間足</div>
+                        <div class="wave-btn" onclick="setWave(this, '4h')">4時間足</div>
+                        <div class="wave-btn" onclick="setWave(this, '1d')">日足</div>
+                    </div>
+                </div>
+
+                <div class="control-section" style="grid-column: 1 / -1;">
+                    <div class="section-title">📝 分析メモ</div>
+                    <textarea class="analysis-memo" id="analysisMemo" placeholder="自由に分析内容を記入してください..."></textarea>
+                </div>
+
+                <div class="control-section" style="grid-column: 1 / -1;">
+                    <div class="section-title">🤖 ChatGPT固定プロンプト</div>
+                    <div class="prompt-settings">
+                        <textarea class="prompt-textarea" id="fixedPrompt" placeholder="ChatGPTに送信する際の固定プロンプトを設定してください...">あなたは経験豊富なFXトレーダーです。以下のチャート分析データを評価し、実用的なアドバイスを提供してください。
+
+特に以下の観点から分析をお願いします：
+1. テクニカル分析の妥当性
+2. リスク管理の観点
+3. エントリー・エグジット戦略
+4. 市場環境との整合性
+
+具体的で実践的なアドバイスをお願いします。</textarea>
+                        <div class="prompt-controls">
+                            <button class="prompt-btn save-prompt-btn" onclick="saveFixedPrompt()">💾 プロンプト保存</button>
+                            <button class="prompt-btn reset-prompt-btn" onclick="resetFixedPrompt()">🔄 デフォルトに戻す</button>
+                            <button class="prompt-btn chatgpt-analysis-btn" onclick="sendToChatGPTBrowser()">🤖 ChatGPT分析</button>
+                        </div>
+                        
+                        <button class="copy-text-toggle" onclick="toggleCopyTextArea()">
+                            📋 ChatGPT用テキストを表示/非表示
+                        </button>
+                        
+                        <div class="copy-text-area" id="copyTextArea">
+                            <h3>📋 ChatGPT用テキスト</h3>
+                            <p style="font-size: 12px; color: #6c757d; margin-bottom: 10px;">
+                                以下のテキストをコピーしてChatGPTに貼り付けてください
+                            </p>
+                            <textarea class="copy-textarea" id="copyTextarea" readonly></textarea>
+                            <div class="copy-controls">
+                                <button class="copy-btn copy-all-btn" onclick="copyAllText()">📋 全文コピー</button>
+                                <button class="copy-btn copy-memo-btn" onclick="copyMemoOnly()">📝 分析メモのみコピー</button>
+                                <button class="copy-btn close-copy-btn" onclick="closeCopyArea()">✕ 閉じる</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- テスト機能 -->
+            <div class="test-section">
+                <div class="section-title">🔧 テスト機能</div>
+                <div class="test-buttons">
+                    <button class="test-btn test-firebase" onclick="testFirebaseConnection()">Firebase接続テスト</button>
+                    <button class="test-btn test-save" onclick="manualSave()">手動保存</button>
+                    <button class="test-btn test-debug" onclick="mobileDebug()">📱 スマホデバッグ</button>
+                    <button class="test-btn" style="background: #ffc107; color: #212529;" onclick="showFirebaseData()">🔍 Firebase確認</button>
+                    <button class="test-btn test-reset" onclick="resetAllData()">完全リセット</button>
                 </div>
             </div>
         </div>
@@ -172,10 +889,10 @@
     </div>
 
     <script>
-        // 統一されたFirebaseパス（PC・スマホ共通）
+        // 統一されたFirebaseパス
         const FIREBASE_PATH = 'appData';
         
-        // アプリ状態
+        // アプリ状態（新形式）
         let appState = {
             currentCurrency: "USDJPY",
             currentScenario: "scenario1",
@@ -201,6 +918,106 @@
                 scenario3: "シナリオ3",
                 scenario4: "シナリオ4"
             },
+            // 元のデータ構造も保持
+            currencyData: {
+                'USDJPY': {
+                    pair: 'USD/JPY',
+                    status: 'considering',
+                    wave: 'unselected',
+                    timeframe: '4時間足',
+                    images: ['USDJPY.jpeg', 'USDJPY2.jpeg', 'USDJPY3.jpeg'],
+                    imageLabels: ['シナリオ1', 'シナリオ2', 'シナリオ3'],
+                    imageStatuses: {
+                        'USDJPY.jpeg': 'considering',
+                        'USDJPY2.jpeg': 'considering',
+                        'USDJPY3.jpeg': 'considering'
+                    },
+                    memo: '',
+                    customScenarios: []
+                },
+                'EURUSD': {
+                    pair: 'EUR/USD',
+                    status: 'considering',
+                    wave: 'unselected',
+                    timeframe: '日足',
+                    images: ['EURUSD.jpeg', 'EURUSD2.jpeg'],
+                    imageLabels: ['シナリオ1', 'シナリオ2'],
+                    imageStatuses: {
+                        'EURUSD.jpeg': 'considering',
+                        'EURUSD2.jpeg': 'considering'
+                    },
+                    memo: '',
+                    customScenarios: []
+                },
+                'GBPUSD': {
+                    pair: 'GBP/USD',
+                    status: 'considering',
+                    wave: 'unselected',
+                    timeframe: '4時間足',
+                    images: ['GBPUSD.jpeg', 'GBPUSD2.jpeg', 'GBPUSD3.jpeg', 'GBPUSD4.jpeg'],
+                    imageLabels: ['シナリオ1', 'シナリオ2', 'シナリオ3', 'シナリオ4'],
+                    imageStatuses: {
+                        'GBPUSD.jpeg': 'considering',
+                        'GBPUSD2.jpeg': 'considering',
+                        'GBPUSD3.jpeg': 'considering',
+                        'GBPUSD4.jpeg': 'considering'
+                    },
+                    memo: '',
+                    customScenarios: []
+                },
+                'AUDUSD': {
+                    pair: 'AUD/USD',
+                    status: 'considering',
+                    wave: 'unselected',
+                    timeframe: '日足',
+                    images: ['AUDUSD.jpeg', 'AUDUSD2.jpeg'],
+                    imageLabels: ['シナリオ1', 'シナリオ2'],
+                    imageStatuses: {
+                        'AUDUSD.jpeg': 'considering',
+                        'AUDUSD2.jpeg': 'considering'
+                    },
+                    memo: '',
+                    customScenarios: []
+                },
+                'SILVER': {
+                    pair: 'SILVER',
+                    status: 'considering',
+                    wave: 'unselected',
+                    timeframe: '4時間足',
+                    images: ['SILVER.jpeg', 'SILVER2.jpeg'],
+                    imageLabels: ['シナリオ1', 'シナリオ2'],
+                    imageStatuses: {
+                        'SILVER.jpeg': 'considering',
+                        'SILVER2.jpeg': 'considering'
+                    },
+                    memo: '',
+                    customScenarios: []
+                },
+                'GOLD': {
+                    pair: 'GOLD',
+                    status: 'considering',
+                    wave: 'unselected',
+                    timeframe: '日足',
+                    images: ['GOLD.png'],
+                    imageLabels: ['シナリオ1'],
+                    imageStatuses: {
+                        'GOLD.png': 'considering'
+                    },
+                    memo: '',
+                    customScenarios: []
+                }
+            },
+            allImages: [
+                'USDJPY.jpeg', 'USDJPY2.jpeg', 'USDJPY3.jpeg',
+                'EURUSD.jpeg', 'EURUSD2.jpeg',
+                'GBPUSD.jpeg', 'GBPUSD2.jpeg', 'GBPUSD3.jpeg', 'GBPUSD4.jpeg',
+                'AUDUSD.jpeg', 'AUDUSD2.jpeg',
+                'SILVER.jpeg', 'SILVER2.jpeg',
+                'GOLD.png'
+            ],
+            currentImage: 'USDJPY.jpeg',
+            currentPageNum: 1,
+            uploadedImages: {},
             lastUpdate: Date.now(),
             deviceId: 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             version: '2.0'
@@ -208,180 +1025,22 @@
 
         let isConnected = false;
         let realtimeListener = null;
-        let lastSyncTimestamp = 0;
+
+        const defaultFixedPrompt = `あなたは経験豊富なFXトレーダーです。以下のチャート分析データを評価し、実用的なアドバイスを提供してください。
+
+特に以下の観点から分析をお願いします：
+1. テクニカル分析の妥当性
+2. リスク管理の観点
+3. エントリー・エグジット戦略
+4. 市場環境との整合性
+
+具体的で実践的なアドバイスをお願いします。`;
 
         function updateSyncStatus(status, message) {
             const statusDiv = document.getElementById('syncStatus');
             statusDiv.textContent = message;
             statusDiv.className = `sync-status ${status}`;
             isConnected = (status === 'connected' || status === 'listening');
-            
-            if (status === 'connected') {
-                updateLastSyncInfo();
-            }
-        }
-
-        function updateLastSyncInfo() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('ja-JP');
-            document.getElementById('lastSyncInfo').textContent = `最終同期: ${timeString}`;
-            lastSyncTimestamp = Date.now();
-        }
-
-        // 🔧 Firebaseパス統一機能
-        function fixFirebasePath() {
-            console.log('🔧 Firebaseパス統一開始...');
-            updateSyncStatus('syncing', '🔧 パス統一中...');
-            
-            if (!window.firebaseDatabase) {
-                alert('❌ Firebase未初期化です');
-                updateSyncStatus('disconnected', 'Firebase未初期化');
-                return;
-            }
-
-            // 既存データを確認
-            const appDataRef = window.firebaseRef(window.firebaseDatabase, 'appData');
-            const fxAppDataRef = window.firebaseRef(window.firebaseDatabase, 'fxAppData');
-            
-            Promise.all([
-                window.firebaseGet(appDataRef),
-                window.firebaseGet(fxAppDataRef)
-            ]).then(([appDataSnapshot, fxAppDataSnapshot]) => {
-                let sourceData = null;
-                let sourcePath = '';
-                
-                // どちらにデータがあるか確認
-                if (appDataSnapshot.exists()) {
-                    sourceData = appDataSnapshot.val();
-                    sourcePath = 'appData';
-                    console.log('📥 appDataにデータ発見');
-                } else if (fxAppDataSnapshot.exists()) {
-                    sourceData = fxAppDataSnapshot.val();
-                    sourcePath = 'fxAppData';
-                    console.log('📥 fxAppDataにデータ発見');
-                } else {
-                    console.log('❌ 両方にデータなし - 新規データを作成');
-                    sourceData = appState;
-                    sourcePath = '新規作成';
-                }
-                
-                // データを新形式に変換（必要に応じて）
-                const unifiedData = convertToUnifiedFormat(sourceData);
-                
-                // appDataに統一保存
-                window.firebaseSet(appDataRef, unifiedData)
-                    .then(() => {
-                        console.log('✅ appDataに統一保存完了');
-                        
-                        // fxAppDataが存在する場合は削除
-                        if (fxAppDataSnapshot.exists()) {
-                            return window.firebaseSet(fxAppDataRef, null);
-                        }
-                        return Promise.resolve();
-                    })
-                    .then(() => {
-                        console.log('✅ パス統一完了');
-                        
-                        // アプリ状態を更新
-                        appState = unifiedData;
-                        
-                        // ローカルストレージも更新
-                        localStorage.setItem('fxAppState', JSON.stringify(unifiedData));
-                        
-                        // UI更新
-                        updateUI();
-                        updateSyncStatus('connected', '🔧 パス統一完了');
-                        
-                        // リアルタイム同期開始
-                        setupRealtimeSync();
-                        
-                        alert(`✅ Firebaseパス統一完了！\n\n元データ: ${sourcePath}\n統一先: appData\n\nPC・スマホ間の同期が正常に動作します！`);
-                        
-                    })
-                    .catch(error => {
-                        console.error('❌ パス統一失敗:', error);
-                        updateSyncStatus('disconnected', 'パス統一失敗');
-                        alert(`❌ パス統一失敗: ${error.message}`);
-                    });
-                
-            }).catch(error => {
-                console.error('❌ データ確認失敗:', error);
-                updateSyncStatus('disconnected', 'データ確認失敗');
-                alert(`❌ データ確認失敗: ${error.message}`);
-            });
-        }
-
-        // データを統一形式に変換
-        function convertToUnifiedFormat(data) {
-            // すでに新形式の場合はそのまま返す
-            if (data.version === '2.0' && data.scenarios && data.scenarioLabels) {
-                return {
-                    ...data,
-                    lastUpdate: Date.now(),
-                    deviceId: appState.deviceId
-                };
-            }
-            
-            // 旧形式から新形式に変換
-            const unifiedData = {
-                currentCurrency: data.currentCurrency || "USDJPY",
-                currentScenario: "scenario1",
-                currencies: {},
-                scenarios: {},
-                scenarioLabels: {},
-                lastUpdate: Date.now(),
-                deviceId: appState.deviceId,
-                version: '2.0'
-            };
-
-            // 旧形式のcurrenciesデータを変換
-            if (data.currencies) {
-                Object.keys(data.currencies).forEach(currencyKey => {
-                    const oldCurrency = data.currencies[currencyKey];
-                    
-                    // 通貨表示名を設定
-                    unifiedData.currencies[currencyKey] = oldCurrency.pair || currencyKey;
-                    
-                    // シナリオを変換
-                    if (oldCurrency.labels && oldCurrency.labels.length > 0) {
-                        unifiedData.scenarios[currencyKey] = [];
-                        
-                        oldCurrency.labels.forEach((label, index) => {
-                            const scenarioKey = `scenario${index + 1}`;
-                            unifiedData.scenarios[currencyKey].push(scenarioKey);
-                            unifiedData.scenarioLabels[scenarioKey] = label;
-                        });
-                    } else {
-                        unifiedData.scenarios[currencyKey] = ["scenario1"];
-                        if (!unifiedData.scenarioLabels["scenario1"]) {
-                            unifiedData.scenarioLabels["scenario1"] = "シナリオ1";
-                        }
-                    }
-                });
-            }
-
-            // デフォルト通貨を追加
-            const defaultCurrencies = {
-                USDJPY: "USD/JPY",
-                EURUSD: "EUR/USD", 
-                GBPUSD: "GBP/USD",
-                AUDUSD: "AUD/USD",
-                SILVER: "SILVER",
-                GOLD: "GOLD"
-            };
-
-            Object.keys(defaultCurrencies).forEach(currencyKey => {
-                if (!unifiedData.currencies[currencyKey]) {
-                    unifiedData.currencies[currencyKey] = defaultCurrencies[currencyKey];
-                    unifiedData.scenarios[currencyKey] = ["scenario1"];
-                    if (!unifiedData.scenarioLabels["scenario1"]) {
-                        unifiedData.scenarioLabels["scenario1"] = "シナリオ1";
-                    }
-                }
-            });
-
-            console.log('🔄 統一形式に変換:', unifiedData);
-            return unifiedData;
         }
 
         // Firebase接続テスト
@@ -449,7 +1108,7 @@
                             message += `📊 総シナリオ数: ${Object.values(data.scenarios || {}).flat().length}個\n`;
                             message += `🏷️ ラベル数: ${Object.keys(data.scenarioLabels || {}).length}個`;
                         } else {
-                            message += `⚠️ 旧形式のデータです\n「🔧 パス統一」ボタンで変換してください`;
+                            message += `⚠️ 旧形式のデータです`;
                         }
                         
                         alert(message);
@@ -481,10 +1140,7 @@
                     総シナリオ数: Object.values(appState.scenarios).flat().length,
                     現在通貨のシナリオ数: appState.scenarios[appState.currentCurrency]?.length || 0,
                     シナリオラベル数: Object.keys(appState.scenarioLabels).length
-                },
-                現在のシナリオ一覧: appState.scenarios[appState.currentCurrency]?.map(key => 
-                    appState.scenarioLabels[key] || key
-                ) || []
+                }
             };
 
             let alertMessage = '=== 📱 スマホデバッグ情報 ===\n\n';
@@ -494,8 +1150,7 @@
             alertMessage += `⏰ 最終更新: ${debugInfo.基本情報.最終更新}\n`;
             alertMessage += `🔧 バージョン: ${debugInfo.基本情報.バージョン}\n`;
             alertMessage += `💱 現在通貨: ${debugInfo.基本情報.現在通貨}\n`;
-            alertMessage += `📊 シナリオ数: ${debugInfo.データ状況.現在通貨のシナリオ数}個\n\n`;
-            alertMessage += `📋 現在のシナリオ:\n${debugInfo.現在のシナリオ一覧.join(', ')}`;
+            alertMessage += `📊 シナリオ数: ${debugInfo.データ状況.現在通貨のシナリオ数}個`;
 
             alert(alertMessage);
         }
@@ -507,7 +1162,6 @@
                 return;
             }
 
-            // 既存のリスナーを削除
             if (realtimeListener) {
                 const dataRef = window.firebaseRef(window.firebaseDatabase, FIREBASE_PATH);
                 window.firebaseOff(dataRef, 'value', realtimeListener);
@@ -527,24 +1181,20 @@
                         shouldUpdate: remoteData.deviceId !== appState.deviceId && remoteData.lastUpdate > appState.lastUpdate
                     });
                     
-                    // バージョン2.0以上で、他のデバイスからの更新の場合のみ適用
                     if (remoteData.version === '2.0' && 
                         remoteData.deviceId !== appState.deviceId && 
                         remoteData.lastUpdate > appState.lastUpdate) {
                         
                         console.log('📥 他デバイスからの更新を適用');
                         
-                        // データを更新
                         appState = {
                             ...remoteData,
-                            deviceId: appState.deviceId // デバイスIDは保持
+                            deviceId: appState.deviceId
                         };
                         
-                        // UI更新
                         updateUI();
                         updateSyncStatus('listening', '他デバイスから更新');
                         
-                        // ローカルストレージも更新
                         localStorage.setItem('fxAppState', JSON.stringify(appState));
                     }
                 } else {
@@ -568,7 +1218,6 @@
                 appState.lastUpdate = Date.now();
                 appState.version = '2.0';
 
-                // ローカル保存
                 try {
                     localStorage.setItem('fxAppState', JSON.stringify(appState));
                     console.log('✅ ローカル保存完了');
@@ -579,7 +1228,6 @@
                     return;
                 }
 
-                // Firebase保存
                 if (window.firebaseDatabase && isConnected) {
                     const dataRef = window.firebaseRef(window.firebaseDatabase, FIREBASE_PATH);
                     
@@ -630,6 +1278,9 @@
             updateCurrencyTabs();
             updateScenarioButtons();
             updateCurrencyDisplay();
+            loadCurrentImage();
+            updateDisplay();
+            generateCopyText();
         }
 
         function updateCurrencyTabs() {
@@ -690,11 +1341,115 @@
             display.textContent = appState.currencies[appState.currentCurrency] || appState.currentCurrency;
         }
 
-        // テストシナリオ追加
-        function addTestScenario() {
-            showAddImageModal();
+        function loadCurrentImage() {
+            const data = appState.currencyData[appState.currentCurrency];
+            if (!data || !data.images || data.images.length === 0) {
+                showPlaceholder();
+                return;
+            }
+
+            const currentImageName = data.images[0]; // 最初の画像を表示
+            
+            if (appState.uploadedImages && appState.uploadedImages[currentImageName]) {
+                displayUploadedImage(appState.uploadedImages[currentImageName]);
+                return;
+            }
+
+            const imagePaths = [
+                `images/${currentImageName}`,
+                currentImageName
+            ];
+
+            tryLoadImage(imagePaths, 0);
         }
 
+        function tryLoadImage(paths, index) {
+            if (index >= paths.length) {
+                showPlaceholder();
+                return;
+            }
+
+            const img = new Image();
+            img.onload = function() {
+                displayImage(paths[index]);
+            };
+            img.onerror = function() {
+                tryLoadImage(paths, index + 1);
+            };
+            img.src = paths[index];
+        }
+
+        function displayImage(src) {
+            const chartImage = document.getElementById('chartImage');
+            const placeholder = document.getElementById('chartDisplay');
+            
+            chartImage.src = src;
+            chartImage.style.display = 'block';
+            placeholder.style.display = 'none';
+        }
+
+        function displayUploadedImage(src) {
+            const chartImage = document.getElementById('chartImage');
+            const placeholder = document.getElementById('chartDisplay');
+            
+            chartImage.src = src;
+            chartImage.style.display = 'block';
+            placeholder.style.display = 'none';
+        }
+
+        function showPlaceholder() {
+            const chartImage = document.getElementById('chartImage');
+            const placeholder = document.getElementById('chartDisplay');
+            
+            chartImage.style.display = 'none';
+            placeholder.style.display = 'flex';
+            
+            const currencyName = appState.currencies[appState.currentCurrency] || appState.currentCurrency;
+            placeholder.innerHTML = `
+                📈 ${currencyName} チャート
+                <small style="margin-top: 10px; display: block;">
+                    画像ファイルを配置してください<br>
+                    タップで拡大表示
+                </small>
+            `;
+        }
+
+        function updateDisplay() {
+            const data = appState.currencyData[appState.currentCurrency];
+            if (!data) return;
+            
+            document.getElementById('analysisMemo').value = data.memo || '';
+        }
+
+        function setStatus(element, status) {
+            document.querySelectorAll('.status-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            if (appState.currencyData[appState.currentCurrency]) {
+                appState.currencyData[appState.currentCurrency].status = status;
+            }
+            
+            generateCopyText();
+            saveData();
+        }
+
+        function setWave(element, wave) {
+            document.querySelectorAll('.wave-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            if (appState.currencyData[appState.currentCurrency]) {
+                appState.currencyData[appState.currentCurrency].wave = wave;
+            }
+            
+            generateCopyText();
+            saveData();
+        }
+
+        // シナリオ追加
         function showAddImageModal() {
             document.getElementById('addScenarioModal').classList.add('active');
             document.getElementById('newScenarioName').focus();
@@ -735,6 +1490,133 @@
             alert(`✅ "${scenarioName}" を ${appState.currencies[appState.currentCurrency]} に追加しました！`);
         }
 
+        // ChatGPT関連機能
+        function saveFixedPrompt() {
+            const prompt = document.getElementById('fixedPrompt').value;
+            localStorage.setItem('fx_fixed_prompt', prompt);
+            alert('固定プロンプトを保存しました');
+        }
+
+        function resetFixedPrompt() {
+            document.getElementById('fixedPrompt').value = defaultFixedPrompt;
+            localStorage.removeItem('fx_fixed_prompt');
+            alert('固定プロンプトをデフォルトに戻しました');
+        }
+
+        function sendToChatGPTBrowser() {
+            window.open('https://chat.openai.com/', '_blank');
+            alert('ChatGPTが新しいタブで開かれました。');
+        }
+
+        function toggleCopyTextArea() {
+            const copyArea = document.getElementById('copyTextArea');
+            if (copyArea.classList.contains('active')) {
+                copyArea.classList.remove('active');
+            } else {
+                copyArea.classList.add('active');
+                generateCopyText();
+            }
+        }
+
+        function closeCopyArea() {
+            document.getElementById('copyTextArea').classList.remove('active');
+        }
+
+        function generateCopyText() {
+            const data = appState.currencyData[appState.currentCurrency];
+            if (!data) return;
+            
+            const statusText = {
+                'considering': '🤔 検討中', 'skip': '⏭️ 見送り', 'missed': '😞 見逃し',
+                'pending': '📋 現在指値中', 'holding': '💼 保持中', 'completed': '✅ 完了'
+            };
+            
+            const waveText = {
+                'unselected': '未選択', '1h': '1時間足', '4h': '4時間足', '1d': '日足'
+            };
+
+            const fixedPrompt = document.getElementById('fixedPrompt').value || defaultFixedPrompt;
+
+            let message = `${fixedPrompt}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 **基本情報**
+・通貨ペア: ${data.pair}
+・分析ステータス: ${statusText[data.status] || '🤔 検討中'}
+・狙う波: ${waveText[data.wave] || '未選択'}
+・時間軸: ${data.timeframe}
+・分析日時: ${new Date().toLocaleString('ja-JP')}
+
+📝 **分析メモ**
+${document.getElementById('analysisMemo').value || '記載なし'}
+
+**注意**: この後にチャート画像をアップロードしますので、画像と合わせて総合的な分析をお願いします。`;
+
+            document.getElementById('copyTextarea').value = message;
+        }
+
+        function copyAllText() {
+            const textarea = document.getElementById('copyTextarea');
+            textarea.select();
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                alert('全文をクリップボードにコピーしました');
+            }).catch(() => {
+                document.execCommand('copy');
+                alert('全文をクリップボードにコピーしました');
+            });
+        }
+
+        function copyMemoOnly() {
+            const memo = document.getElementById('analysisMemo').value || '記載なし';
+            const data = appState.currencyData[appState.currentCurrency];
+            const fixedPrompt = document.getElementById('fixedPrompt').value || defaultFixedPrompt;
+            
+            const memoText = `${fixedPrompt}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 **${data?.pair || appState.currentCurrency} 分析メモ**
+${memo}
+
+**注意**: この後にチャート画像をアップロードしますので、画像と合わせて総合的な分析をお願いします。`;
+
+            navigator.clipboard.writeText(memoText).then(() => {
+                alert('分析メモをクリップボードにコピーしました');
+            });
+        }
+
+        // ナビゲーション機能
+        function previousPage() {
+            // 簡易実装
+            alert('前のページ機能（開発中）');
+        }
+
+        function nextPage() {
+            // 簡易実装
+            alert('次のページ機能（開発中）');
+        }
+
+        function returnToTop() {
+            appState.currentCurrency = 'USDJPY';
+            appState.currentScenario = 'scenario1';
+            
+            updateUI();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            saveData();
+        }
+
+        function openChartModal() {
+            // チャートモーダル機能（簡易実装）
+            alert('チャート拡大表示機能（開発中）');
+        }
+
+        // その他の管理機能
+        function showAddCurrencyModal() { alert('通貨ペア追加機能（開発中）'); }
+        function showDeleteCurrencyModal() { alert('通貨ペア削除機能（開発中）'); }
+        function showDeleteImageModal() { alert('シナリオ削除機能（開発中）'); }
+        function shareAnalysis() { alert('共有機能（開発中）'); }
+
         // 手動保存
         function manualSave() {
             saveData()
@@ -758,31 +1640,50 @@
             }
         }
 
-        // ダミー関数
-        function shareAnalysis() { alert('共有機能（開発中）'); }
-        function showAddCurrencyModal() { alert('通貨ペア追加（開発中）'); }
-        function showDeleteCurrencyModal() { alert('通貨ペア削除（開発中）'); }
-        function showDeleteImageModal() { alert('シナリオ削除（開発中）'); }
-
-        // モーダルクリック時の閉じる処理
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('modal')) {
-                e.target.classList.remove('active');
+        // 自動保存（分析メモ）
+        function autoSaveMemo() {
+            const currentMemo = document.getElementById('analysisMemo').value;
+            if (appState.currencyData[appState.currentCurrency]) {
+                appState.currencyData[appState.currentCurrency].memo = currentMemo;
             }
-        });
+            generateCopyText();
+            saveData();
+        }
 
         // 初期化
+        function initializePage() {
+            loadData();
+            updateUI();
+            
+            // 固定プロンプト読み込み
+            const savedPrompt = localStorage.getItem('fx_fixed_prompt');
+            if (savedPrompt) {
+                document.getElementById('fixedPrompt').value = savedPrompt;
+            }
+            
+            setTimeout(() => {
+                testFirebaseConnection();
+            }, 1000);
+        }
+
+        // イベントリスナー
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 FXアプリ初期化開始', { 
                 deviceId: appState.deviceId.substr(-8),
                 firebasePath: FIREBASE_PATH
             });
             
-            loadData();
+            initializePage();
             
-            setTimeout(() => {
-                testFirebaseConnection();
-            }, 1000);
+            // 自動保存（5秒間隔）
+            setInterval(autoSaveMemo, 5000);
+        });
+
+        // モーダルクリック時の閉じる処理
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
+            }
         });
 
         // ページが非表示になる前にリスナーをクリーンアップ
