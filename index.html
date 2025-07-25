@@ -610,7 +610,7 @@
             color: #2c3e50;
         }
 
-        .modal input {
+        .modal input, .modal select {
             width: 100%;
             padding: 12px;
             border: 1px solid #dee2e6;
@@ -761,6 +761,7 @@
                     <div>
                         <button class="mgmt-btn add-btn" onclick="showAddImageModal()">➕ シナリオ追加</button>
                         <button class="mgmt-btn delete-btn" onclick="showDeleteImageModal()">🗑️ シナリオ削除</button>
+                        <button class="mgmt-btn test-save" onclick="manualSave()">💾 手動保存</button>
                     </div>
                 </div>
                 <div class="image-buttons" id="imageButtons"></div>
@@ -783,7 +784,7 @@
                 </div>
                 
                 <div class="chart-navigation">
-                    <button class="chart-nav-btn" onclick="previousPage()" id="prevBtn" disabled>
+                    <button class="chart-nav-btn" onclick="previousPage()" id="prevBtn">
                         ← 前のチャート
                     </button>
                     <button class="chart-nav-btn" onclick="nextPage()" id="nextBtn">
@@ -888,11 +889,65 @@
         </div>
     </div>
 
+    <!-- 通貨ペア追加モーダル -->
+    <div class="modal" id="addCurrencyModal">
+        <div class="modal-content">
+            <h3>➕ 通貨ペア追加</h3>
+            <input type="text" id="newCurrencyCode" placeholder="通貨コード (例: EURJPY)">
+            <input type="text" id="newCurrencyName" placeholder="表示名 (例: EUR/JPY)">
+            <div class="modal-buttons">
+                <button class="mgmt-btn" style="background: #6c757d; color: white;" onclick="closeAddCurrencyModal()">キャンセル</button>
+                <button class="mgmt-btn add-btn" onclick="addNewCurrency()">追加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通貨ペア削除モーダル -->
+    <div class="modal" id="deleteCurrencyModal">
+        <div class="modal-content">
+            <h3>🗑️ 通貨ペア削除</h3>
+            <p style="color: #dc3545; margin-bottom: 15px;">⚠️ 削除すると復元できません</p>
+            <select id="deleteCurrencySelect">
+                <!-- JavaScript で動的に生成 -->
+            </select>
+            <div class="modal-buttons">
+                <button class="mgmt-btn" style="background: #6c757d; color: white;" onclick="closeDeleteCurrencyModal()">キャンセル</button>
+                <button class="mgmt-btn delete-btn" onclick="deleteCurrency()">削除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- シナリオ削除モーダル -->
+    <div class="modal" id="deleteScenarioModal">
+        <div class="modal-content">
+            <h3>🗑️ シナリオ削除</h3>
+            <p style="color: #dc3545; margin-bottom: 15px;">⚠️ 削除すると復元できません</p>
+            <select id="deleteScenarioSelect">
+                <!-- JavaScript で動的に生成 -->
+            </select>
+            <div class="modal-buttons">
+                <button class="mgmt-btn" style="background: #6c757d; color: white;" onclick="closeDeleteScenarioModal()">キャンセル</button>
+                <button class="mgmt-btn delete-btn" onclick="deleteScenario()">削除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- チャートモーダル -->
+    <div class="modal" id="chartModal" style="background: rgba(0,0,0,0.9);">
+        <div style="position: relative; max-width: 95%; max-height: 95%;">
+            <button onclick="closeChartModal()" style="position: absolute; top: -40px; right: 0; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 20px;">×</button>
+            <img id="modalChartImage" style="max-width: 100%; max-height: 100%; border-radius: 8px;" alt="拡大チャート">
+        </div>
+    </div>
+
     <script>
         // 統一されたFirebaseパス
         const FIREBASE_PATH = 'appData';
         
-        // アプリ状態（新形式）
+        // 正しい順序で通貨ペアを定義
+        const currencyOrder = ['USDJPY', 'EURUSD', 'GBPUSD', 'AUDUSD', 'SILVER', 'GOLD'];
+        
+        // アプリ状態（修正版）
         let appState = {
             currentCurrency: "USDJPY",
             currentScenario: "scenario1",
@@ -918,7 +973,7 @@
                 scenario3: "シナリオ3",
                 scenario4: "シナリオ4"
             },
-            // 元のデータ構造も保持
+            // 元のデータ構造も保持（画像管理用）
             currencyData: {
                 'USDJPY': {
                     pair: 'USD/JPY',
@@ -1280,26 +1335,31 @@
             updateCurrencyDisplay();
             loadCurrentImage();
             updateDisplay();
+            updateNavigationButtons();
             generateCopyText();
         }
 
+        // 通貨ペアタブの更新（正しい順序で）
         function updateCurrencyTabs() {
             const container = document.getElementById('currencyTabs');
             container.innerHTML = '';
             
-            Object.keys(appState.currencies).forEach(currencyKey => {
-                const tab = document.createElement('div');
-                tab.className = 'currency-tab' + (currencyKey === appState.currentCurrency ? ' active' : '');
-                tab.textContent = appState.currencies[currencyKey];
-                tab.onclick = function() { 
-                    appState.currentCurrency = currencyKey;
-                    if (appState.scenarios[currencyKey] && appState.scenarios[currencyKey].length > 0) {
-                        appState.currentScenario = appState.scenarios[currencyKey][0];
-                    }
-                    updateUI();
-                    saveData();
-                };
-                container.appendChild(tab);
+            // 正しい順序で表示
+            currencyOrder.forEach(currencyKey => {
+                if (appState.currencies[currencyKey]) {
+                    const tab = document.createElement('div');
+                    tab.className = 'currency-tab' + (currencyKey === appState.currentCurrency ? ' active' : '');
+                    tab.textContent = appState.currencies[currencyKey];
+                    tab.onclick = function() { 
+                        appState.currentCurrency = currencyKey;
+                        if (appState.scenarios[currencyKey] && appState.scenarios[currencyKey].length > 0) {
+                            appState.currentScenario = appState.scenarios[currencyKey][0];
+                        }
+                        updateUI();
+                        saveData();
+                    };
+                    container.appendChild(tab);
+                }
             });
         }
 
@@ -1319,6 +1379,8 @@
                 btn.onclick = function() { 
                     appState.currentScenario = scenarioKey;
                     updateScenarioButtons();
+                    loadCurrentImage();
+                    updateNavigationButtons();
                     saveData();
                 };
                 
@@ -1341,6 +1403,7 @@
             display.textContent = appState.currencies[appState.currentCurrency] || appState.currentCurrency;
         }
 
+        // 画像読み込み機能（修正版）
         function loadCurrentImage() {
             const data = appState.currencyData[appState.currentCurrency];
             if (!data || !data.images || data.images.length === 0) {
@@ -1348,7 +1411,13 @@
                 return;
             }
 
-            const currentImageName = data.images[0]; // 最初の画像を表示
+            // 現在のシナリオに対応する画像を取得
+            const currentScenarios = appState.scenarios[appState.currentCurrency] || [];
+            const scenarioIndex = currentScenarios.indexOf(appState.currentScenario);
+            const imageIndex = Math.max(0, scenarioIndex);
+            const currentImageName = data.images[imageIndex] || data.images[0];
+            
+            appState.currentImage = currentImageName;
             
             if (appState.uploadedImages && appState.uploadedImages[currentImageName]) {
                 displayUploadedImage(appState.uploadedImages[currentImageName]);
@@ -1414,11 +1483,44 @@
             `;
         }
 
+        // 分析ステータス更新（修正版）
         function updateDisplay() {
             const data = appState.currencyData[appState.currentCurrency];
             if (!data) return;
             
+            // 分析メモを更新
             document.getElementById('analysisMemo').value = data.memo || '';
+            
+            // ステータスボタンの状態を更新
+            document.querySelectorAll('.status-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const statusButtons = document.querySelectorAll('.status-btn');
+            const statusMap = {
+                'considering': 0, 'skip': 1, 'missed': 2,
+                'pending': 3, 'holding': 4, 'completed': 5
+            };
+            
+            const statusIndex = statusMap[data.status] || 0;
+            if (statusButtons[statusIndex]) {
+                statusButtons[statusIndex].classList.add('active');
+            }
+            
+            // 波の選択状態を更新
+            document.querySelectorAll('.wave-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const waveButtons = document.querySelectorAll('.wave-btn');
+            const waveMap = {
+                'unselected': 0, '1h': 1, '4h': 2, '1d': 3
+            };
+            
+            const waveIndex = waveMap[data.wave] || 0;
+            if (waveButtons[waveIndex]) {
+                waveButtons[waveIndex].classList.add('active');
+            }
         }
 
         function setStatus(element, status) {
@@ -1490,6 +1592,226 @@
             alert(`✅ "${scenarioName}" を ${appState.currencies[appState.currentCurrency]} に追加しました！`);
         }
 
+        // 通貨ペア管理機能
+        function showAddCurrencyModal() {
+            document.getElementById('addCurrencyModal').classList.add('active');
+            document.getElementById('newCurrencyCode').focus();
+        }
+
+        function closeAddCurrencyModal() {
+            document.getElementById('addCurrencyModal').classList.remove('active');
+            document.getElementById('newCurrencyCode').value = '';
+            document.getElementById('newCurrencyName').value = '';
+        }
+
+        function addNewCurrency() {
+            const currencyCode = document.getElementById('newCurrencyCode').value.trim().toUpperCase();
+            const currencyName = document.getElementById('newCurrencyName').value.trim();
+            
+            if (!currencyCode || !currencyName) {
+                alert('通貨コードと表示名の両方を入力してください。');
+                return;
+            }
+
+            if (appState.currencies[currencyCode]) {
+                alert('この通貨ペアは既に存在します。');
+                return;
+            }
+
+            appState.currencies[currencyCode] = currencyName;
+            appState.scenarios[currencyCode] = ['scenario1'];
+            
+            // currencyDataも追加
+            appState.currencyData[currencyCode] = {
+                pair: currencyName,
+                status: 'considering',
+                wave: 'unselected',
+                timeframe: '4時間足',
+                images: [],
+                imageLabels: [],
+                imageStatuses: {},
+                memo: '',
+                customScenarios: []
+            };
+            
+            updateUI();
+            saveData();
+            closeAddCurrencyModal();
+            
+            alert(`✅ "${currencyName}" を追加しました！`);
+        }
+
+        function showDeleteCurrencyModal() {
+            const select = document.getElementById('deleteCurrencySelect');
+            select.innerHTML = '';
+            
+            Object.keys(appState.currencies).forEach(currencyKey => {
+                const option = document.createElement('option');
+                option.value = currencyKey;
+                option.textContent = appState.currencies[currencyKey];
+                select.appendChild(option);
+            });
+            
+            document.getElementById('deleteCurrencyModal').classList.add('active');
+        }
+
+        function closeDeleteCurrencyModal() {
+            document.getElementById('deleteCurrencyModal').classList.remove('active');
+        }
+
+        function deleteCurrency() {
+            const currencyKey = document.getElementById('deleteCurrencySelect').value;
+            if (!currencyKey) return;
+
+            if (Object.keys(appState.currencies).length <= 1) {
+                alert('最後の通貨ペアは削除できません。');
+                return;
+            }
+
+            if (confirm(`"${appState.currencies[currencyKey]}" を削除しますか？`)) {
+                delete appState.currencies[currencyKey];
+                delete appState.scenarios[currencyKey];
+                delete appState.currencyData[currencyKey];
+                
+                // 削除した通貨が現在選択中の場合、最初の通貨に切り替え
+                if (appState.currentCurrency === currencyKey) {
+                    appState.currentCurrency = Object.keys(appState.currencies)[0];
+                    appState.currentScenario = appState.scenarios[appState.currentCurrency][0];
+                }
+                
+                updateUI();
+                saveData();
+                closeDeleteCurrencyModal();
+                
+                alert('✅ 通貨ペアを削除しました');
+            }
+        }
+
+        // シナリオ削除機能
+        function showDeleteImageModal() {
+            const select = document.getElementById('deleteScenarioSelect');
+            select.innerHTML = '';
+            
+            const currentScenarios = appState.scenarios[appState.currentCurrency] || [];
+            currentScenarios.forEach(scenarioKey => {
+                const option = document.createElement('option');
+                option.value = scenarioKey;
+                option.textContent = appState.scenarioLabels[scenarioKey] || scenarioKey;
+                select.appendChild(option);
+            });
+            
+            document.getElementById('deleteScenarioModal').classList.add('active');
+        }
+
+        function closeDeleteScenarioModal() {
+            document.getElementById('deleteScenarioModal').classList.remove('active');
+        }
+
+        function deleteScenario() {
+            const scenarioKey = document.getElementById('deleteScenarioSelect').value;
+            if (!scenarioKey) return;
+
+            const currentScenarios = appState.scenarios[appState.currentCurrency] || [];
+            if (currentScenarios.length <= 1) {
+                alert('最後のシナリオは削除できません。');
+                return;
+            }
+
+            if (confirm(`"${appState.scenarioLabels[scenarioKey]}" を削除しますか？`)) {
+                // シナリオリストから削除
+                const index = currentScenarios.indexOf(scenarioKey);
+                if (index > -1) {
+                    currentScenarios.splice(index, 1);
+                }
+                
+                // ラベルも削除
+                delete appState.scenarioLabels[scenarioKey];
+                
+                // 削除したシナリオが現在選択中の場合、最初のシナリオに切り替え
+                if (appState.currentScenario === scenarioKey) {
+                    appState.currentScenario = currentScenarios[0];
+                }
+                
+                updateUI();
+                saveData();
+                closeDeleteScenarioModal();
+                
+                alert('✅ シナリオを削除しました');
+            }
+        }
+
+        // ナビゲーション機能（修正版）
+        function updateNavigationButtons() {
+            const currentScenarios = appState.scenarios[appState.currentCurrency] || [];
+            const currentIndex = currentScenarios.indexOf(appState.currentScenario);
+            
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.disabled = currentIndex <= 0;
+            nextBtn.disabled = currentIndex >= currentScenarios.length - 1;
+        }
+
+        function previousPage() {
+            const currentScenarios = appState.scenarios[appState.currentCurrency] || [];
+            const currentIndex = currentScenarios.indexOf(appState.currentScenario);
+            
+            if (currentIndex > 0) {
+                appState.currentScenario = currentScenarios[currentIndex - 1];
+                updateUI();
+                saveData();
+            }
+        }
+
+        function nextPage() {
+            const currentScenarios = appState.scenarios[appState.currentCurrency] || [];
+            const currentIndex = currentScenarios.indexOf(appState.currentScenario);
+            
+            if (currentIndex < currentScenarios.length - 1) {
+                appState.currentScenario = currentScenarios[currentIndex + 1];
+                updateUI();
+                saveData();
+            }
+        }
+
+        function returnToTop() {
+            appState.currentCurrency = 'USDJPY';
+            appState.currentScenario = 'scenario1';
+            
+            updateUI();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            saveData();
+        }
+
+        // チャートモーダル機能
+        function openChartModal() {
+            const chartImage = document.getElementById('chartImage');
+            const modalImage = document.getElementById('modalChartImage');
+            
+            if (chartImage.style.display !== 'none' && chartImage.src) {
+                modalImage.src = chartImage.src;
+            } else {
+                // プレースホルダー画像を生成
+                const canvas = document.createElement('canvas');
+                canvas.width = 800;
+                canvas.height = 600;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#f8f9fa';
+                ctx.fillRect(0, 0, 800, 600);
+                ctx.fillStyle = '#6c757d';
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('チャート画像が見つかりません', 400, 300);
+                modalImage.src = canvas.toDataURL();
+            }
+            
+            document.getElementById('chartModal').classList.add('active');
+        }
+
+        function closeChartModal() {
+            document.getElementById('chartModal').classList.remove('active');
+        }
+
         // ChatGPT関連機能
         function saveFixedPrompt() {
             const prompt = document.getElementById('fixedPrompt').value;
@@ -1543,6 +1865,7 @@
 
 📊 **基本情報**
 ・通貨ペア: ${data.pair}
+・現在のシナリオ: ${appState.scenarioLabels[appState.currentScenario] || appState.currentScenario}
 ・分析ステータス: ${statusText[data.status] || '🤔 検討中'}
 ・狙う波: ${waveText[data.wave] || '未選択'}
 ・時間軸: ${data.timeframe}
@@ -1586,36 +1909,22 @@ ${memo}
             });
         }
 
-        // ナビゲーション機能
-        function previousPage() {
-            // 簡易実装
-            alert('前のページ機能（開発中）');
-        }
-
-        function nextPage() {
-            // 簡易実装
-            alert('次のページ機能（開発中）');
-        }
-
-        function returnToTop() {
-            appState.currentCurrency = 'USDJPY';
-            appState.currentScenario = 'scenario1';
+        function shareAnalysis() {
+            const data = appState.currencyData[appState.currentCurrency];
+            const currentScenarioLabel = appState.scenarioLabels[appState.currentScenario] || appState.currentScenario;
             
-            updateUI();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            saveData();
+            const shareText = `${data.pair} - ${currentScenarioLabel}\n分析メモ: ${document.getElementById('analysisMemo').value || '記載なし'}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: `${data.pair} 分析`,
+                    text: shareText
+                });
+            } else {
+                navigator.clipboard.writeText(shareText);
+                alert('分析内容をクリップボードにコピーしました');
+            }
         }
-
-        function openChartModal() {
-            // チャートモーダル機能（簡易実装）
-            alert('チャート拡大表示機能（開発中）');
-        }
-
-        // その他の管理機能
-        function showAddCurrencyModal() { alert('通貨ペア追加機能（開発中）'); }
-        function showDeleteCurrencyModal() { alert('通貨ペア削除機能（開発中）'); }
-        function showDeleteImageModal() { alert('シナリオ削除機能（開発中）'); }
-        function shareAnalysis() { alert('共有機能（開発中）'); }
 
         // 手動保存
         function manualSave() {
