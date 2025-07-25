@@ -1138,6 +1138,35 @@
 
 具体的で実践的なアドバイスをお願いします。`;
 
+        // 初期化時にシナリオ別データを正しく設定する関数を追加
+        function initializeScenarioData() {
+            // 全シナリオに対してデフォルト値を設定
+            Object.keys(appState.scenarios).forEach(currency => {
+                appState.scenarios[currency].forEach(scenarioKey => {
+                    // ステータスの初期化
+                    if (!appState.scenarioStatuses[scenarioKey]) {
+                        appState.scenarioStatuses[scenarioKey] = 'considering';
+                    }
+                    
+                    // 波の初期化
+                    if (!appState.scenarioWaves[scenarioKey]) {
+                        appState.scenarioWaves[scenarioKey] = 'unselected';
+                    }
+                    
+                    // メモの初期化
+                    if (!appState.scenarioMemos[scenarioKey]) {
+                        appState.scenarioMemos[scenarioKey] = '';
+                    }
+                });
+            });
+            
+            console.log('✅ シナリオデータ初期化完了', {
+                ステータス数: Object.keys(appState.scenarioStatuses).length,
+                メモ数: Object.keys(appState.scenarioMemos).length,
+                波設定数: Object.keys(appState.scenarioWaves).length
+            });
+        }
+
         // 全シナリオリストを構築
         function buildAllScenariosList() {
             allScenarios = [];
@@ -1160,7 +1189,7 @@
             isConnected = (status === 'connected' || status === 'listening');
         }
 
-        // 🔥 Firebase強制保存機能
+        // 🔥 Firebase強制保存機能（改善版）
         function forceFirebaseSave() {
             console.log('🔥 Firebase強制保存開始...');
             updateSyncStatus('syncing', '🔥 強制保存中...');
@@ -1171,6 +1200,9 @@
                 return;
             }
 
+            // データの整合性チェックと修復
+            initializeScenarioData();
+            
             // 最新データで更新
             appState.lastUpdate = Date.now();
             appState.version = '2.0';
@@ -1185,7 +1217,10 @@
                     // ローカルストレージも更新
                     localStorage.setItem('fxAppState', JSON.stringify(appState));
                     
-                    alert('✅ Firebase強制保存が完了しました！\n\nデータがFirebaseに確実に保存されました。');
+                    // UI更新
+                    updateUI();
+                    
+                    alert('✅ Firebase強制保存が完了しました！\n\nデータがFirebaseに確実に保存され、表示も更新されました。');
                 })
                 .catch(error => {
                     console.error('❌ Firebase強制保存失敗:', error);
@@ -1400,7 +1435,7 @@
             });
         }
 
-        // データ読み込み
+        // データ読み込み（修正版）
         function loadData() {
             const saved = localStorage.getItem('fxAppState');
             if (saved) {
@@ -1426,10 +1461,14 @@
                     console.error('❌ ローカルデータ読み込み失敗:', error);
                 }
             }
+            
+            // シナリオデータの初期化を追加
+            initializeScenarioData();
             buildAllScenariosList();
             updateUI();
         }
 
+        // UI更新（修正版）
         function updateUI() {
             updateCurrencyTabs();
             updateScenarioButtons();
@@ -1437,7 +1476,29 @@
             loadCurrentImage();
             updateDisplay();
             updateNavigationButtons();
-            generateCopyText();
+            
+            // コピーテキスト生成を確実に実行
+            setTimeout(() => {
+                generateCopyText();
+                updateCopyButtonsVisibility();
+            }, 100);
+        }
+
+        // コピーボタンの表示状態を更新する関数を追加
+        function updateCopyButtonsVisibility() {
+            const copyToggleBtn = document.querySelector('.copy-text-toggle');
+            const copyArea = document.getElementById('copyTextArea');
+            const copyControls = document.querySelector('.copy-controls');
+            
+            if (copyToggleBtn) {
+                copyToggleBtn.style.display = 'block';
+            }
+            
+            if (copyControls) {
+                copyControls.style.display = 'flex';
+            }
+            
+            console.log('🔧 コピーボタン表示状態更新完了');
         }
 
         // 通貨ペアタブの更新（正しい順序で）
@@ -1605,11 +1666,23 @@
             `;
         }
 
-        // 分析ステータス更新（シナリオ別に修正）
+        // 分析表示更新関数（修正版）
         function updateDisplay() {
+            // 現在のシナリオが存在することを確認
+            if (!appState.currentScenario) {
+                const currentScenarios = appState.scenarios[appState.currentCurrency] || [];
+                if (currentScenarios.length > 0) {
+                    appState.currentScenario = currentScenarios[0];
+                }
+            }
+            
             // シナリオ別メモを読み込み
             const scenarioMemo = appState.scenarioMemos[appState.currentScenario] || '';
-            document.getElementById('analysisMemo').value = scenarioMemo;
+            const memoElement = document.getElementById('analysisMemo');
+            if (memoElement) {
+                memoElement.value = scenarioMemo;
+                memoElement.style.display = 'block'; // 確実に表示
+            }
             
             // ステータスボタンの状態を更新
             document.querySelectorAll('.status-btn').forEach(btn => {
@@ -1643,6 +1716,13 @@
             if (waveButtons[waveIndex]) {
                 waveButtons[waveIndex].classList.add('active');
             }
+            
+            console.log('🔧 表示更新完了', {
+                シナリオ: appState.currentScenario,
+                ステータス: currentStatus,
+                波: currentWave,
+                メモ文字数: scenarioMemo.length
+            });
         }
 
         // シナリオ別ステータス設定
@@ -2134,9 +2214,9 @@ ${currentMemo}
             }
         }
 
-        // 初期化
+        // 初期化（修正版）
         function initializePage() {
-            loadData();
+            loadData(); // この中でinitializeScenarioData()が呼ばれる
             updateUI();
             
             // 固定プロンプト読み込み
@@ -2145,9 +2225,16 @@ ${currentMemo}
                 document.getElementById('fixedPrompt').value = savedPrompt;
             }
             
+            // 少し遅らせてFirebase接続テスト
             setTimeout(() => {
                 testFirebaseConnection();
             }, 1000);
+            
+            // さらに遅らせてUI最終調整
+            setTimeout(() => {
+                updateCopyButtonsVisibility();
+                console.log('🎯 初期化完了 - 全機能利用可能');
+            }, 2000);
         }
 
         // イベントリスナー
