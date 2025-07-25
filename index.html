@@ -87,8 +87,7 @@
         
         .last-sync-info { position: fixed; bottom: 10px; right: 10px; padding: 5px 10px; background: rgba(0,0,0,0.7); color: white; border-radius: 5px; font-size: 10px; z-index: 1000; }
         
-        /* データ変換ボタンを目立たせる */
-        .convert-btn { background: #6f42c1 !important; color: white !important; font-weight: bold !important; animation: pulse 2s infinite; }
+        .path-fix-btn { background: #6f42c1 !important; color: white !important; font-weight: bold !important; animation: pulse 2s infinite; }
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
@@ -149,7 +148,7 @@
                 </div>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <button class="mgmt-btn" style="background: #17a2b8; color: white;" onclick="testFirebaseConnection()">Firebase接続テスト</button>
-                    <button class="mgmt-btn convert-btn" onclick="convertOldData()">🔄 データ変換</button>
+                    <button class="mgmt-btn path-fix-btn" onclick="fixFirebasePath()">🔧 パス統一</button>
                     <button class="mgmt-btn" style="background: #28a745; color: white;" onclick="manualSave()">手動保存</button>
                     <button class="mgmt-btn" style="background: #6f42c1; color: white;" onclick="addTestScenario()">テストシナリオ追加</button>
                     <button class="mgmt-btn" style="background: #e83e8c; color: white;" onclick="mobileDebug()">📱 スマホデバッグ</button>
@@ -173,10 +172,10 @@
     </div>
 
     <script>
-        // 既存のFirebaseパスを使用
+        // 統一されたFirebaseパス（PC・スマホ共通）
         const FIREBASE_PATH = 'appData';
         
-        // 新しいアプリ状態
+        // アプリ状態
         let appState = {
             currentCurrency: "USDJPY",
             currentScenario: "scenario1",
@@ -229,10 +228,10 @@
             lastSyncTimestamp = Date.now();
         }
 
-        // 🔄 データ変換機能（旧形式→新形式）
-        function convertOldData() {
-            console.log('🔄 データ変換開始...');
-            updateSyncStatus('syncing', '🔄 データ変換中...');
+        // 🔧 Firebaseパス統一機能
+        function fixFirebasePath() {
+            console.log('🔧 Firebaseパス統一開始...');
+            updateSyncStatus('syncing', '🔧 パス統一中...');
             
             if (!window.firebaseDatabase) {
                 alert('❌ Firebase未初期化です');
@@ -240,63 +239,92 @@
                 return;
             }
 
-            const dataRef = window.firebaseRef(window.firebaseDatabase, FIREBASE_PATH);
+            // 既存データを確認
+            const appDataRef = window.firebaseRef(window.firebaseDatabase, 'appData');
+            const fxAppDataRef = window.firebaseRef(window.firebaseDatabase, 'fxAppData');
             
-            window.firebaseGet(dataRef)
-                .then(snapshot => {
-                    if (snapshot.exists()) {
-                        const oldData = snapshot.val();
-                        console.log('📥 旧データ取得:', oldData);
+            Promise.all([
+                window.firebaseGet(appDataRef),
+                window.firebaseGet(fxAppDataRef)
+            ]).then(([appDataSnapshot, fxAppDataSnapshot]) => {
+                let sourceData = null;
+                let sourcePath = '';
+                
+                // どちらにデータがあるか確認
+                if (appDataSnapshot.exists()) {
+                    sourceData = appDataSnapshot.val();
+                    sourcePath = 'appData';
+                    console.log('📥 appDataにデータ発見');
+                } else if (fxAppDataSnapshot.exists()) {
+                    sourceData = fxAppDataSnapshot.val();
+                    sourcePath = 'fxAppData';
+                    console.log('📥 fxAppDataにデータ発見');
+                } else {
+                    console.log('❌ 両方にデータなし - 新規データを作成');
+                    sourceData = appState;
+                    sourcePath = '新規作成';
+                }
+                
+                // データを新形式に変換（必要に応じて）
+                const unifiedData = convertToUnifiedFormat(sourceData);
+                
+                // appDataに統一保存
+                window.firebaseSet(appDataRef, unifiedData)
+                    .then(() => {
+                        console.log('✅ appDataに統一保存完了');
                         
-                        // 旧形式から新形式に変換
-                        const convertedData = convertOldFormatToNew(oldData);
-                        console.log('🔄 変換後データ:', convertedData);
+                        // fxAppDataが存在する場合は削除
+                        if (fxAppDataSnapshot.exists()) {
+                            return window.firebaseSet(fxAppDataRef, null);
+                        }
+                        return Promise.resolve();
+                    })
+                    .then(() => {
+                        console.log('✅ パス統一完了');
                         
                         // アプリ状態を更新
-                        appState = convertedData;
+                        appState = unifiedData;
                         
-                        // Firebaseに新形式で保存
-                        window.firebaseSet(dataRef, convertedData)
-                            .then(() => {
-                                console.log('✅ 変換データ保存完了');
-                                
-                                // ローカルストレージも更新
-                                localStorage.setItem('fxAppState', JSON.stringify(convertedData));
-                                
-                                // UI更新
-                                updateUI();
-                                updateSyncStatus('connected', '🔄 データ変換完了');
-                                
-                                // リアルタイム同期開始
-                                setupRealtimeSync();
-                                
-                                const scenarioCount = Object.values(convertedData.scenarios).flat().length;
-                                alert(`✅ データ変換完了！\n\n旧形式から新形式に変換しました\n総シナリオ数: ${scenarioCount}個\n\nこれで同期が正常に動作します！`);
-                                
-                            })
-                            .catch(error => {
-                                console.error('❌ 変換データ保存失敗:', error);
-                                updateSyncStatus('disconnected', 'データ保存失敗');
-                                alert(`❌ 変換データ保存失敗: ${error.message}`);
-                            });
+                        // ローカルストレージも更新
+                        localStorage.setItem('fxAppState', JSON.stringify(unifiedData));
                         
-                    } else {
-                        console.log('❌ Firebaseにデータなし');
-                        alert('❌ Firebaseにデータがありません');
-                        updateSyncStatus('disconnected', 'Firebaseデータなし');
-                    }
-                })
-                .catch(error => {
-                    console.error('❌ データ変換失敗:', error);
-                    updateSyncStatus('disconnected', 'データ変換失敗');
-                    alert(`❌ データ変換失敗: ${error.message}`);
-                });
+                        // UI更新
+                        updateUI();
+                        updateSyncStatus('connected', '🔧 パス統一完了');
+                        
+                        // リアルタイム同期開始
+                        setupRealtimeSync();
+                        
+                        alert(`✅ Firebaseパス統一完了！\n\n元データ: ${sourcePath}\n統一先: appData\n\nPC・スマホ間の同期が正常に動作します！`);
+                        
+                    })
+                    .catch(error => {
+                        console.error('❌ パス統一失敗:', error);
+                        updateSyncStatus('disconnected', 'パス統一失敗');
+                        alert(`❌ パス統一失敗: ${error.message}`);
+                    });
+                
+            }).catch(error => {
+                console.error('❌ データ確認失敗:', error);
+                updateSyncStatus('disconnected', 'データ確認失敗');
+                alert(`❌ データ確認失敗: ${error.message}`);
+            });
         }
 
-        // 旧形式から新形式への変換関数
-        function convertOldFormatToNew(oldData) {
-            const newData = {
-                currentCurrency: oldData.currentCurrency || "USDJPY",
+        // データを統一形式に変換
+        function convertToUnifiedFormat(data) {
+            // すでに新形式の場合はそのまま返す
+            if (data.version === '2.0' && data.scenarios && data.scenarioLabels) {
+                return {
+                    ...data,
+                    lastUpdate: Date.now(),
+                    deviceId: appState.deviceId
+                };
+            }
+            
+            // 旧形式から新形式に変換
+            const unifiedData = {
+                currentCurrency: data.currentCurrency || "USDJPY",
                 currentScenario: "scenario1",
                 currencies: {},
                 scenarios: {},
@@ -306,32 +334,33 @@
                 version: '2.0'
             };
 
-            // 通貨データを変換
-            if (oldData.currencies) {
-                Object.keys(oldData.currencies).forEach(currencyKey => {
-                    const oldCurrency = oldData.currencies[currencyKey];
+            // 旧形式のcurrenciesデータを変換
+            if (data.currencies) {
+                Object.keys(data.currencies).forEach(currencyKey => {
+                    const oldCurrency = data.currencies[currencyKey];
                     
                     // 通貨表示名を設定
-                    newData.currencies[currencyKey] = oldCurrency.pair || currencyKey;
+                    unifiedData.currencies[currencyKey] = oldCurrency.pair || currencyKey;
                     
                     // シナリオを変換
                     if (oldCurrency.labels && oldCurrency.labels.length > 0) {
-                        newData.scenarios[currencyKey] = [];
+                        unifiedData.scenarios[currencyKey] = [];
                         
                         oldCurrency.labels.forEach((label, index) => {
-                            const scenarioKey = `scenario${currencyKey}${index + 1}`;
-                            newData.scenarios[currencyKey].push(scenarioKey);
-                            newData.scenarioLabels[scenarioKey] = label;
+                            const scenarioKey = `scenario${index + 1}`;
+                            unifiedData.scenarios[currencyKey].push(scenarioKey);
+                            unifiedData.scenarioLabels[scenarioKey] = label;
                         });
                     } else {
-                        // ラベルがない場合はデフォルト
-                        newData.scenarios[currencyKey] = ["scenario1"];
-                        newData.scenarioLabels["scenario1"] = "シナリオ1";
+                        unifiedData.scenarios[currencyKey] = ["scenario1"];
+                        if (!unifiedData.scenarioLabels["scenario1"]) {
+                            unifiedData.scenarioLabels["scenario1"] = "シナリオ1";
+                        }
                     }
                 });
             }
 
-            // 不足している通貨を追加
+            // デフォルト通貨を追加
             const defaultCurrencies = {
                 USDJPY: "USD/JPY",
                 EURUSD: "EUR/USD", 
@@ -342,17 +371,17 @@
             };
 
             Object.keys(defaultCurrencies).forEach(currencyKey => {
-                if (!newData.currencies[currencyKey]) {
-                    newData.currencies[currencyKey] = defaultCurrencies[currencyKey];
-                    newData.scenarios[currencyKey] = ["scenario1"];
-                    if (!newData.scenarioLabels["scenario1"]) {
-                        newData.scenarioLabels["scenario1"] = "シナリオ1";
+                if (!unifiedData.currencies[currencyKey]) {
+                    unifiedData.currencies[currencyKey] = defaultCurrencies[currencyKey];
+                    unifiedData.scenarios[currencyKey] = ["scenario1"];
+                    if (!unifiedData.scenarioLabels["scenario1"]) {
+                        unifiedData.scenarioLabels["scenario1"] = "シナリオ1";
                     }
                 }
             });
 
-            console.log('🔄 変換結果:', newData);
-            return newData;
+            console.log('🔄 統一形式に変換:', unifiedData);
+            return unifiedData;
         }
 
         // Firebase接続テスト
@@ -414,12 +443,13 @@
                         message += `✅ データ存在: あり\n`;
                         message += `🔧 バージョン: ${data.version || '旧形式'}\n`;
                         message += `💱 現在通貨: ${data.currentCurrency}\n`;
+                        message += `📊 現在シナリオ: ${data.currentScenario || '不明'}\n`;
                         
                         if (data.version === '2.0') {
                             message += `📊 総シナリオ数: ${Object.values(data.scenarios || {}).flat().length}個\n`;
                             message += `🏷️ ラベル数: ${Object.keys(data.scenarioLabels || {}).length}個`;
                         } else {
-                            message += `⚠️ 旧形式のデータです\n「🔄 データ変換」ボタンで変換してください`;
+                            message += `⚠️ 旧形式のデータです\n「🔧 パス統一」ボタンで変換してください`;
                         }
                         
                         alert(message);
@@ -439,6 +469,7 @@
             const debugInfo = {
                 基本情報: {
                     Firebase接続: isConnected ? '✅ 接続中' : '❌ 未接続',
+                    Firebaseパス: FIREBASE_PATH,
                     デバイスID: appState.deviceId.substr(-8),
                     最終更新: new Date(appState.lastUpdate).toLocaleString('ja-JP'),
                     バージョン: appState.version || '不明',
@@ -458,6 +489,7 @@
 
             let alertMessage = '=== 📱 スマホデバッグ情報 ===\n\n';
             alertMessage += `🔗 Firebase: ${debugInfo.基本情報.Firebase接続}\n`;
+            alertMessage += `📂 パス: ${debugInfo.基本情報.Firebaseパス}\n`;
             alertMessage += `📱 デバイス: ...${debugInfo.基本情報.デバイスID}\n`;
             alertMessage += `⏰ 最終更新: ${debugInfo.基本情報.最終更新}\n`;
             alertMessage += `🔧 バージョン: ${debugInfo.基本情報.バージョン}\n`;
@@ -534,7 +566,7 @@
                 updateSyncStatus('syncing', '保存中...');
 
                 appState.lastUpdate = Date.now();
-                appState.version = '2.0'; // バージョンを確実に設定
+                appState.version = '2.0';
 
                 // ローカル保存
                 try {
