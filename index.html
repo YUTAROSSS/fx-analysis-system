@@ -227,13 +227,14 @@
             color: #495057;
         }
 
-        /* 基本の active 状態（選択中） */
+        /* 基本の active 状態（選択中）の共通設定 */
         .image-btn.active {
             transform: scale(1.05);
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         /* 分析ステータス別の色設定 */
+        /* 検討中 - 青 */
         .image-btn.status-considering {
             background: #007bff;
             color: white;
@@ -245,21 +246,23 @@
             border-color: #0056b3;
         }
 
-        .image-btn.status-skip,
+        /* 見逃し、見送り、完了 - グレー */
         .image-btn.status-missed,
+        .image-btn.status-skip,
         .image-btn.status-completed {
             background: #6c757d;
             color: white;
             border-color: #6c757d;
         }
 
-        .image-btn.status-skip.active,
         .image-btn.status-missed.active,
+        .image-btn.status-skip.active,
         .image-btn.status-completed.active {
             background: #495057;
             border-color: #495057;
         }
 
+        /* 指値逆指値中、保持中 - 赤 */
         .image-btn.status-pending,
         .image-btn.status-holding {
             background: #dc3545;
@@ -383,6 +386,27 @@
             color: #6c757d;
             cursor: not-allowed;
             transform: none;
+        }
+
+        /* GOLDの最終ページ用トップへ戻るボタン */
+        .return-top-btn {
+            padding: 12px 24px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .return-top-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
         }
 
         .chart-info {
@@ -978,7 +1002,7 @@
                 gap: 10px;
             }
 
-            .chart-nav-btn {
+            .chart-nav-btn, .return-top-btn {
                 width: 100%;
                 justify-content: center;
             }
@@ -1070,7 +1094,7 @@
                 </div>
                 
                 <!-- チャート周辺のナビゲーション -->
-                <div class="chart-navigation">
+                <div class="chart-navigation" id="chartNavigation">
                     <button class="chart-nav-btn" onclick="previousPage()" id="prevBtn" disabled>
                         ← 前のチャート
                     </button>
@@ -1464,7 +1488,7 @@
             }
         }
 
-        // 画像ボタンの更新（完全に新しい実装）
+        // 画像ボタンの更新（修正版）
         function updateImageButtons() {
             const data = currencyData[currentCurrency];
             const container = document.getElementById('imageButtons');
@@ -2123,6 +2147,28 @@ ${memo}`;
             });
         }
 
+        // GOLDの最終ページかどうかを判定する関数
+        function isGoldLastPage() {
+            return currentImage === 'GOLD.png' && currentPageNum === getTotalPages();
+        }
+
+        // トップへ戻る関数
+        function returnToTop() {
+            currentPageNum = 1;
+            currentCurrency = 'USDJPY';
+            currentImage = 'USDJPY.jpeg';
+            
+            updateCurrencyTabs();
+            updateDisplay();
+            updateImageButtons();
+            loadCurrentImage();
+            updateCustomScenarios();
+            updatePageInfo();
+            
+            // スクロールをトップに戻す
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         // ページナビゲーション
         function nextPage() {
             const totalPages = getTotalPages();
@@ -2174,6 +2220,29 @@ ${memo}`;
             
             document.getElementById('prevBtn').disabled = currentPageNum === 1;
             document.getElementById('nextBtn').disabled = currentPageNum === totalPages;
+            
+            // GOLDの最終ページの場合、ナビゲーションボタンを変更
+            const chartNavigation = document.getElementById('chartNavigation');
+            
+            if (isGoldLastPage()) {
+                chartNavigation.innerHTML = `
+                    <button class="chart-nav-btn" onclick="previousPage()" id="prevBtn">
+                        ← 前のチャート
+                    </button>
+                    <button class="return-top-btn" onclick="returnToTop()">
+                        🏠 トップへ戻る
+                    </button>
+                `;
+            } else {
+                chartNavigation.innerHTML = `
+                    <button class="chart-nav-btn" onclick="previousPage()" id="prevBtn" ${currentPageNum === 1 ? 'disabled' : ''}>
+                        ← 前のチャート
+                    </button>
+                    <button class="chart-nav-btn" onclick="nextPage()" id="nextBtn" ${currentPageNum === totalPages ? 'disabled' : ''}>
+                        次のチャート →
+                    </button>
+                `;
+            }
         }
 
         // チャートモーダル
