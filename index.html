@@ -187,6 +187,23 @@
         .current-image-info { background: #f8f9fa; padding: 8px; border-radius: 6px; margin-top: 8px; font-size: 11px; color: #495057; text-align: center; }
         .chart-info { margin-top: 15px; text-align: center; color: #6c757d; font-size: 12px; }
         
+        /* 使用量モーダル */
+        .usage-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+        .usage-modal.active { display: flex; }
+        .usage-modal-content { background: white; padding: 25px; border-radius: 12px; max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto; }
+        .usage-details { margin: 20px 0; }
+        .usage-breakdown { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .usage-bar { width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .usage-bar-fill { height: 100%; background: linear-gradient(90deg, #28a745 0%, #ffc107 50%, #dc3545 100%); transition: width 0.3s ease; }
+        
+        /* クリーンアップモーダル */
+        .cleanup-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+        .cleanup-modal.active { display: flex; }
+        .cleanup-modal-content { background: white; padding: 25px; border-radius: 12px; max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto; }
+        .cleanup-option { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #007bff; }
+        .cleanup-btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; margin-top: 10px; }
+        .cleanup-btn-info { background: #17a2b8; color: white; }
+        
         /* レスポンシブ */
         @media (min-width: 768px) {
             .currency-tabs, .image-buttons { justify-content: flex-start; }
@@ -475,6 +492,50 @@
         let currentCurrency = 'USDJPY', currentImage = 'USDJPY.jpeg', currentPageNum = 1, uploadedImages = {}, imageStatusMap = {};
         const defaultFixedPrompt = `あなたは経験豊富なFXトレーダーです。以下のチャート分析データを評価し、実用的なアドバイスを提供してください。\n\n特に以下の観点から分析をお願いします：\n1. テクニカル分析の妥当性\n2. リスク管理の観点\n3. エントリー・エグジット戦略\n4. 市場環境との整合性\n\n具体的で実践的なアドバイスをお願いします。`;
 
+        // データ同期を確実にする関数
+        function ensureDataSync() {
+            return new Promise((resolve) => {
+                if (window.firebaseDatabase && window.firebaseRef && window.firebaseSet) {
+                    const userRef = window.firebaseRef(window.firebaseDatabase, 'fx_analysis_data');
+                    const dataToSave = {
+                        currencyData,
+                        allImages,
+                        currentCurrency,
+                        currentImage,
+                        currentPageNum,
+                        uploadedImages,
+                        lastSaved: new Date().toISOString(),
+                        syncId: Date.now()
+                    };
+                    
+                    window.firebaseSet(userRef, dataToSave)
+                        .then(() => {
+                            localStorage.setItem('fx_analysis_data', JSON.stringify(dataToSave));
+                            localStorage.setItem('last_sync_id', dataToSave.syncId);
+                            console.log('データ同期完了');
+                            resolve();
+                        })
+                        .catch((error) => {
+                            console.error('Firebase同期エラー:', error);
+                            localStorage.setItem('fx_analysis_data', JSON.stringify(dataToSave));
+                            resolve();
+                        });
+                } else {
+                    const dataToSave = {
+                        currencyData,
+                        allImages,
+                        currentCurrency,
+                        currentImage,
+                        currentPageNum,
+                        uploadedImages,
+                        lastSaved: new Date().toISOString()
+                    };
+                    localStorage.setItem('fx_analysis_data', JSON.stringify(dataToSave));
+                    resolve();
+                }
+            });
+        }
+
         // Firebase対応の保存機能
         function saveData() {
             const dataToSave = { currencyData, allImages, currentCurrency, currentImage, currentPageNum, uploadedImages, lastSaved: new Date().toISOString() };
@@ -494,13 +555,26 @@
                 window.firebaseGet(userRef).then((snapshot) => {
                     if (snapshot.exists()) {
                         const data = snapshot.val();
-                        currencyData = data.currencyData || currencyData;
-                        allImages = data.allImages || allImages;
-                        currentCurrency = data.currentCurrency || currentCurrency;
-                        currentImage = data.currentImage || currentImage;
-                        currentPageNum = data.currentPageNum || currentPageNum;
-                        uploadedImages = data.uploadedImages || uploadedImages;
-                        console.log('Firebase データ復元成功'); showSyncIndicator('データ同期完了');
+                        const lastSyncId = localStorage.getItem('last_sync_id');
+                        
+                        if (data.syncId && lastSyncId && data.syncId.toString() === lastSyncId) {
+                            console.log('データは既に最新です');
+                            loadFromLocalStorage();
+                        } else {
+                            currencyData = data.currencyData || currencyData;
+                            allImages = data.allImages || allImages;
+                            currentCurrency = data.currentCurrency || currentCurrency;
+                            currentImage = data.currentImage || currentImage;
+                            currentPageNum = data.currentPageNum || currentPageNum;
+                            uploadedImages = data.uploadedImages || uploadedImages;
+                            
+                            if (data.syncId) {
+                                localStorage.setItem('last_sync_id', data.syncId);
+                            }
+                            
+                            console.log('Firebase データ復元成功');
+                            showSyncIndicator('データ同期完了');
+                        }
                     } else { loadFromLocalStorage(); }
                 }).catch((error) => { console.error('Firebase読み込みエラー:', error); loadFromLocalStorage(); });
             } else { loadFromLocalStorage(); }
@@ -545,6 +619,42 @@
             indicator.className = `auto-save-indicator ${type}`;
             indicator.classList.add('show');
             setTimeout(() => { indicator.classList.remove('show'); }, 3000);
+        }
+
+        // データの整合性をチェック
+        function validateDataIntegrity() {
+            let hasChanges = false;
+            
+            // 削除された画像を allImages から除去
+            allImages = allImages.filter(imageName => {
+                let exists = false;
+                for (const currency in currencyData) {
+                    if (currencyData[currency].images.includes(imageName)) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    hasChanges = true;
+                    console.log('削除された画像を除去:', imageName);
+                }
+                return exists;
+            });
+            
+            // 現在の画像が削除されている場合の処理
+            if (currentImage && !allImages.includes(currentImage)) {
+                const currentData = currencyData[currentCurrency];
+                if (currentData && currentData.images.length > 0) {
+                    currentImage = currentData.images[0];
+                    hasChanges = true;
+                    console.log('現在の画像を修正:', currentImage);
+                }
+            }
+            
+            if (hasChanges) {
+                ensureDataSync();
+                updateImageButtons();
+            }
         }
 
         // 使用量監視機能
@@ -616,7 +726,22 @@
 
         function initializePage() {
             setTimeout(() => { enableRealtimeSync(); }, 1000);
-            loadData(); updateCurrencyTabs(); updateDisplay(); updatePageInfo(); updateImageButtons(); loadCurrentImage(); checkAllImageStatus(); loadFixedPrompt(); generateCopyText(); updateUsageDisplay();
+            loadData();
+            
+            // データ整合性チェックを追加
+            setTimeout(() => {
+                validateDataIntegrity();
+                updateCurrencyTabs();
+                updateDisplay();
+                updatePageInfo();
+                updateImageButtons();
+                loadCurrentImage();
+                checkAllImageStatus();
+                loadFixedPrompt();
+                generateCopyText();
+                updateUsageDisplay();
+            }, 500);
+            
             setInterval(updateUsageDisplay, 5000);
         }
 
@@ -644,12 +769,30 @@
             updateCurrencyTabs(); updateDisplay(); updateImageButtons(); loadCurrentImage(); updateCustomScenarios(); generateCopyText(); saveData();
         }
 
-        function selectImage(element, imageName) {
+        // 修正されたselectImage関数
+        async function selectImage(element, imageName) {
+            // 削除されたシナリオかどうかチェック
+            const currentData = currencyData[currentCurrency];
+            if (!currentData.images.includes(imageName)) {
+                console.warn('選択された画像は削除されています:', imageName);
+                showStatus('このシナリオは削除されています', 'warning');
+                updateImageButtons();
+                return;
+            }
+            
             currentImage = imageName;
-            updateImageButtons(); loadCurrentImage(); updateCurrentImageInfo();
+            updateImageButtons();
+            loadCurrentImage();
+            updateCurrentImageInfo();
+            
             const imageIndex = allImages.indexOf(imageName);
-            if (imageIndex !== -1) { currentPageNum = imageIndex + 1; updatePageInfo(); }
-            generateCopyText(); saveData();
+            if (imageIndex !== -1) {
+                currentPageNum = imageIndex + 1;
+                updatePageInfo();
+            }
+            
+            generateCopyText();
+            await ensureDataSync();
         }
 
         function getStatusText(status) {
@@ -875,27 +1018,69 @@
             if (currency && currencyData[currency]) { currencyData[currency].images.forEach((image, index) => { const option = document.createElement('option'); option.value = image; option.textContent = currencyData[currency].imageLabels[index]; imageSelector.appendChild(option); }); }
         }
 
-        function deleteImage() {
+        // 修正されたdeleteImage関数
+        async function deleteImage() {
             const currency = document.getElementById('deleteImageCurrency').value;
             const imageName = document.getElementById('deleteImageSelect').value;
-            if (!currency || !imageName) { alert('削除するシナリオを選択してください。'); return; }
+            
+            if (!currency || !imageName) {
+                alert('削除するシナリオを選択してください。');
+                return;
+            }
+            
             const data = currencyData[currency];
             const imageIndex = data.images.indexOf(imageName);
-            if (imageIndex === -1) { alert('選択されたシナリオが見つかりません。'); return; }
+            
+            if (imageIndex === -1) {
+                alert('選択されたシナリオが見つかりません。');
+                return;
+            }
+            
             const scenarioName = data.imageLabels[imageIndex];
-            if (!confirm(`${currencyData[currency].pair} の「${scenarioName}」を削除しますか？\nこの操作は取り消せません。`)) { return; }
-            data.images.splice(imageIndex, 1); data.imageLabels.splice(imageIndex, 1); delete data.imageStatuses[imageName];
+            
+            if (!confirm(`${currencyData[currency].pair} の「${scenarioName}」を削除しますか？\nこの操作は取り消せません。`)) {
+                return;
+            }
+            
+            // データ削除処理
+            data.images.splice(imageIndex, 1);
+            data.imageLabels.splice(imageIndex, 1);
+            delete data.imageStatuses[imageName];
+            
             const allImageIndex = allImages.indexOf(imageName);
-            if (allImageIndex !== -1) { allImages.splice(allImageIndex, 1); }
+            if (allImageIndex !== -1) {
+                allImages.splice(allImageIndex, 1);
+            }
             delete uploadedImages[imageName];
+            
+            // 現在表示中の画像が削除された場合の処理
             if (currentImage === imageName) {
-                if (data.images.length > 0) { currentImage = data.images[0]; } else {
+                if (data.images.length > 0) {
+                    currentImage = data.images[0];
+                } else {
                     const remainingCurrencies = Object.keys(currencyData).filter(c => currencyData[c].images.length > 0);
-                    if (remainingCurrencies.length > 0) { currentCurrency = remainingCurrencies[0]; currentImage = currencyData[currentCurrency].images[0]; updateCurrencyTabs(); updateDisplay(); updateCustomScenarios(); }
+                    if (remainingCurrencies.length > 0) {
+                        currentCurrency = remainingCurrencies[0];
+                        currentImage = currencyData[currentCurrency].images[0];
+                        updateCurrencyTabs();
+                        updateDisplay();
+                        updateCustomScenarios();
+                    }
                 }
             }
-            if (currentCurrency === currency) { updateImageButtons(); loadCurrentImage(); }
-            updatePageInfo(); closeDeleteImageModal(); showStatus(`${scenarioName} を削除しました。`, 'success'); saveData();
+            
+            // 確実にデータを同期
+            await ensureDataSync();
+            
+            // UI更新
+            if (currentCurrency === currency) {
+                updateImageButtons();
+                loadCurrentImage();
+            }
+            
+            updatePageInfo();
+            closeDeleteImageModal();
+            showStatus(`${scenarioName} を削除しました。`, 'success');
         }
 
         function showAddCurrencyModal() { document.getElementById('addCurrencyModal').classList.add('active'); }
