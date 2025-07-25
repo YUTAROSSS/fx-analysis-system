@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FX通貨ペア分析管理システム</title>
     <style>
-        /* 前回のCSSはそのまま使用 */
         * {
             margin: 0;
             padding: 0;
@@ -32,7 +31,7 @@
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px 30px;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -40,22 +39,22 @@
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 600;
         }
 
         .header-controls {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
         }
 
         .btn {
-            padding: 8px 16px;
+            padding: 6px 12px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
             transition: all 0.3s ease;
         }
 
@@ -71,16 +70,56 @@
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        /* 通貨ペア管理セクション */
+        .currency-management {
+            background: #e8f5e8;
+            border: 2px solid #28a745;
+            padding: 20px;
+            margin: 15px;
+            border-radius: 12px;
+        }
+
+        .management-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .mgmt-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .add-currency-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .add-image-btn {
+            background: #007bff;
+            color: white;
+        }
+
+        .delete-currency-btn {
+            background: #dc3545;
+            color: white;
         }
 
         /* 画像差し替えセクション */
         .image-replacement-section {
             background: #fff3cd;
             border: 2px solid #ffc107;
-            padding: 20px;
-            margin: 20px;
+            padding: 15px;
+            margin: 15px;
             border-radius: 12px;
         }
 
@@ -88,161 +127,121 @@
             background: white;
             border: 2px dashed #007bff;
             border-radius: 8px;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             margin: 10px 0;
             transition: all 0.3s ease;
         }
 
-        .upload-area:hover {
-            border-color: #0056b3;
-            background: #f8f9ff;
-        }
-
         .upload-btn {
             background: #007bff;
             color: white;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             margin: 5px;
-            font-size: 14px;
+            font-size: 12px;
         }
 
-        .upload-btn:hover {
-            background: #0056b3;
-        }
-
-        /* 画像ファイル一覧 */
-        .image-info-section {
-            background: #e3f2fd;
-            padding: 20px;
-            margin: 20px;
-            border-radius: 12px;
-            border: 2px solid #2196f3;
-        }
-
-        .image-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .image-item {
-            background: white;
-            padding: 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            text-align: center;
-            border: 1px solid #dee2e6;
-            transition: all 0.3s ease;
-        }
-
-        .image-item:hover {
-            background: #f8f9fa;
-            transform: translateY(-2px);
-        }
-
-        .image-item.loaded {
-            border-color: #28a745;
-            background: #d4edda;
-        }
-
-        .image-item.missing {
-            border-color: #dc3545;
-            background: #f8d7da;
-        }
-
-        /* メインコンテンツ */
+        /* メインコンテンツ - スマホ優先レイアウト */
         .main-content {
             display: grid;
-            grid-template-columns: 320px 1fr 380px;
+            grid-template-columns: 1fr;
             gap: 0;
-            min-height: 600px;
+            min-height: 400px;
+        }
+
+        /* デスクトップ用レイアウト */
+        @media (min-width: 1024px) {
+            .main-content {
+                grid-template-columns: 280px 1fr 320px;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .main-content {
+                grid-template-columns: 250px 1fr;
+            }
+            
+            .right-panel {
+                order: 3;
+                grid-column: 1 / -1;
+            }
         }
 
         /* 左パネル */
         .left-panel {
             background: #f8f9fa;
-            padding: 25px;
-            border-right: 1px solid #e9ecef;
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            order: 2;
+        }
+
+        @media (min-width: 768px) {
+            .left-panel {
+                border-right: 1px solid #e9ecef;
+                border-bottom: none;
+                order: 1;
+                padding: 20px;
+            }
         }
 
         .currency-info {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         .currency-pair {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 700;
             color: #2c3e50;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        @media (min-width: 768px) {
+            .currency-pair {
+                font-size: 26px;
+                text-align: left;
+            }
         }
 
         .section-title {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             color: #495057;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
-        .status-buttons {
-            display: flex;
-            flex-direction: column;
+        .status-buttons, .wave-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 8px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
-        .status-btn {
-            padding: 10px 15px;
-            border: 2px solid #dee2e6;
-            background: white;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-            text-align: left;
+        @media (min-width: 768px) {
+            .status-buttons, .wave-buttons {
+                grid-template-columns: 1fr;
+            }
         }
 
-        .status-btn.active {
-            border-color: #4285f4;
-            background: #4285f4;
-            color: white;
-        }
-
-        .status-btn:hover:not(.active) {
-            border-color: #4285f4;
-            background: #f8f9ff;
-        }
-
-        /* 狙う波選択（色分け対応） */
-        .wave-selector {
-            margin-bottom: 25px;
-        }
-
-        .wave-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .wave-btn {
+        .status-btn, .wave-btn {
             padding: 8px 12px;
             border: 2px solid #dee2e6;
             background: white;
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 13px;
+            font-size: 12px;
             text-align: center;
             font-weight: 600;
         }
 
-        .wave-btn:hover:not(.active) {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        .status-btn.active {
+            border-color: #4285f4;
+            background: #4285f4;
+            color: white;
         }
 
         /* 狙う波の色分け */
@@ -270,41 +269,27 @@
             color: white;
         }
 
-        /* ホバー時の色分け */
-        .wave-btn.unselected:hover:not(.active) {
-            border-color: #6c757d;
-            background: #f8f9fa;
-        }
-
-        .wave-btn.wave-1h:hover:not(.active) {
-            border-color: #9acd32;
-            background: #f8fff8;
-        }
-
-        .wave-btn.wave-4h:hover:not(.active) {
-            border-color: #007bff;
-            background: #f8f9ff;
-        }
-
-        .wave-btn.wave-1d:hover:not(.active) {
-            border-color: #dc3545;
-            background: #fff8f8;
-        }
-
         .currency-tabs {
             display: flex;
             flex-wrap: wrap;
             gap: 5px;
             margin-bottom: 15px;
+            justify-content: center;
+        }
+
+        @media (min-width: 768px) {
+            .currency-tabs {
+                justify-content: flex-start;
+            }
         }
 
         .currency-tab {
-            padding: 6px 12px;
+            padding: 6px 10px;
             background: white;
             border: 1px solid #dee2e6;
-            border-radius: 20px;
+            border-radius: 15px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 11px;
             transition: all 0.3s ease;
         }
 
@@ -315,14 +300,18 @@
         }
 
         /* 画像選択ボタン */
-        .image-selector {
-            margin-bottom: 20px;
-        }
-
         .image-buttons {
             display: flex;
             flex-wrap: wrap;
             gap: 5px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        @media (min-width: 768px) {
+            .image-buttons {
+                justify-content: flex-start;
+            }
         }
 
         .image-btn {
@@ -334,7 +323,7 @@
             font-size: 10px;
             transition: all 0.3s ease;
             text-align: center;
-            min-width: 70px;
+            min-width: 60px;
         }
 
         .image-btn.active {
@@ -343,31 +332,70 @@
             border-color: #28a745;
         }
 
-        .image-btn:hover:not(.active) {
-            background: #e9ecef;
-        }
-
         .image-btn.missing {
             background: #f8d7da;
             border-color: #dc3545;
             color: #721c24;
         }
 
-        /* チャートエリア */
+        /* 分析ステータスに応じた画像ボタンの色変更 */
+        .image-buttons.status-grey .image-btn {
+            background: #6c757d;
+            color: white;
+            border-color: #6c757d;
+        }
+
+        .image-buttons.status-grey .image-btn.active {
+            background: #495057;
+            border-color: #495057;
+        }
+
+        .image-buttons.status-red .image-btn {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .image-buttons.status-red .image-btn.active {
+            background: #c82333;
+            border-color: #c82333;
+        }
+
+        .image-buttons.status-blue .image-btn {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .image-buttons.status-blue .image-btn.active {
+            background: #0056b3;
+            border-color: #0056b3;
+        }
+
+        /* チャートエリア - スマホで最優先表示 */
         .chart-area {
-            padding: 25px;
+            padding: 15px;
             background: white;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            position: relative;
+            order: 1;
         }
 
+        @media (min-width: 768px) {
+            .chart-area {
+                padding: 20px;
+                order: 2;
+            }
+        }
+
+        /* スマホで画像を最大限大きく表示 */
         .chart-container {
             width: 100%;
-            max-width: 600px;
-            height: 450px;
+            max-width: 100%;
+            height: 60vh; /* スマホで画面の60%を使用 */
+            min-height: 300px;
             border: 2px solid #e9ecef;
             border-radius: 12px;
             overflow: hidden;
@@ -377,9 +405,22 @@
             background: white;
         }
 
+        @media (min-width: 768px) {
+            .chart-container {
+                max-width: 600px;
+                height: 450px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .chart-container {
+                height: 500px;
+            }
+        }
+
         .chart-container:hover {
-            transform: scale(1.02);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transform: scale(1.01);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
         }
 
         .chart-image {
@@ -399,7 +440,7 @@
             align-items: center;
             justify-content: center;
             color: #6c757d;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             flex-direction: column;
             text-align: center;
@@ -407,18 +448,18 @@
         }
 
         .chart-info {
-            margin-top: 15px;
+            margin-top: 10px;
             text-align: center;
             color: #6c757d;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .current-image-info {
             background: #f8f9fa;
-            padding: 10px;
+            padding: 8px;
             border-radius: 6px;
-            margin-top: 10px;
-            font-size: 12px;
+            margin-top: 8px;
+            font-size: 11px;
             color: #495057;
             text-align: center;
         }
@@ -426,52 +467,64 @@
         /* 右パネル */
         .right-panel {
             background: #f8f9fa;
-            padding: 25px;
-            border-left: 1px solid #e9ecef;
+            padding: 15px;
+            border-top: 1px solid #e9ecef;
+            order: 3;
+        }
+
+        @media (min-width: 768px) {
+            .right-panel {
+                border-left: 1px solid #e9ecef;
+                border-top: none;
+                padding: 20px;
+            }
         }
 
         .analysis-memo {
-            height: 400px;
+            height: 250px;
             width: 100%;
-            padding: 15px;
+            padding: 12px;
             border: 1px solid #dee2e6;
             border-radius: 8px;
             resize: vertical;
-            font-size: 13px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.4;
             background: white;
+        }
+
+        @media (min-width: 768px) {
+            .analysis-memo {
+                height: 300px;
+                font-size: 13px;
+            }
         }
 
         /* シナリオ追加機能 */
         .scenario-add-section {
-            margin-top: 20px;
+            margin-top: 15px;
         }
 
         .add-scenario-btn {
             background: #28a745;
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 11px;
             margin-bottom: 10px;
-        }
-
-        .add-scenario-btn:hover {
-            background: #218838;
         }
 
         .scenario-input {
             display: none;
             background: white;
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
             border: 1px solid #dee2e6;
             margin-bottom: 10px;
         }
 
-        .scenario-input input {
+        .scenario-input input, .scenario-input textarea {
             width: 100%;
             padding: 8px;
             border: 1px solid #dee2e6;
@@ -481,19 +534,13 @@
         }
 
         .scenario-input textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            resize: vertical;
             height: 60px;
-            font-size: 12px;
+            resize: vertical;
         }
 
         .scenario-input-buttons {
             display: flex;
             gap: 8px;
-            margin-top: 8px;
         }
 
         .scenario-input-btn {
@@ -516,7 +563,7 @@
 
         .custom-scenario-item {
             background: white;
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
             margin-bottom: 8px;
             border-left: 4px solid #28a745;
@@ -540,32 +587,44 @@
             font-weight: 600;
             color: #2c3e50;
             margin-bottom: 5px;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .scenario-desc {
-            font-size: 12px;
+            font-size: 11px;
             color: #6c757d;
         }
 
         /* フッター */
         .footer {
             background: #f8f9fa;
-            padding: 15px 30px;
+            padding: 12px 20px;
             border-top: 1px solid #e9ecef;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .page-info {
+            color: #6c757d;
+            font-size: 12px;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 8px;
         }
 
         .nav-btn {
-            padding: 8px 16px;
+            padding: 6px 12px;
             background: #4285f4;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
             transition: all 0.3s ease;
         }
 
@@ -575,7 +634,7 @@
             cursor: not-allowed;
         }
 
-        /* モーダル */
+        /* モーダル - スマホ対応強化 */
         .modal {
             display: none;
             position: fixed;
@@ -583,10 +642,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.9);
             z-index: 1000;
             justify-content: center;
             align-items: center;
+            padding: 10px;
         }
 
         .modal.active {
@@ -594,8 +654,8 @@
         }
 
         .modal-content {
-            max-width: 95%;
-            max-height: 95%;
+            max-width: 98%;
+            max-height: 98%;
             border-radius: 8px;
             overflow: hidden;
             background: white;
@@ -609,34 +669,69 @@
 
         .close-modal {
             position: absolute;
-            top: 20px;
-            right: 30px;
+            top: 15px;
+            right: 20px;
             color: white;
             font-size: 30px;
             cursor: pointer;
             z-index: 1001;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* レスポンシブ */
-        @media (max-width: 1024px) {
-            .main-content {
-                grid-template-columns: 280px 1fr 320px;
-            }
+        /* 管理用モーダル */
+        .management-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
 
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto auto auto;
-            }
-            
-            .chart-container {
-                height: 300px;
-            }
+        .management-modal.active {
+            display: flex;
+        }
 
-            .image-grid {
-                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            }
+        .management-modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .management-modal h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .management-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .management-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
         }
 
         /* ステータスメッセージ */
@@ -644,7 +739,7 @@
             padding: 10px;
             border-radius: 6px;
             margin: 10px 0;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .status-success {
@@ -664,25 +759,60 @@
             background: #d1ecf1;
             border: 1px solid #bee5eb;
         }
+
+        /* スマホ専用の追加スタイル */
+        @media (max-width: 767px) {
+            .header h1 {
+                font-size: 16px;
+            }
+            
+            .btn {
+                font-size: 11px;
+                padding: 5px 10px;
+            }
+            
+            .currency-management, .image-replacement-section {
+                margin: 10px;
+                padding: 15px;
+            }
+            
+            .chart-container {
+                height: 70vh; /* スマホでさらに大きく */
+                margin-bottom: 10px;
+            }
+            
+            .currency-pair {
+                font-size: 20px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- ヘッダー -->
         <div class="header">
-            <h1>🔍 FX通貨ペア分析管理システム</h1>
+            <h1>🔍 FX通貨ペア分析システム</h1>
             <div class="header-controls">
                 <button class="btn btn-secondary" onclick="shareAnalysis()">📤 共有</button>
-                <button class="btn btn-secondary" onclick="saveAnalysis()">💾 保存</button>
-                <button class="btn btn-primary" onclick="exportReport()">📊 レポート出力</button>
             </div>
+        </div>
+
+        <!-- 通貨ペア管理セクション -->
+        <div class="currency-management">
+            <h3>🔧 通貨ペア・画像管理</h3>
+            <div class="management-controls">
+                <button class="mgmt-btn add-currency-btn" onclick="showAddCurrencyModal()">➕ 通貨ペア追加</button>
+                <button class="mgmt-btn add-image-btn" onclick="showAddImageModal()">🖼️ 画像追加</button>
+                <button class="mgmt-btn delete-currency-btn" onclick="showDeleteCurrencyModal()">🗑️ 通貨ペア削除</button>
+            </div>
+            <p style="font-size: 12px; color: #6c757d;">
+                通貨ペアの追加・削除、各通貨ペアへの画像追加が可能です
+            </p>
         </div>
 
         <!-- 画像差し替えセクション -->
         <div class="image-replacement-section">
             <h3>🔄 画像の簡単差し替え機能</h3>
-            <p>現在表示中の画像を新しい画像に差し替えることができます。</p>
-            
             <div class="upload-area">
                 <p><strong>📷 画像ファイルをアップロード</strong></p>
                 <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
@@ -692,21 +822,11 @@
                 <button class="upload-btn" onclick="resetToOriginal()">
                     元の画像に戻す
                 </button>
-                <p style="font-size: 12px; color: #6c757d; margin-top: 10px;">
-                    JPG, PNG, GIF形式対応 | 現在の画像: <span id="currentImageName">USDJPY.jpeg</span>
+                <p style="font-size: 11px; color: #6c757d; margin-top: 8px;">
+                    現在の画像: <span id="currentImageName">USDJPY.jpeg</span>
                 </p>
             </div>
-            
             <div id="uploadStatus"></div>
-        </div>
-
-        <!-- 画像ファイル情報セクション -->
-        <div class="image-info-section">
-            <h3>📁 全画像ファイル一覧 (14個)</h3>
-            <p>以下の画像ファイルをimagesフォルダに配置してください：</p>
-            <div class="image-grid" id="imageStatusGrid">
-                <!-- JavaScript で動的に生成 -->
-            </div>
         </div>
 
         <!-- メインコンテンツ -->
@@ -716,13 +836,8 @@
                 <!-- 通貨ペア選択 -->
                 <div class="currency-selector">
                     <div class="section-title">通貨ペア選択</div>
-                    <div class="currency-tabs">
-                        <div class="currency-tab active" onclick="selectCurrency('USDJPY')">USD/JPY</div>
-                        <div class="currency-tab" onclick="selectCurrency('EURUSD')">EUR/USD</div>
-                        <div class="currency-tab" onclick="selectCurrency('GBPUSD')">GBP/USD</div>
-                        <div class="currency-tab" onclick="selectCurrency('AUDUSD')">AUD/USD</div>
-                        <div class="currency-tab" onclick="selectCurrency('SILVER')">SILVER</div>
-                        <div class="currency-tab" onclick="selectCurrency('GOLD')">GOLD</div>
+                    <div class="currency-tabs" id="currencyTabs">
+                        <!-- JavaScript で動的に生成 -->
                     </div>
                 </div>
 
@@ -734,7 +849,7 @@
                     </div>
                 </div>
 
-                <!-- 通貨ペア情報（価格表示を削除） -->
+                <!-- 通貨ペア情報 -->
                 <div class="currency-info">
                     <div class="currency-pair" id="currentPair">USD/JPY</div>
                 </div>
@@ -752,7 +867,7 @@
                     </div>
                 </div>
 
-                <!-- 狙う波選択（色分け対応） -->
+                <!-- 狙う波選択 -->
                 <div class="wave-selector">
                     <div class="section-title">狙う波</div>
                     <div class="wave-buttons">
@@ -771,7 +886,7 @@
                         📈 USD/JPY チャート
                         <small style="margin-top: 10px; display: block;">
                             画像ファイルを配置してください<br>
-                            クリックで拡大表示
+                            タップで拡大表示
                         </small>
                     </div>
                     <img id="chartImage" class="chart-image" style="display: none;" alt="チャート画像">
@@ -796,7 +911,7 @@
                     <button class="add-scenario-btn" onclick="showScenarioInput()">+ シナリオ追加</button>
                     
                     <div class="scenario-input" id="scenarioInput">
-                        <input type="text" id="scenarioTitle" placeholder="シナリオタイトル (例: メインシナリオ (70%))">
+                        <input type="text" id="scenarioTitle" placeholder="シナリオタイトル">
                         <textarea id="scenarioDesc" placeholder="シナリオの詳細説明"></textarea>
                         <div class="scenario-input-buttons">
                             <button class="scenario-input-btn scenario-save-btn" onclick="saveScenario()">保存</button>
@@ -832,27 +947,72 @@
         </div>
     </div>
 
+    <!-- 通貨ペア追加モーダル -->
+    <div class="management-modal" id="addCurrencyModal">
+        <div class="management-modal-content">
+            <h3>➕ 通貨ペア追加</h3>
+            <input type="text" id="newCurrencyName" class="management-input" placeholder="通貨ペア名 (例: EURJPY)">
+            <input type="text" id="newCurrencyDisplay" class="management-input" placeholder="表示名 (例: EUR/JPY)">
+            <input type="text" id="newCurrencyTimeframe" class="management-input" placeholder="時間軸 (例: 4時間足)">
+            <div class="management-buttons">
+                <button class="mgmt-btn" style="background: #6c757d; color: white;" onclick="closeAddCurrencyModal()">キャンセル</button>
+                <button class="mgmt-btn add-currency-btn" onclick="addNewCurrency()">追加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 画像追加モーダル -->
+    <div class="management-modal" id="addImageModal">
+        <div class="management-modal-content">
+            <h3>🖼️ 画像追加</h3>
+            <select id="targetCurrency" class="management-input">
+                <!-- JavaScript で動的に生成 -->
+            </select>
+            <input type="file" id="newImageFile" class="management-input" accept="image/*">
+            <input type="text" id="newImageLabel" class="management-input" placeholder="画像ラベル (例: シナリオ3)">
+            <div class="management-buttons">
+                <button class="mgmt-btn" style="background: #6c757d; color: white;" onclick="closeAddImageModal()">キャンセル</button>
+                <button class="mgmt-btn add-image-btn" onclick="addNewImage()">追加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通貨ペア削除モーダル -->
+    <div class="management-modal" id="deleteCurrencyModal">
+        <div class="management-modal-content">
+            <h3>🗑️ 通貨ペア削除</h3>
+            <p style="color: #dc3545; margin-bottom: 15px;">⚠️ 削除すると復元できません</p>
+            <select id="deleteCurrency" class="management-input">
+                <!-- JavaScript で動的に生成 -->
+            </select>
+            <div class="management-buttons">
+                <button class="mgmt-btn" style="background: #6c757d; color: white;" onclick="closeDeleteCurrencyModal()">キャンセル</button>
+                <button class="mgmt-btn delete-currency-btn" onclick="deleteCurrency()">削除</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // 🔧 修正: USDJPYを最初にするため画像配列の順番を変更
-        const allImages = [
-            'USDJPY.jpeg',    // 1ページ目
-            'USDJPY2.jpeg',   // 2ページ目
-            'USDJPY3.jpeg',   // 3ページ目
-            'EURUSD.jpeg',    // 4ページ目
-            'EURUSD2.jpeg',   // 5ページ目
-            'GBPUSD.jpeg',    // 6ページ目
-            'GBPUSD2.jpeg',   // 7ページ目
-            'GBPUSD3.jpeg',   // 8ページ目
-            'GBPUSD4.jpeg',   // 9ページ目
-            'AUDUSD.jpeg',    // 10ページ目
-            'AUDUSD2.jpeg',   // 11ページ目
-            'SILVER.jpeg',    // 12ページ目
-            'SILVER2.jpeg',   // 13ページ目
-            'GOLD.png'        // 14ページ目
+        // 画像配列をUSDJPYから開始
+        let allImages = [
+            'USDJPY.jpeg',
+            'USDJPY2.jpeg',
+            'USDJPY3.jpeg',
+            'EURUSD.jpeg',
+            'EURUSD2.jpeg',
+            'GBPUSD.jpeg',
+            'GBPUSD2.jpeg',
+            'GBPUSD3.jpeg',
+            'GBPUSD4.jpeg',
+            'AUDUSD.jpeg',
+            'AUDUSD2.jpeg',
+            'SILVER.jpeg',
+            'SILVER2.jpeg',
+            'GOLD.png'
         ];
 
-        // 通貨ペアデータ（価格情報を削除、チャート選択表記を統一）
-        const currencyData = {
+        // 通貨ペアデータ（動的に管理）
+        let currencyData = {
             'USDJPY': {
                 pair: 'USD/JPY',
                 status: 'considering',
@@ -916,18 +1076,19 @@
         };
 
         let currentCurrency = 'USDJPY';
-        let currentImage = 'USDJPY.jpeg';  // 🔧 修正: 最初の画像をUSDJPYに
+        let currentImage = 'USDJPY.jpeg';
         let currentPageNum = 1;
-        const totalPagesNum = 14;
         let uploadedImages = {};
         let imageStatusMap = {};
 
-        // 以下、他のJavaScript関数は前回と同じ...
-        // （長いため省略しますが、機能は全て同じです）
+        // 動的に総ページ数を計算
+        function getTotalPages() {
+            return allImages.length;
+        }
 
         // ページ初期化
         function initializePage() {
-            createImageStatusGrid();
+            updateCurrencyTabs();
             updateDisplay();
             updatePageInfo();
             updateImageButtons();
@@ -935,17 +1096,17 @@
             checkAllImageStatus();
         }
 
-        // 画像ステータスグリッドを作成
-        function createImageStatusGrid() {
-            const grid = document.getElementById('imageStatusGrid');
-            grid.innerHTML = '';
+        // 通貨ペアタブの動的生成
+        function updateCurrencyTabs() {
+            const container = document.getElementById('currencyTabs');
+            container.innerHTML = '';
             
-            allImages.forEach(imageName => {
-                const item = document.createElement('div');
-                item.className = 'image-item';
-                item.id = `status-${imageName}`;
-                item.textContent = imageName;
-                grid.appendChild(item);
+            Object.keys(currencyData).forEach(currency => {
+                const tab = document.createElement('div');
+                tab.className = 'currency-tab' + (currency === currentCurrency ? ' active' : '');
+                tab.textContent = currencyData[currency].pair;
+                tab.onclick = function() { selectCurrency(currency); };
+                container.appendChild(tab);
             });
         }
 
@@ -956,24 +1117,13 @@
             });
         }
 
-        // 個別画像の状況をチェック
         function checkImageStatus(imageName) {
             const img = new Image();
             img.onload = function() {
                 imageStatusMap[imageName] = 'loaded';
-                const statusElement = document.getElementById(`status-${imageName}`);
-                if (statusElement) {
-                    statusElement.className = 'image-item loaded';
-                    statusElement.title = '読み込み成功';
-                }
             };
             img.onerror = function() {
                 imageStatusMap[imageName] = 'missing';
-                const statusElement = document.getElementById(`status-${imageName}`);
-                if (statusElement) {
-                    statusElement.className = 'image-item missing';
-                    statusElement.title = '画像が見つかりません';
-                }
             };
             img.src = `images/${imageName}`;
         }
@@ -983,11 +1133,7 @@
             currentCurrency = currency;
             currentImage = currencyData[currency].images[0];
             
-            document.querySelectorAll('.currency-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
+            updateCurrencyTabs();
             updateDisplay();
             updateImageButtons();
             loadCurrentImage();
@@ -1007,7 +1153,6 @@
             updateCurrentImageInfo();
             updateCurrentImageName();
             
-            // ページ番号を更新
             const imageIndex = allImages.indexOf(imageName);
             if (imageIndex !== -1) {
                 currentPageNum = imageIndex + 1;
@@ -1015,11 +1160,23 @@
             }
         }
 
-        // 画像ボタンの更新
+        // 画像ボタンの更新（分析ステータスに応じた色変更を含む）
         function updateImageButtons() {
             const data = currencyData[currentCurrency];
             const container = document.getElementById('imageButtons');
             container.innerHTML = '';
+            
+            // 分析ステータスに応じてクラスを設定
+            container.className = 'image-buttons';
+            const status = data.status;
+            
+            if (status === 'skip' || status === 'missed' || status === 'completed') {
+                container.classList.add('status-grey');
+            } else if (status === 'pending' || status === 'holding') {
+                container.classList.add('status-red');
+            } else if (status === 'considering') {
+                container.classList.add('status-blue');
+            }
             
             data.images.forEach((image, index) => {
                 const btn = document.createElement('div');
@@ -1103,7 +1260,7 @@
                     ${currentImage} が見つかりません<br>
                     imagesフォルダに画像を配置するか<br>
                     上記の差し替え機能をご利用ください<br>
-                    クリックで拡大表示
+                    タップで拡大表示
                 </small>
             `;
             
@@ -1161,11 +1318,10 @@
             }, 4000);
         }
 
-        // 表示更新（価格表示を削除）
+        // 表示更新
         function updateDisplay() {
             const data = currencyData[currentCurrency];
             
-            // 通貨ペア名のみ表示
             document.getElementById('currentPair').textContent = data.pair;
             document.getElementById('timeframe').textContent = data.timeframe;
             
@@ -1176,12 +1332,8 @@
             
             const statusButtons = document.querySelectorAll('.status-btn');
             const statusMap = {
-                'considering': 0,
-                'skip': 1,
-                'missed': 2,
-                'pending': 3,
-                'holding': 4,
-                'completed': 5
+                'considering': 0, 'skip': 1, 'missed': 2,
+                'pending': 3, 'holding': 4, 'completed': 5
             };
             
             const statusIndex = statusMap[data.status] || 0;
@@ -1189,17 +1341,14 @@
                 statusButtons[statusIndex].classList.add('active');
             }
             
-            // 狙う波ボタン更新（色分け対応）
+            // 狙う波ボタン更新
             document.querySelectorAll('.wave-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             
             const waveButtons = document.querySelectorAll('.wave-btn');
             const waveMap = {
-                'unselected': 0,
-                '1h': 1,
-                '4h': 2,
-                '1d': 3
+                'unselected': 0, '1h': 1, '4h': 2, '1d': 3
             };
             
             const waveIndex = waveMap[data.wave] || 0;
@@ -1207,30 +1356,28 @@
                 waveButtons[waveIndex].classList.add('active');
             }
             
-            // メモ更新
             document.getElementById('analysisMemo').value = data.memo;
-            
-            // 現在の画像名を更新
             updateCurrentImageName();
         }
 
-        // ステータス設定
+        // ステータス設定（画像ボタンの色も更新）
         function setStatus(element, status) {
             document.querySelectorAll('.status-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             element.classList.add('active');
-            
             currencyData[currentCurrency].status = status;
+            
+            // 画像ボタンの色を更新
+            updateImageButtons();
         }
 
-        // 狙う波設定（色分け対応）
+        // 狙う波設定
         function setWave(element, wave) {
             document.querySelectorAll('.wave-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             element.classList.add('active');
-            
             currencyData[currentCurrency].wave = wave;
         }
 
@@ -1294,9 +1441,159 @@
             });
         }
 
+        // 通貨ペア管理機能
+        function showAddCurrencyModal() {
+            document.getElementById('addCurrencyModal').classList.add('active');
+        }
+
+        function closeAddCurrencyModal() {
+            document.getElementById('addCurrencyModal').classList.remove('active');
+            document.getElementById('newCurrencyName').value = '';
+            document.getElementById('newCurrencyDisplay').value = '';
+            document.getElementById('newCurrencyTimeframe').value = '';
+        }
+
+        function addNewCurrency() {
+            const name = document.getElementById('newCurrencyName').value.trim().toUpperCase();
+            const display = document.getElementById('newCurrencyDisplay').value.trim();
+            const timeframe = document.getElementById('newCurrencyTimeframe').value.trim();
+            
+            if (!name || !display || !timeframe) {
+                alert('全ての項目を入力してください。');
+                return;
+            }
+            
+            if (currencyData[name]) {
+                alert('この通貨ペアは既に存在します。');
+                return;
+            }
+            
+            currencyData[name] = {
+                pair: display,
+                status: 'considering',
+                wave: 'unselected',
+                timeframe: timeframe,
+                images: [],
+                imageLabels: [],
+                memo: '',
+                customScenarios: []
+            };
+            
+            updateCurrencyTabs();
+            updateCurrencySelectors();
+            closeAddCurrencyModal();
+            showStatus(`${display} を追加しました！`, 'success');
+        }
+
+        function showAddImageModal() {
+            updateCurrencySelectors();
+            document.getElementById('addImageModal').classList.add('active');
+        }
+
+        function closeAddImageModal() {
+            document.getElementById('addImageModal').classList.remove('active');
+            document.getElementById('newImageFile').value = '';
+            document.getElementById('newImageLabel').value = '';
+        }
+
+        function addNewImage() {
+            const currency = document.getElementById('targetCurrency').value;
+            const file = document.getElementById('newImageFile').files[0];
+            const label = document.getElementById('newImageLabel').value.trim();
+            
+            if (!currency || !file || !label) {
+                alert('全ての項目を入力してください。');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageName = `${currency}_${Date.now()}.${file.name.split('.').pop()}`;
+                
+                currencyData[currency].images.push(imageName);
+                currencyData[currency].imageLabels.push(label);
+                allImages.push(imageName);
+                uploadedImages[imageName] = e.target.result;
+                
+                if (currentCurrency === currency) {
+                    updateImageButtons();
+                }
+                
+                updatePageInfo();
+                closeAddImageModal();
+                showStatus(`${label} を ${currencyData[currency].pair} に追加しました！`, 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showDeleteCurrencyModal() {
+            updateCurrencySelectors();
+            document.getElementById('deleteCurrencyModal').classList.add('active');
+        }
+
+        function closeDeleteCurrencyModal() {
+            document.getElementById('deleteCurrencyModal').classList.remove('active');
+        }
+
+        function deleteCurrency() {
+            const currency = document.getElementById('deleteCurrency').value;
+            
+            if (!currency) {
+                alert('削除する通貨ペアを選択してください。');
+                return;
+            }
+            
+            if (!confirm(`${currencyData[currency].pair} を完全に削除しますか？\nこの操作は取り消せません。`)) {
+                return;
+            }
+            
+            // 関連画像をallImagesから削除
+            currencyData[currency].images.forEach(imageName => {
+                const index = allImages.indexOf(imageName);
+                if (index !== -1) {
+                    allImages.splice(index, 1);
+                }
+                delete uploadedImages[imageName];
+            });
+            
+            delete currencyData[currency];
+            
+            // 現在の通貨が削除された場合、最初の通貨に切り替え
+            if (currentCurrency === currency) {
+                const remainingCurrencies = Object.keys(currencyData);
+                if (remainingCurrencies.length > 0) {
+                    selectCurrency(remainingCurrencies[0]);
+                }
+            }
+            
+            updateCurrencyTabs();
+            updatePageInfo();
+            closeDeleteCurrencyModal();
+            showStatus(`${currencyData[currency]?.pair || currency} を削除しました。`, 'info');
+        }
+
+        function updateCurrencySelectors() {
+            const selectors = ['targetCurrency', 'deleteCurrency'];
+            
+            selectors.forEach(selectorId => {
+                const selector = document.getElementById(selectorId);
+                if (selector) {
+                    selector.innerHTML = '';
+                    
+                    Object.keys(currencyData).forEach(currency => {
+                        const option = document.createElement('option');
+                        option.value = currency;
+                        option.textContent = currencyData[currency].pair;
+                        selector.appendChild(option);
+                    });
+                }
+            });
+        }
+
         // ページナビゲーション
         function nextPage() {
-            if (currentPageNum < totalPagesNum) {
+            const totalPages = getTotalPages();
+            if (currentPageNum < totalPages) {
                 currentPageNum++;
                 const nextImageName = allImages[currentPageNum - 1];
                 switchToImagePage(nextImageName);
@@ -1316,26 +1613,16 @@
         function switchToImagePage(imageName) {
             currentImage = imageName;
             
-            // 対応する通貨ペアを見つける
             for (const [currency, data] of Object.entries(currencyData)) {
                 if (data.images.includes(imageName)) {
                     if (currentCurrency !== currency) {
                         currentCurrency = currency;
-                        
-                        // タブの状態更新
-                        document.querySelectorAll('.currency-tab').forEach(tab => {
-                            tab.classList.remove('active');
-                            if (tab.onclick.toString().includes(currency)) {
-                                tab.classList.add('active');
-                            }
-                        });
-                        
+                        updateCurrencyTabs();
                         updateDisplay();
                         updateImageButtons();
                         updateCustomScenarios();
                     }
                     
-                    // 画像ボタンの状態更新
                     document.querySelectorAll('.image-btn').forEach(btn => {
                         btn.classList.remove('active');
                     });
@@ -1356,11 +1643,12 @@
         }
 
         function updatePageInfo() {
+            const totalPages = getTotalPages();
             document.getElementById('currentPage').textContent = currentPageNum;
-            document.getElementById('totalPages').textContent = totalPagesNum;
+            document.getElementById('totalPages').textContent = totalPages;
             
             document.getElementById('prevBtn').disabled = currentPageNum === 1;
-            document.getElementById('nextBtn').disabled = currentPageNum === totalPagesNum;
+            document.getElementById('nextBtn').disabled = currentPageNum === totalPages;
         }
 
         // チャートモーダル
@@ -1396,19 +1684,12 @@
         function shareAnalysis() {
             const data = currencyData[currentCurrency];
             const statusText = {
-                'considering': '🤔 検討中',
-                'skip': '⏭️ 見送り',
-                'missed': '😞 見逃し',
-                'pending': '📋 指値逆指値中',
-                'holding': '💼 保持中',
-                'completed': '✅ 完了'
+                'considering': '🤔 検討中', 'skip': '⏭️ 見送り', 'missed': '😞 見逃し',
+                'pending': '📋 指値逆指値中', 'holding': '💼 保持中', 'completed': '✅ 完了'
             };
             
             const waveText = {
-                'unselected': '未選択',
-                '1h': '1時間足',
-                '4h': '4時間足',
-                '1d': '日足'
+                'unselected': '未選択', '1h': '1時間足', '4h': '4時間足', '1d': '日足'
             };
             
             let shareText = `${data.pair} 分析レポート\n`;
@@ -1436,76 +1717,18 @@
             }
         }
 
-        function saveAnalysis() {
-            // 現在の分析メモを保存
-            currencyData[currentCurrency].memo = document.getElementById('analysisMemo').value;
-            
-            const data = {
-                currency: currentCurrency,
-                currentImage: currentImage,
-                timestamp: new Date().toISOString(),
-                status: currencyData[currentCurrency].status,
-                wave: currencyData[currentCurrency].wave,
-                analysis: currencyData[currentCurrency].memo,
-                customScenarios: currencyData[currentCurrency].customScenarios,
-                hasUploadedImage: !!uploadedImages[currentImage]
-            };
-            
-            localStorage.setItem(`fx_analysis_${currentCurrency}_${currentImage}`, JSON.stringify(data));
-            alert('分析データを保存しました');
-        }
-
-        function exportReport() {
-            // 全ての分析メモを保存
-            Object.keys(currencyData).forEach(currency => {
-                if (currency === currentCurrency) {
-                    currencyData[currency].memo = document.getElementById('analysisMemo').value;
-                }
-            });
-            
-            const reportData = {
-                currencies: currencyData,
-                allImages: allImages,
-                imageStatus: imageStatusMap,
-                uploadedImages: Object.keys(uploadedImages),
-                currentSettings: {
-                    currency: currentCurrency,
-                    image: currentImage,
-                    page: currentPageNum
-                },
-                timestamp: new Date().toISOString(),
-                analyst: 'FX Analysis System'
-            };
-            
-            const blob = new Blob([JSON.stringify(reportData, null, 2)], {
-                type: 'application/json'
-            });
-            
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `fx_analysis_report_${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            
-            URL.revokeObjectURL(url);
-        }
-
         // 自動更新機能
         function updateTimestamp() {
             const now = new Date();
             const timeString = now.toLocaleString('ja-JP', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
             });
             
             document.getElementById('lastUpdate').textContent = timeString;
             document.getElementById('footerUpdate').textContent = timeString;
         }
 
-        // メモの自動保存
         function autoSaveMemo() {
             const currentMemo = document.getElementById('analysisMemo').value;
             currencyData[currentCurrency].memo = currentMemo;
@@ -1516,19 +1739,25 @@
             initializePage();
             updateTimestamp();
             setInterval(updateTimestamp, 300000);
-            
-            // メモの自動保存（5秒ごと）
             setInterval(autoSaveMemo, 5000);
         });
 
-        // モーダル外クリックで閉じる
+        // イベントリスナー
         document.getElementById('chartModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeChartModal();
             }
         });
 
-        // キーボードナビゲーション
+        // モーダル外クリックで閉じる
+        document.querySelectorAll('.management-modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
         document.addEventListener('keydown', function(e) {
             if (e.key === 'ArrowLeft') {
                 previousPage();
@@ -1537,6 +1766,9 @@
             } else if (e.key === 'Escape') {
                 closeChartModal();
                 hideScenarioInput();
+                document.querySelectorAll('.management-modal').forEach(modal => {
+                    modal.classList.remove('active');
+                });
             }
         });
     </script>
