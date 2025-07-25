@@ -220,26 +220,31 @@
             margin-bottom: 8px;
         }
 
-        /* 画像ボタンの基本スタイル - 常に青色で統一（!important で強制） */
-        .image-btn {
-            padding: 8px 16px;
+        /* 画像ボタンの基本スタイル - 常に青色で統一（最強の優先度で強制） */
+        .image-btn,
+        .image-btn:hover,
+        .image-btn:focus,
+        .image-btn:active,
+        .image-btn.selected,
+        .image-btn.active {
+            padding: 8px 16px !important;
             border: 2px solid #4285f4 !important;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 11px;
-            transition: all 0.3s ease;
-            text-align: center;
-            min-width: 80px;
-            font-weight: 600;
-            position: relative;
+            border-radius: 8px !important;
+            cursor: pointer !important;
+            font-size: 11px !important;
+            transition: all 0.3s ease !important;
+            text-align: center !important;
+            min-width: 80px !important;
+            font-weight: 600 !important;
+            position: relative !important;
             background: #4285f4 !important;
             color: white !important;
         }
 
         /* 選択中のシナリオは影で表現（色は変更しない） */
         .image-btn.selected {
-            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4) !important;
+            transform: translateY(-3px) !important;
             background: #4285f4 !important;
             color: white !important;
         }
@@ -853,6 +858,36 @@
             font-size: 12px;
         }
 
+        /* デバッグボタンのスタイル */
+        .debug-buttons {
+            margin-left: 20px;
+        }
+
+        .debug-btn {
+            padding: 5px 10px;
+            font-size: 10px;
+            border: none;
+            border-radius: 3px;
+            margin-right: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .debug-save {
+            background: #007bff;
+            color: white;
+        }
+
+        .debug-check {
+            background: #28a745;
+            color: white;
+        }
+
+        .debug-reset {
+            background: #dc3545;
+            color: white;
+        }
+
         /* モーダル */
         .modal {
             display: none;
@@ -1070,6 +1105,11 @@
                 align-items: flex-start;
                 gap: 4px;
             }
+
+            .debug-buttons {
+                margin-left: 0;
+                margin-top: 10px;
+            }
         }
     </style>
 </head>
@@ -1279,6 +1319,12 @@
                 ページ <span id="currentPage">1</span> / <span id="totalPages">14</span> | 
                 最終更新: <span id="footerUpdate">2025-07-24 14:30</span>
             </div>
+            <!-- デバッグ用ボタン -->
+            <div class="debug-buttons">
+                <button class="debug-btn debug-save" onclick="manualSave()">手動保存</button>
+                <button class="debug-btn debug-check" onclick="checkDataIntegrity()">データ確認</button>
+                <button class="debug-btn debug-reset" onclick="resetAllData()">リセット</button>
+            </div>
         </div>
     </div>
 
@@ -1479,7 +1525,7 @@
 
 具体的で実践的なアドバイスをお願いします。`;
 
-        // 自動保存機能（ポップアップを表示しない）
+        // 自動保存機能（デバッグ情報付き）
         function saveData() {
             const dataToSave = {
                 currencyData: currencyData,
@@ -1491,8 +1537,19 @@
                 lastSaved: new Date().toISOString()
             };
             
-            localStorage.setItem('fx_analysis_data', JSON.stringify(dataToSave));
-            showAutoSaveIndicator();
+            try {
+                localStorage.setItem('fx_analysis_data', JSON.stringify(dataToSave));
+                console.log('データ保存成功:', {
+                    timestamp: dataToSave.lastSaved,
+                    currencyCount: Object.keys(currencyData).length,
+                    totalImages: allImages.length,
+                    currentCurrency: currentCurrency
+                });
+                showAutoSaveIndicator();
+            } catch (error) {
+                console.error('データ保存エラー:', error);
+                alert('データの保存に失敗しました: ' + error.message);
+            }
         }
 
         function loadData() {
@@ -1506,10 +1563,19 @@
                     currentImage = data.currentImage || currentImage;
                     currentPageNum = data.currentPageNum || currentPageNum;
                     uploadedImages = data.uploadedImages || uploadedImages;
-                    console.log('データを復元しました:', data.lastSaved);
+                    
+                    console.log('データ復元成功:', {
+                        timestamp: data.lastSaved,
+                        currencyCount: Object.keys(currencyData).length,
+                        totalImages: allImages.length,
+                        currentCurrency: currentCurrency
+                    });
                 } catch (error) {
                     console.error('データの復元に失敗しました:', error);
+                    alert('保存されたデータの読み込みに失敗しました。初期状態で開始します。');
                 }
+            } else {
+                console.log('保存されたデータが見つかりません。初期状態で開始します。');
             }
         }
 
@@ -1523,6 +1589,38 @@
             return allImages.length;
         }
 
+        // データの整合性をチェックする関数（デバッグ用）
+        function checkDataIntegrity() {
+            console.log('=== データ整合性チェック ===');
+            console.log('通貨ペアデータ:', currencyData);
+            console.log('全画像リスト:', allImages);
+            console.log('アップロード画像:', uploadedImages);
+            console.log('現在の通貨:', currentCurrency);
+            console.log('現在の画像:', currentImage);
+            
+            // 各通貨ペアのカスタムシナリオをチェック
+            Object.keys(currencyData).forEach(currency => {
+                const data = currencyData[currency];
+                console.log(`${currency} のカスタムシナリオ:`, data.customScenarios);
+                console.log(`${currency} の画像:`, data.images);
+                console.log(`${currency} の画像ラベル:`, data.imageLabels);
+            });
+        }
+
+        // 手動保存ボタン（デバッグ用）
+        function manualSave() {
+            saveData();
+            alert('データを手動保存しました。コンソールを確認してください。');
+        }
+
+        // 手動データリセット機能（デバッグ用）
+        function resetAllData() {
+            if (confirm('全てのデータをリセットしますか？この操作は取り消せません。')) {
+                localStorage.removeItem('fx_analysis_data');
+                location.reload();
+            }
+        }
+
         // ページ初期化
         function initializePage() {
             loadData(); // データを復元
@@ -1534,6 +1632,9 @@
             checkAllImageStatus();
             loadFixedPrompt();
             generateCopyText(); // 初期化時にコピーテキストを生成
+            
+            // デバッグ用：データ整合性チェック
+            checkDataIntegrity();
         }
 
         // 固定プロンプトの読み込み
@@ -1637,7 +1738,7 @@
             return statusTexts[status] || '🤔 検討中';
         }
 
-        // 画像ボタンの更新（ステータスに関係なく青色で統一・!important で強制）
+        // 画像ボタンの更新（完全に青色で固定・JavaScriptでもスタイルを強制適用）
         function updateImageButtons() {
             const data = currencyData[currentCurrency];
             const container = document.getElementById('imageButtons');
@@ -1652,14 +1753,50 @@
                 btn.textContent = data.imageLabels[index];
                 btn.onclick = function() { selectImage(this, image); };
                 
+                // JavaScriptでもスタイルを強制適用（CSSの!importantと併用）
+                btn.style.cssText = `
+                    background: #4285f4 !important;
+                    color: white !important;
+                    border: 2px solid #4285f4 !important;
+                    padding: 8px 16px !important;
+                    border-radius: 8px !important;
+                    cursor: pointer !important;
+                    font-size: 11px !important;
+                    transition: all 0.3s ease !important;
+                    text-align: center !important;
+                    min-width: 80px !important;
+                    font-weight: 600 !important;
+                    position: relative !important;
+                `;
+                
                 // 現在選択中の画像は影で表現（色は変更しない）
                 if (image === currentImage) {
                     btn.classList.add('selected');
+                    btn.style.cssText += `
+                        box-shadow: 0 8px 16px rgba(0,0,0,0.4) !important;
+                        transform: translateY(-3px) !important;
+                        background: #4285f4 !important;
+                        color: white !important;
+                    `;
                 }
                 
                 // 画像が見つからない場合のみ色を変更
                 if (imageStatusMap[image] === 'missing') {
                     btn.classList.add('missing');
+                    btn.style.cssText = `
+                        background: #f8d7da !important;
+                        border-color: #dc3545 !important;
+                        color: #721c24 !important;
+                        padding: 8px 16px !important;
+                        border-radius: 8px !important;
+                        cursor: pointer !important;
+                        font-size: 11px !important;
+                        transition: all 0.3s ease !important;
+                        text-align: center !important;
+                        min-width: 80px !important;
+                        font-weight: 600 !important;
+                        position: relative !important;
+                    `;
                     btn.title = '画像が見つかりません';
                 }
                 
@@ -1874,7 +2011,7 @@
             saveData(); // 自動保存
         }
 
-        // シナリオ追加機能
+        // カスタムシナリオ機能（修正版）
         function showScenarioInput() {
             document.getElementById('scenarioInput').style.display = 'block';
             document.getElementById('scenarioTitle').focus();
@@ -1901,22 +2038,39 @@
                 desc: desc
             };
             
+            console.log('カスタムシナリオ追加前:', currencyData[currentCurrency].customScenarios);
+            
+            // カスタムシナリオを追加
             currencyData[currentCurrency].customScenarios.push(scenario);
+            
+            console.log('カスタムシナリオ追加後:', currencyData[currentCurrency].customScenarios);
+            
             updateCustomScenarios();
             hideScenarioInput();
-            generateCopyText(); // シナリオ追加時にコピーテキストを更新
-            saveData(); // 自動保存
+            generateCopyText();
+            
+            // 必ず保存を実行
+            saveData();
+            console.log('カスタムシナリオ保存完了:', scenario);
         }
 
         function deleteScenario(scenarioId) {
             if (confirm('このシナリオを削除しますか？')) {
                 const scenarios = currencyData[currentCurrency].customScenarios;
                 const index = scenarios.findIndex(s => s.id === scenarioId);
+                
+                console.log('カスタムシナリオ削除前:', scenarios);
+                
                 if (index !== -1) {
                     scenarios.splice(index, 1);
+                    console.log('カスタムシナリオ削除後:', scenarios);
+                    
                     updateCustomScenarios();
-                    generateCopyText(); // シナリオ削除時にコピーテキストを更新
-                    saveData(); // 自動保存
+                    generateCopyText();
+                    
+                    // 必ず保存を実行
+                    saveData();
+                    console.log('カスタムシナリオ削除保存完了:', scenarioId);
                 }
             }
         }
@@ -2086,7 +2240,7 @@ ${memo}
             });
         }
 
-        // シナリオ管理機能
+        // シナリオ管理機能（修正版）
         function showAddImageModal() {
             updateCurrencySelectors();
             document.getElementById('addImageModal').classList.add('active');
@@ -2112,12 +2266,14 @@ ${memo}
             reader.onload = function(e) {
                 const imageName = `${currency}_${Date.now()}.${file.name.split('.').pop()}`;
                 
+                // データ構造に追加
                 currencyData[currency].images.push(imageName);
                 currencyData[currency].imageLabels.push(label);
-                currencyData[currency].imageStatuses[imageName] = 'considering'; // 新しい画像のステータスを初期化
+                currencyData[currency].imageStatuses[imageName] = 'considering';
                 allImages.push(imageName);
                 uploadedImages[imageName] = e.target.result;
                 
+                // 現在の通貨ペアの場合は表示を更新
                 if (currentCurrency === currency) {
                     updateImageButtons();
                 }
@@ -2125,7 +2281,10 @@ ${memo}
                 updatePageInfo();
                 closeAddImageModal();
                 showStatus(`${label} を ${currencyData[currency].pair} に追加しました！`, 'success');
-                saveData(); // 自動保存
+                
+                // 必ず保存を実行
+                saveData();
+                console.log('シナリオ追加後のデータ保存完了:', imageName);
             };
             reader.readAsDataURL(file);
         }
@@ -2200,10 +2359,16 @@ ${memo}
                 return;
             }
             
-            // 画像とラベルを削除
+            console.log('削除前のデータ:', {
+                images: [...data.images],
+                imageLabels: [...data.imageLabels],
+                allImages: [...allImages]
+            });
+            
+            // データから削除
             data.images.splice(imageIndex, 1);
             data.imageLabels.splice(imageIndex, 1);
-            delete data.imageStatuses[imageName]; // 画像ステータスも削除
+            delete data.imageStatuses[imageName];
             
             // allImagesからも削除
             const allImageIndex = allImages.indexOf(imageName);
@@ -2214,7 +2379,13 @@ ${memo}
             // アップロード画像も削除
             delete uploadedImages[imageName];
             
-            // 現在の画像が削除された場合、最初の画像に切り替え
+            console.log('削除後のデータ:', {
+                images: [...data.images],
+                imageLabels: [...data.imageLabels],
+                allImages: [...allImages]
+            });
+            
+            // 現在の画像が削除された場合の処理
             if (currentImage === imageName) {
                 if (data.images.length > 0) {
                     currentImage = data.images[0];
@@ -2224,6 +2395,9 @@ ${memo}
                     if (remainingCurrencies.length > 0) {
                         currentCurrency = remainingCurrencies[0];
                         currentImage = currencyData[currentCurrency].images[0];
+                        updateCurrencyTabs();
+                        updateDisplay();
+                        updateCustomScenarios();
                     }
                 }
             }
@@ -2237,7 +2411,10 @@ ${memo}
             updatePageInfo();
             closeDeleteImageModal();
             showStatus(`${scenarioName} を削除しました。`, 'info');
-            saveData(); // 自動保存
+            
+            // 必ず保存を実行
+            saveData();
+            console.log('シナリオ削除後のデータ保存完了:', imageName);
         }
 
         // 通貨ペア管理機能
