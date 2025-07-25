@@ -7,31 +7,33 @@
     
     <!-- Firebase SDK -->
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+      import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBMwI1i8DSnFYSBhz_zv80oGYaRmqvXEzA",
-            authDomain: "fx-analysis-system.firebaseapp.com",
-            databaseURL: "https://fx-analysis-system-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "fx-analysis-system",
-            storageBucket: "fx-analysis-system.firebasestorage.app",
-            messagingSenderId: "286393020262",
-            appId: "1:286393020262:web:eee0ede07040002b4762a7"
-        };
+      // あなたのFirebase設定
+      const firebaseConfig = {
+        apiKey: "AIzaSyBMwI1i8DSnFYSBhz_zv80oGYaRmqvXEzA",
+        authDomain: "fx-analysis-system.firebaseapp.com",
+        databaseURL: "https://fx-analysis-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "fx-analysis-system",
+        storageBucket: "fx-analysis-system.firebasestorage.app",
+        messagingSenderId: "286393020262",
+        appId: "1:286393020262:web:eee0ede07040002b4762a7"
+      };
 
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        
-        // グローバル変数として設定
-        window.firebaseApp = app;
-        window.firebaseDatabase = database;
-        window.firebaseRef = ref;
-        window.firebaseSet = set;
-        window.firebaseGet = get;
-        window.firebaseOnValue = onValue;
-        
-        console.log('Firebase初期化完了');
+      // Firebase を初期化
+      const app = initializeApp(firebaseConfig);
+      const database = getDatabase(app);
+      
+      // グローバル変数として設定
+      window.firebaseApp = app;
+      window.firebaseDatabase = database;
+      window.firebaseRef = ref;
+      window.firebaseSet = set;
+      window.firebaseGet = get;
+      window.firebaseOnValue = onValue;
+      
+      console.log('Firebase初期化完了');
     </script>
     
     <style>
@@ -354,10 +356,6 @@
 
         .auto-save-indicator.show {
             opacity: 1;
-        }
-
-        .auto-save-indicator.error {
-            background: #dc3545;
         }
 
         /* 通貨ペア名表示 */
@@ -886,39 +884,16 @@
             font-size: 13px;
         }
 
-        /* フッター */
-        .footer {
-            background: #f8f9fa;
-            padding: 15px 20px;
-            border-top: 1px solid #e9ecef;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .footer-top {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .page-info {
-            color: #6c757d;
-            font-size: 12px;
-        }
-
         /* 使用量表示エリア */
         .usage-info {
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
-            justify-content: center;
+            margin: 10px 0;
             padding: 10px;
-            background: #e8f4fd;
+            background: #f8f9fa;
             border-radius: 8px;
-            border: 1px solid #007bff;
+            border: 1px solid #e9ecef;
         }
 
         .usage-item {
@@ -946,38 +921,6 @@
 
         .usage-value.danger {
             color: #dc3545;
-        }
-
-        /* デバッグボタンのスタイル */
-        .debug-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            justify-content: center;
-        }
-
-        .debug-btn {
-            padding: 5px 10px;
-            font-size: 10px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .debug-save {
-            background: #007bff;
-            color: white;
-        }
-
-        .debug-check {
-            background: #28a745;
-            color: white;
-        }
-
-        .debug-reset {
-            background: #dc3545;
-            color: white;
         }
 
         /* 詳細使用量モーダル */
@@ -1120,10 +1063,53 @@
             color: white;
         }
 
-        .cleanup-btn:disabled {
-            background: #e9ecef;
+        /* フッター */
+        .footer {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .page-info {
             color: #6c757d;
-            cursor: not-allowed;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        /* デバッグボタンのスタイル */
+        .debug-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .debug-btn {
+            padding: 5px 10px;
+            font-size: 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .debug-save {
+            background: #007bff;
+            color: white;
+        }
+
+        .debug-check {
+            background: #28a745;
+            color: white;
+        }
+
+        .debug-reset {
+            background: #dc3545;
+            color: white;
         }
 
         /* モーダル */
@@ -1344,6 +1330,15 @@
                 gap: 4px;
             }
 
+            .debug-buttons {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .debug-btn {
+                width: 100%;
+            }
+
             .usage-info {
                 flex-direction: column;
                 gap: 8px;
@@ -1353,15 +1348,6 @@
                 flex-direction: row;
                 justify-content: space-between;
                 min-width: auto;
-            }
-            
-            .debug-buttons {
-                flex-direction: column;
-                gap: 5px;
-            }
-            
-            .debug-btn {
-                width: 100%;
             }
         }
     </style>
@@ -1568,11 +1554,9 @@
 
         <!-- フッター -->
         <div class="footer">
-            <div class="footer-top">
-                <div class="page-info">
-                    ページ <span id="currentPage">1</span> / <span id="totalPages">14</span> | 
-                    最終更新: <span id="footerUpdate">2025-07-24 14:30</span>
-                </div>
+            <div class="page-info">
+                ページ <span id="currentPage">1</span> / <span id="totalPages">14</span> | 
+                最終更新: <span id="footerUpdate">2025-07-24 14:30</span>
             </div>
             
             <!-- 使用量表示エリア -->
@@ -1677,7 +1661,7 @@
     <input type="file" id="dataImportFile" accept=".json" style="display: none;" onchange="handleDataImport(event)">
 
     <script>
-        // 画像配列をUSDJPYから開始
+        // 画像配列をUSDJPYから開始（データを保持）
         let allImages = [
             'USDJPY.jpeg',
             'USDJPY2.jpeg',
@@ -1695,7 +1679,7 @@
             'GOLD.png'
         ];
 
-        // 通貨ペアデータ（動的に管理） - 各シナリオごとに独立したステータスを管理
+        // 通貨ペアデータ（データを保持）
         let currencyData = {
             'USDJPY': {
                 pair: 'USD/JPY',
@@ -1802,7 +1786,7 @@
 
 具体的で実践的なアドバイスをお願いします。`;
 
-        // Firebase対応の自動保存機能
+        // Firebase対応のデータ保存機能
         function saveData() {
             const dataToSave = {
                 currencyData: currencyData,
@@ -1929,7 +1913,6 @@
                             updateCustomScenarios();
                             updatePageInfo();
                             generateCopyText();
-                            updateUsageDisplay();
                             
                             localStorage.setItem('last_sync_timestamp', data.lastSaved);
                             showSyncIndicator('他のデバイスから更新');
@@ -2387,13 +2370,6 @@
         function resetAllData() {
             if (confirm('全てのデータをリセットしますか？この操作は取り消せません。')) {
                 localStorage.removeItem('fx_analysis_data');
-                
-                // Firebaseからもデータを削除
-                if (window.firebaseDatabase && window.firebaseRef && window.firebaseSet) {
-                    const userRef = window.firebaseRef(window.firebaseDatabase, 'fx_analysis_data');
-                    window.firebaseSet(userRef, null);
-                }
-                
                 location.reload();
             }
         }
@@ -2496,6 +2472,7 @@
             currentImage = imageName;
             
             updateImageButtons();
+            
             loadCurrentImage();
             updateCurrentImageInfo();
             updateCurrentImageName();
@@ -2643,8 +2620,8 @@
             document.getElementById('currentImageName').textContent = currentImage;
         }
 
-        // 画像アップロード処理（圧縮機能付き）
-        async function handleImageUpload(event) {
+        // 画像アップロード処理
+        function handleImageUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -2653,9 +2630,6 @@
                 return;
             }
 
-            // 画像を圧縮
-            const compressedFile = await compressImage(file);
-            
             const reader = new FileReader();
             reader.onload = function(e) {
                 uploadedImages[currentImage] = e.target.result;
@@ -2664,27 +2638,7 @@
                 updateCurrentImageName();
                 saveData();
             };
-            reader.readAsDataURL(compressedFile);
-        }
-
-        // 画像圧縮機能
-        function compressImage(file, maxWidth = 800, quality = 0.8) {
-            return new Promise((resolve) => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
-                
-                img.onload = function() {
-                    const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
-                    canvas.width = img.width * ratio;
-                    canvas.height = img.height * ratio;
-                    
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    canvas.toBlob(resolve, 'image/jpeg', quality);
-                };
-                
-                img.src = URL.createObjectURL(file);
-            });
+            reader.readAsDataURL(file);
         }
 
         // 元の画像に戻す
@@ -2810,6 +2764,7 @@
             };
             
             currencyData[currentCurrency].customScenarios.push(scenario);
+            
             updateCustomScenarios();
             hideScenarioInput();
             generateCopyText();
@@ -3016,14 +2971,12 @@ ${memo}
             reader.onload = function(e) {
                 const imageName = `${currency}_${Date.now()}.${file.name.split('.').pop()}`;
                 
-                // データ構造に追加
                 currencyData[currency].images.push(imageName);
                 currencyData[currency].imageLabels.push(label);
                 currencyData[currency].imageStatuses[imageName] = 'considering';
                 allImages.push(imageName);
                 uploadedImages[imageName] = e.target.result;
                 
-                // 現在の通貨ペアの場合は表示を更新
                 if (currentCurrency === currency) {
                     updateImageButtons();
                 }
@@ -3049,7 +3002,6 @@ ${memo}
             const currencySelector = document.getElementById('deleteImageCurrency');
             const imageSelector = document.getElementById('deleteImageSelect');
             
-            // 通貨ペア選択肢を更新
             currencySelector.innerHTML = '';
             Object.keys(currencyData).forEach(currency => {
                 const option = document.createElement('option');
@@ -3058,12 +3010,10 @@ ${memo}
                 currencySelector.appendChild(option);
             });
             
-            // 通貨ペア変更時に画像選択肢を更新
             currencySelector.onchange = function() {
                 updateImageSelectOptions();
             };
             
-            // 初期表示時の画像選択肢を更新
             updateImageSelectOptions();
         }
 
@@ -3106,26 +3056,21 @@ ${memo}
                 return;
             }
             
-            // データから削除
             data.images.splice(imageIndex, 1);
             data.imageLabels.splice(imageIndex, 1);
             delete data.imageStatuses[imageName];
             
-            // allImagesからも削除
             const allImageIndex = allImages.indexOf(imageName);
             if (allImageIndex !== -1) {
                 allImages.splice(allImageIndex, 1);
             }
             
-            // アップロード画像も削除
             delete uploadedImages[imageName];
             
-            // 現在の画像が削除された場合の処理
             if (currentImage === imageName) {
                 if (data.images.length > 0) {
                     currentImage = data.images[0];
                 } else {
-                    // 画像がない場合は他の通貨ペアの最初の画像に切り替え
                     const remainingCurrencies = Object.keys(currencyData).filter(c => currencyData[c].images.length > 0);
                     if (remainingCurrencies.length > 0) {
                         currentCurrency = remainingCurrencies[0];
@@ -3137,7 +3082,6 @@ ${memo}
                 }
             }
             
-            // 現在の通貨ペアの場合は表示を更新
             if (currentCurrency === currency) {
                 updateImageButtons();
                 loadCurrentImage();
@@ -3216,7 +3160,6 @@ ${memo}
                 return;
             }
             
-            // 関連画像をallImagesから削除
             currencyData[currency].images.forEach(imageName => {
                 const index = allImages.indexOf(imageName);
                 if (index !== -1) {
@@ -3227,7 +3170,6 @@ ${memo}
             
             delete currencyData[currency];
             
-            // 現在の通貨が削除された場合、最初の通貨に切り替え
             if (currentCurrency === currency) {
                 const remainingCurrencies = Object.keys(currencyData);
                 if (remainingCurrencies.length > 0) {
@@ -3270,4 +3212,251 @@ ${memo}
             updateDisplay();
             updateImageButtons();
             loadCurrentImage();
-            updateCustomScenarios
+            updateCustomScenarios();
+            updatePageInfo();
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            saveData();
+        }
+
+        // ページナビゲーション
+        function nextPage() {
+            const totalPages = getTotalPages();
+            if (currentPageNum < totalPages) {
+                currentPageNum++;
+                const nextImageName = allImages[currentPageNum - 1];
+                switchToImagePage(nextImageName);
+                updatePageInfo();
+            }
+        }
+
+        function previousPage() {
+            if (currentPageNum > 1) {
+                currentPageNum--;
+                const prevImageName = allImages[currentPageNum - 1];
+                switchToImagePage(prevImageName);
+                updatePageInfo();
+            }
+        }
+
+        function switchToImagePage(imageName) {
+            currentImage = imageName;
+            
+            for (const [currency, data] of Object.entries(currencyData)) {
+                if (data.images.includes(imageName)) {
+                    if (currentCurrency !== currency) {
+                        currentCurrency = currency;
+                        updateCurrencyTabs();
+                        updateDisplay();
+                        updateCustomScenarios();
+                    }
+                    
+                    updateImageButtons();
+                    break;
+                }
+            }
+            
+            loadCurrentImage();
+            updateCurrentImageInfo();
+            updateCurrentImageName();
+            generateCopyText();
+            saveData();
+        }
+
+        // ページ情報の更新
+        function updatePageInfo() {
+            const totalPages = getTotalPages();
+            document.getElementById('currentPage').textContent = currentPageNum;
+            document.getElementById('totalPages').textContent = totalPages;
+            
+            document.getElementById('prevBtn').disabled = currentPageNum === 1;
+            document.getElementById('nextBtn').disabled = currentPageNum === totalPages;
+        }
+
+        // チャートモーダル
+        function openChartModal() {
+            const modal = document.getElementById('chartModal');
+            modal.classList.add('active');
+            
+            const modalChart = document.getElementById('modalChart');
+            const chartImage = document.getElementById('chartImage');
+            
+            if (chartImage.style.display !== 'none' && chartImage.src) { if (chartImage.style.display !== 'none' && chartImage.src) {
+                modalChart.src = chartImage.src;
+            } else {
+                modalChart.src = 'data:image/svg+xml;base64,' + btoa(`
+                    <svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#f8f9fa"/>
+                        <text x="400" y="280" text-anchor="middle" font-size="24" fill="#6c757d">
+                            ${currencyData[currentCurrency].pair} チャート
+                        </text>
+                        <text x="400" y="320" text-anchor="middle" font-size="16" fill="#6c757d">
+                            ${currentImage} が見つかりません
+                        </text>
+                    </svg>
+                `);
+            }
+        }
+
+        function closeChartModal() {
+            document.getElementById('chartModal').classList.remove('active');
+        }
+
+        // ユーティリティ関数
+        function shareAnalysis() {
+            const data = currencyData[currentCurrency];
+            const currentImageStatus = data.imageStatuses[currentImage] || 'considering';
+            const statusText = {
+                'considering': '🤔 検討中', 'skip': '⏭️ 見送り', 'missed': '😞 見逃し',
+                'pending': '📋 指値逆指値中', 'holding': '💼 保持中', 'completed': '✅ 完了'
+            };
+            
+            const waveText = {
+                'unselected': '未選択', '1h': '1時間足', '4h': '4時間足', '1d': '日足'
+            };
+            
+            let shareText = `${data.pair} 分析レポート\n`;
+            shareText += `画像: ${currentImage}\n`;
+            shareText += `ステータス: ${statusText[currentImageStatus]}\n`;
+            shareText += `狙う波: ${waveText[data.wave]}\n\n`;
+            shareText += `分析メモ:\n${document.getElementById('analysisMemo').value}\n\n`;
+            
+            if (data.customScenarios.length > 0) {
+                shareText += `カスタムシナリオ:\n`;
+                data.customScenarios.forEach(scenario => {
+                    shareText += `・${scenario.title}: ${scenario.desc}\n`;
+                });
+            }
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: `${data.pair} 分析レポート`,
+                    text: shareText,
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(shareText);
+                alert('分析内容をクリップボードにコピーしました');
+            }
+        }
+
+        // 自動更新機能
+        function updateTimestamp() {
+            const now = new Date();
+            const timeString = now.toLocaleString('ja-JP', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+            
+            document.getElementById('lastUpdate').textContent = timeString;
+            document.getElementById('footerUpdate').textContent = timeString;
+        }
+
+        function autoSaveMemo() {
+            const currentMemo = document.getElementById('analysisMemo').value;
+            currencyData[currentCurrency].memo = currentMemo;
+            generateCopyText();
+            saveData();
+        }
+
+        // データインポート機能
+        function handleDataImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.name.endsWith('.json')) {
+                showStatus('JSONファイルを選択してください。', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    if (!importedData.currencyData || !importedData.allImages) {
+                        throw new Error('無効なデータファイルです。');
+                    }
+                    
+                    if (confirm('現在のデータを上書きしてインポートしますか？\n※現在のデータは失われます。')) {
+                        currencyData = importedData.currencyData;
+                        allImages = importedData.allImages;
+                        currentCurrency = importedData.currentCurrency || 'USDJPY';
+                        currentImage = importedData.currentImage || 'USDJPY.jpeg';
+                        currentPageNum = importedData.currentPageNum || 1;
+                        uploadedImages = importedData.uploadedImages || {};
+                        
+                        updateCurrencyTabs();
+                        updateDisplay();
+                        updateImageButtons();
+                        loadCurrentImage();
+                        updateCustomScenarios();
+                        updatePageInfo();
+                        generateCopyText();
+                        
+                        saveData();
+                        
+                        showStatus(`データのインポートが完了しました。\n出力日時: ${new Date(importedData.exportDate || importedData.backupDate).toLocaleString('ja-JP')}`, 'success');
+                    }
+                } catch (error) {
+                    console.error('インポートエラー:', error);
+                    showStatus('データファイルの読み込みに失敗しました: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+            
+            event.target.value = '';
+        }
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+            updateTimestamp();
+            setInterval(updateTimestamp, 300000);
+            setInterval(autoSaveMemo, 5000);
+        });
+
+        // イベントリスナー
+        document.getElementById('chartModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeChartModal();
+            }
+        });
+
+        // モーダル外クリックで閉じる
+        document.querySelectorAll('.management-modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
+        // 使用量・クリーンアップモーダル外クリックで閉じる
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('usage-modal')) {
+                closeUsageModal();
+            }
+            if (e.target.classList.contains('cleanup-modal')) {
+                closeCleanupModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') {
+                previousPage();
+            } else if (e.key === 'ArrowRight') {
+                nextPage();
+            } else if (e.key === 'Escape') {
+                closeChartModal();
+                hideScenarioInput();
+                document.querySelectorAll('.management-modal').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+                closeUsageModal();
+                closeCleanupModal();
+            }
+        });
+    </script>
+</body>
+</html>
