@@ -90,6 +90,38 @@
             border: 1px solid #e9ecef;
         }
 
+        .currency-selector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .currency-management-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .currency-mgmt-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .add-currency-mgmt-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .delete-currency-mgmt-btn {
+            background: #dc3545;
+            color: white;
+        }
+
         .section-title {
             font-size: 14px;
             font-weight: 600;
@@ -182,7 +214,6 @@
 
         .image-btn {
             padding: 8px 16px;
-            background: #f8f9fa;
             border: 2px solid #dee2e6;
             border-radius: 8px;
             cursor: pointer;
@@ -192,18 +223,60 @@
             min-width: 80px;
             font-weight: 600;
             position: relative;
+            background: #f8f9fa;
+            color: #495057;
         }
 
+        /* 基本の active 状態（選択中） */
         .image-btn.active {
-            background: #28a745;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* 分析ステータス別の色設定 */
+        .image-btn.status-considering {
+            background: #007bff;
             color: white;
-            border-color: #28a745;
+            border-color: #007bff;
+        }
+
+        .image-btn.status-considering.active {
+            background: #0056b3;
+            border-color: #0056b3;
+        }
+
+        .image-btn.status-skip,
+        .image-btn.status-missed,
+        .image-btn.status-completed {
+            background: #6c757d;
+            color: white;
+            border-color: #6c757d;
+        }
+
+        .image-btn.status-skip.active,
+        .image-btn.status-missed.active,
+        .image-btn.status-completed.active {
+            background: #495057;
+            border-color: #495057;
+        }
+
+        .image-btn.status-pending,
+        .image-btn.status-holding {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .image-btn.status-pending.active,
+        .image-btn.status-holding.active {
+            background: #c82333;
+            border-color: #c82333;
         }
 
         .image-btn.missing {
-            background: #f8d7da;
-            border-color: #dc3545;
-            color: #721c24;
+            background: #f8d7da !important;
+            border-color: #dc3545 !important;
+            color: #721c24 !important;
         }
 
         /* 通貨ペア名表示 */
@@ -662,58 +735,13 @@
             color: white;
         }
 
-        /* 管理セクション - 最下部 */
-        .management-sections {
-            margin-top: 40px;
-            border-top: 2px solid #e9ecef;
-            padding-top: 20px;
-        }
-
-        .currency-management {
-            background: #e8f5e8;
-            border: 2px solid #28a745;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 12px;
-        }
-
-        .management-controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .mgmt-btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .add-currency-btn {
-            background: #28a745;
-            color: white;
-        }
-
-        .add-image-btn {
-            background: #007bff;
-            color: white;
-        }
-
-        .delete-currency-btn {
-            background: #dc3545;
-            color: white;
-        }
-
         /* 画像差し替えセクション */
         .image-replacement-section {
             background: #fff3cd;
             border: 2px solid #ffc107;
             padding: 20px;
             border-radius: 12px;
+            margin-top: 40px;
         }
 
         .upload-area {
@@ -854,6 +882,30 @@
             margin-top: 20px;
         }
 
+        .mgmt-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .add-currency-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .add-image-btn {
+            background: #007bff;
+            color: white;
+        }
+
+        .delete-currency-btn {
+            background: #dc3545;
+            color: white;
+        }
+
         /* ステータスメッセージ */
         .status-message {
             padding: 12px;
@@ -931,12 +983,14 @@
                 justify-content: center;
             }
 
-            .scenario-management-buttons {
+            .scenario-management-buttons,
+            .currency-management-buttons {
                 flex-direction: column;
                 gap: 5px;
             }
 
-            .scenario-mgmt-btn {
+            .scenario-mgmt-btn,
+            .currency-mgmt-btn {
                 width: 100%;
             }
         }
@@ -971,7 +1025,13 @@
 
             <!-- 通貨ペア選択 -->
             <div class="currency-selector">
-                <div class="section-title">通貨ペア選択</div>
+                <div class="currency-selector-header">
+                    <div class="section-title">通貨ペア選択</div>
+                    <div class="currency-management-buttons">
+                        <button class="currency-mgmt-btn add-currency-mgmt-btn" onclick="showAddCurrencyModal()">➕ 通貨ペア追加</button>
+                        <button class="currency-mgmt-btn delete-currency-mgmt-btn" onclick="showDeleteCurrencyModal()">🗑️ 通貨ペア削除</button>
+                    </div>
+                </div>
                 <div class="currency-tabs" id="currencyTabs">
                     <!-- JavaScript で動的に生成 -->
                 </div>
@@ -1104,38 +1164,23 @@
                 </div>
             </div>
 
-            <!-- 管理セクション -->
-            <div class="management-sections">
-                <!-- 通貨ペア管理セクション -->
-                <div class="currency-management">
-                    <h3>🔧 通貨ペア・画像管理</h3>
-                    <div class="management-controls">
-                        <button class="mgmt-btn add-currency-btn" onclick="showAddCurrencyModal()">➕ 通貨ペア追加</button>
-                        <button class="mgmt-btn delete-currency-btn" onclick="showDeleteCurrencyModal()">🗑️ 通貨ペア削除</button>
-                    </div>
-                    <p style="font-size: 12px; color: #6c757d;">
-                        通貨ペアの追加・削除が可能です
+            <!-- 画像差し替えセクション -->
+            <div class="image-replacement-section">
+                <h3>🔄 画像の簡単差し替え機能</h3>
+                <div class="upload-area">
+                    <p><strong>📷 画像ファイルをアップロード</strong></p>
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                    <button class="upload-btn" onclick="document.getElementById('imageUpload').click()">
+                        ファイルを選択
+                    </button>
+                    <button class="upload-btn" onclick="resetToOriginal()">
+                        元の画像に戻す
+                    </button>
+                    <p style="font-size: 11px; color: #6c757d; margin-top: 10px;">
+                        現在の画像: <span id="currentImageName">USDJPY.jpeg</span>
                     </p>
                 </div>
-
-                <!-- 画像差し替えセクション -->
-                <div class="image-replacement-section">
-                    <h3>🔄 画像の簡単差し替え機能</h3>
-                    <div class="upload-area">
-                        <p><strong>📷 画像ファイルをアップロード</strong></p>
-                        <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
-                        <button class="upload-btn" onclick="document.getElementById('imageUpload').click()">
-                            ファイルを選択
-                        </button>
-                        <button class="upload-btn" onclick="resetToOriginal()">
-                            元の画像に戻す
-                        </button>
-                        <p style="font-size: 11px; color: #6c757d; margin-top: 10px;">
-                            現在の画像: <span id="currentImageName">USDJPY.jpeg</span>
-                        </p>
-                    </div>
-                    <div id="uploadStatus"></div>
-                </div>
+                <div id="uploadStatus"></div>
             </div>
         </div>
 
@@ -1405,12 +1450,8 @@
         function selectImage(element, imageName) {
             currentImage = imageName;
             
-            // 全てのボタンのactiveクラスを削除
-            document.querySelectorAll('.image-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            // 選択されたボタンにactiveクラスを追加
-            element.classList.add('active');
+            // 画像ボタンを再描画して選択状態を反映
+            updateImageButtons();
             
             loadCurrentImage();
             updateCurrentImageInfo();
@@ -1423,7 +1464,7 @@
             }
         }
 
-        // 画像ボタンの更新（現在の通貨ペアのシナリオボタンのみ色変更）
+        // 画像ボタンの更新（完全に新しい実装）
         function updateImageButtons() {
             const data = currencyData[currentCurrency];
             const container = document.getElementById('imageButtons');
@@ -1435,14 +1476,15 @@
                 btn.textContent = data.imageLabels[index];
                 btn.onclick = function() { selectImage(this, image); };
                 
+                // 分析ステータスに応じてクラスを追加
+                btn.classList.add(`status-${data.status}`);
+                
                 // 現在選択中の画像かどうかチェック
                 if (image === currentImage) {
                     btn.classList.add('active');
                 }
                 
-                // 分析ステータスに応じて色を変更（現在の通貨ペアのみ）
-                applyStatusColor(btn, data.status, image === currentImage);
-                
+                // 画像が見つからない場合
                 if (imageStatusMap[image] === 'missing') {
                     btn.classList.add('missing');
                     btn.title = '画像が見つかりません';
@@ -1450,40 +1492,6 @@
                 
                 container.appendChild(btn);
             });
-        }
-
-        // ステータスに応じた色を適用
-        function applyStatusColor(btn, status, isActive) {
-            // デフォルトの色をリセット
-            btn.style.backgroundColor = '';
-            btn.style.color = '';
-            btn.style.borderColor = '';
-            
-            if (status === 'skip' || status === 'missed' || status === 'completed') {
-                btn.style.backgroundColor = '#6c757d';
-                btn.style.color = 'white';
-                btn.style.borderColor = '#6c757d';
-                if (isActive) {
-                    btn.style.backgroundColor = '#495057';
-                    btn.style.borderColor = '#495057';
-                }
-            } else if (status === 'pending' || status === 'holding') {
-                btn.style.backgroundColor = '#dc3545';
-                btn.style.color = 'white';
-                btn.style.borderColor = '#dc3545';
-                if (isActive) {
-                    btn.style.backgroundColor = '#c82333';
-                    btn.style.borderColor = '#c82333';
-                }
-            } else if (status === 'considering') {
-                btn.style.backgroundColor = '#007bff';
-                btn.style.color = 'white';
-                btn.style.borderColor = '#007bff';
-                if (isActive) {
-                    btn.style.backgroundColor = '#0056b3';
-                    btn.style.borderColor = '#0056b3';
-                }
-            }
         }
 
         // 現在の画像を読み込み
@@ -2144,7 +2152,6 @@ ${memo}`;
                         currentCurrency = currency;
                         updateCurrencyTabs();
                         updateDisplay();
-                        updateImageButtons();
                         updateCustomScenarios();
                     }
                     
