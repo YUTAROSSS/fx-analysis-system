@@ -86,11 +86,17 @@
         
         .last-sync-info { position: fixed; bottom: 10px; right: 10px; padding: 5px 10px; background: rgba(0,0,0,0.7); color: white; border-radius: 5px; font-size: 10px; z-index: 1000; }
         
+        /* デバッグ情報表示用 */
+        .debug-overlay { display: none; position: fixed; top: 50px; left: 10px; right: 10px; background: rgba(0,0,0,0.9); color: white; padding: 15px; border-radius: 8px; z-index: 3000; max-height: 70vh; overflow-y: auto; font-size: 12px; font-family: monospace; }
+        .debug-overlay.active { display: block; }
+        .debug-close { position: absolute; top: 10px; right: 15px; background: #dc3545; color: white; border: none; border-radius: 3px; padding: 5px 10px; cursor: pointer; font-size: 12px; }
+        
         @media (max-width: 767px) {
             .header h1 { font-size: 16px; }
             .btn { font-size: 11px; padding: 5px 10px; }
             .main-content { padding: 15px; }
             .currency-pair { font-size: 22px; }
+            .mgmt-btn { font-size: 10px; padding: 5px 8px; margin: 2px; }
         }
     </style>
 </head>
@@ -98,6 +104,12 @@
     <div class="container">
         <div class="sync-status" id="syncStatus">接続確認中...</div>
         <div class="last-sync-info" id="lastSyncInfo">最終同期: 未実行</div>
+        
+        <!-- デバッグオーバーレイ -->
+        <div class="debug-overlay" id="debugOverlay">
+            <button class="debug-close" onclick="closeDebugOverlay()">×</button>
+            <div id="debugContent"></div>
+        </div>
         
         <div class="header">
             <h1>🔍 FX通貨ペア分析システム</h1>
@@ -142,6 +154,7 @@
                     <button class="mgmt-btn" style="background: #28a745; color: white;" onclick="manualSave()">手動保存</button>
                     <button class="mgmt-btn" style="background: #6f42c1; color: white;" onclick="addTestScenario()">テストシナリオ追加</button>
                     <button class="mgmt-btn" style="background: #fd7e14; color: white;" onclick="forceSync()">強制同期</button>
+                    <button class="mgmt-btn" style="background: #e83e8c; color: white;" onclick="mobileDebug()">📱 スマホデバッグ</button>
                     <button class="mgmt-btn" style="background: #ffc107; color: #212529;" onclick="showCurrentData()">現在データ表示</button>
                     <button class="mgmt-btn" style="background: #dc3545; color: white;" onclick="resetAllData()">完全リセット</button>
                 </div>
@@ -195,6 +208,19 @@
         let isConnected = false;
         let realtimeListener = null;
         let lastSyncTimestamp = 0;
+        let debugLog = []; // デバッグログを保存
+
+        function logDebug(message, data = null) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = { timestamp, message, data };
+            debugLog.push(logEntry);
+            console.log(`[${timestamp}] ${message}`, data || '');
+            
+            // ログが100件を超えたら古いものを削除
+            if (debugLog.length > 100) {
+                debugLog.shift();
+            }
+        }
 
         function updateSyncStatus(status, message) {
             const statusDiv = document.getElementById('syncStatus');
@@ -202,7 +228,8 @@
             statusDiv.className = `sync-status ${status}`;
             isConnected = (status === 'connected' || status === 'listening');
             
-            // 最終同期時刻を更新
+            logDebug(`同期ステータス更新: ${status} - ${message}`);
+            
             if (status === 'connected') {
                 updateLastSyncInfo();
             }
@@ -213,15 +240,116 @@
             const timeString = now.toLocaleTimeString('ja-JP');
             document.getElementById('lastSyncInfo').textContent = `最終同期: ${timeString}`;
             lastSyncTimestamp = Date.now();
+            logDebug('最終同期時刻更新', timeString);
+        }
+
+        // 📱 スマホデバッグ機能
+        function mobileDebug() {
+            logDebug('スマホデバッグ開始');
+            
+            const debugInfo = {
+                基本情報: {
+                    Firebase接続: isConnected ? '✅ 接続中' : '❌ 未接続',
+                    デバイスID: appState.deviceId.substr(-8),
+                    最終更新: new Date(appState.lastUpdate).toLocaleString('ja-JP'),
+                    現在通貨: appState.currentCurrency,
+                    現在シナリオ: appState.currentScenario
+                },
+                データ状況: {
+                    通貨ペア数: Object.keys(appState.currencies).length,
+                    総シナリオ数: Object.values(appState.scenarios).flat().length,
+                    現在通貨のシナリオ数: appState.scenarios[appState.currentCurrency]?.length || 0,
+                    シナリオラベル数: Object.keys(appState.scenarioLabels).length
+                },
+                技術情報: {
+                    Firebase利用可能: !!window.firebaseDatabase ? '✅' : '❌',
+                    リアルタイム同期: !!realtimeListener ? '✅' : '❌',
+                    ローカルストレージ: localStorage.getItem('fxAppState') ? '✅' : '❌',
+                    最終同期: lastSyncTimestamp ? new Date(lastSyncTimestamp).toLocaleTimeString() : '未実行'
+                },
+                現在のシナリオ一覧: appState.scenarios[appState.currentCurrency]?.map(key => 
+                    appState.scenarioLabels[key] || key
+                ) || []
+            };
+
+            // アラートで基本情報を表示
+            let alertMessage = '=== 📱 スマホデバッグ情報 ===\n\n';
+            alertMessage += `🔗 Firebase: ${debugInfo.基本情報.Firebase接続}\n`;
+            alertMessage += `📱 デバイス: ...${debugInfo.基本情報.デバイスID}\n`;
+            alertMessage += `⏰ 最終更新: ${debugInfo.基本情報.最終更新}\n`;
+            alertMessage += `💱 現在通貨: ${debugInfo.基本情報.現在通貨}\n`;
+            alertMessage += `📊 シナリオ数: ${debugInfo.データ状況.現在通貨のシナリオ数}個\n\n`;
+            alertMessage += `🔧 技術状況:\n`;
+            alertMessage += `Firebase: ${debugInfo.技術情報.Firebase利用可能}\n`;
+            alertMessage += `リアルタイム: ${debugInfo.技術情報.リアルタイム同期}\n`;
+            alertMessage += `ローカル: ${debugInfo.技術情報.ローカルストレージ}\n\n`;
+            alertMessage += `📋 現在のシナリオ:\n${debugInfo.現在のシナリオ一覧.join(', ')}`;
+
+            alert(alertMessage);
+
+            // 詳細情報をオーバーレイで表示
+            showDebugOverlay(debugInfo);
+        }
+
+        function showDebugOverlay(debugInfo) {
+            const overlay = document.getElementById('debugOverlay');
+            const content = document.getElementById('debugContent');
+            
+            let html = '<h3>📱 詳細デバッグ情報</h3>';
+            
+            // 基本情報
+            html += '<h4>🔧 基本情報</h4>';
+            Object.entries(debugInfo.基本情報).forEach(([key, value]) => {
+                html += `<div><strong>${key}:</strong> ${value}</div>`;
+            });
+            
+            // データ状況
+            html += '<h4>📊 データ状況</h4>';
+            Object.entries(debugInfo.データ状況).forEach(([key, value]) => {
+                html += `<div><strong>${key}:</strong> ${value}</div>`;
+            });
+            
+            // 技術情報
+            html += '<h4>⚙️ 技術情報</h4>';
+            Object.entries(debugInfo.技術情報).forEach(([key, value]) => {
+                html += `<div><strong>${key}:</strong> ${value}</div>`;
+            });
+            
+            // 現在のシナリオ
+            html += '<h4>📋 現在のシナリオ一覧</h4>';
+            debugInfo.現在のシナリオ一覧.forEach((scenario, index) => {
+                html += `<div>${index + 1}. ${scenario}</div>`;
+            });
+            
+            // 最近のログ
+            html += '<h4>📝 最近のログ (最新10件)</h4>';
+            const recentLogs = debugLog.slice(-10);
+            recentLogs.forEach(log => {
+                html += `<div style="font-size: 10px; margin: 2px 0;">[${log.timestamp}] ${log.message}</div>`;
+            });
+            
+            // アクションボタン
+            html += '<div style="margin-top: 15px;">';
+            html += '<button onclick="forceSync()" style="margin: 5px; padding: 8px 12px; background: #fd7e14; color: white; border: none; border-radius: 4px;">🔄 強制同期</button>';
+            html += '<button onclick="testFirebaseConnection()" style="margin: 5px; padding: 8px 12px; background: #17a2b8; color: white; border: none; border-radius: 4px;">🔗 接続テスト</button>';
+            html += '<button onclick="manualSave()" style="margin: 5px; padding: 8px 12px; background: #28a745; color: white; border: none; border-radius: 4px;">💾 手動保存</button>';
+            html += '</div>';
+            
+            content.innerHTML = html;
+            overlay.classList.add('active');
+        }
+
+        function closeDebugOverlay() {
+            document.getElementById('debugOverlay').classList.remove('active');
         }
 
         // Firebase接続テスト
         function testFirebaseConnection() {
-            console.log('🔧 Firebase接続テスト開始...');
+            logDebug('Firebase接続テスト開始');
             updateSyncStatus('syncing', 'テスト中...');
             
             if (!window.firebaseDatabase) {
-                console.error('❌ Firebase未初期化');
+                logDebug('Firebase未初期化');
                 updateSyncStatus('disconnected', 'Firebase未初期化');
                 return;
             }
@@ -235,23 +363,21 @@
 
             window.firebaseSet(testRef, testData)
                 .then(() => {
-                    console.log('✅ Firebase書き込み成功');
+                    logDebug('Firebase書き込み成功');
                     return window.firebaseGet(testRef);
                 })
                 .then(snapshot => {
                     if (snapshot.exists()) {
-                        console.log('✅ Firebase読み込み成功:', snapshot.val());
+                        logDebug('Firebase読み込み成功', snapshot.val());
                         updateSyncStatus('connected', 'Firebase接続OK');
-                        
-                        // 接続成功後、リアルタイム同期を開始
                         setupRealtimeSync();
                     } else {
-                        console.log('❌ データ読み込み失敗');
+                        logDebug('データ読み込み失敗');
                         updateSyncStatus('disconnected', '読み込み失敗');
                     }
                 })
                 .catch(error => {
-                    console.error('❌ Firebase操作失敗:', error);
+                    logDebug('Firebase操作失敗', error);
                     updateSyncStatus('disconnected', '接続エラー: ' + error.message);
                 });
         }
@@ -259,7 +385,7 @@
         // リアルタイム同期の設定
         function setupRealtimeSync() {
             if (!window.firebaseDatabase || !isConnected) {
-                console.log('⚠️ Firebase未接続 - リアルタイム同期をスキップ');
+                logDebug('Firebase未接続 - リアルタイム同期をスキップ');
                 return;
             }
 
@@ -267,7 +393,7 @@
             if (realtimeListener) {
                 const rootRef = window.firebaseRef(window.firebaseDatabase, 'fxApp');
                 window.firebaseOff(rootRef, 'value', realtimeListener);
-                console.log('📴 既存のリスナーを削除');
+                logDebug('既存のリスナーを削除');
             }
 
             const rootRef = window.firebaseRef(window.firebaseDatabase, 'fxApp');
@@ -275,13 +401,18 @@
             realtimeListener = window.firebaseOnValue(rootRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const remoteData = snapshot.val();
-                    console.log('🔄 リアルタイム更新受信:', remoteData);
+                    logDebug('リアルタイム更新受信', {
+                        remoteDeviceId: remoteData.deviceId?.substr(-8),
+                        remoteLastUpdate: new Date(remoteData.lastUpdate).toLocaleTimeString(),
+                        currentDeviceId: appState.deviceId.substr(-8),
+                        currentLastUpdate: new Date(appState.lastUpdate).toLocaleTimeString()
+                    });
                     
                     // 自分のデバイスからの更新でない場合のみ適用
                     if (remoteData.deviceId !== appState.deviceId && 
                         remoteData.lastUpdate > appState.lastUpdate) {
                         
-                        console.log('📥 他デバイスからの更新を適用');
+                        logDebug('他デバイスからの更新を適用');
                         
                         // データを更新
                         if (remoteData.scenarios) appState.scenarios = remoteData.scenarios;
@@ -298,21 +429,21 @@
                         localStorage.setItem('fxAppState', JSON.stringify(appState));
                     }
                 } else {
-                    console.log('📭 Firebaseデータなし');
+                    logDebug('Firebaseデータなし');
                 }
             }, (error) => {
-                console.error('❌ リアルタイム同期エラー:', error);
+                logDebug('リアルタイム同期エラー', error);
                 updateSyncStatus('disconnected', 'リアルタイム同期エラー');
             });
 
             updateSyncStatus('listening', 'リアルタイム同期中');
-            console.log('✅ リアルタイム同期開始');
+            logDebug('リアルタイム同期開始');
         }
 
         // データ保存（デバイスID付き）
         function saveData() {
             return new Promise((resolve, reject) => {
-                console.log('💾 データ保存開始...');
+                logDebug('データ保存開始');
                 updateSyncStatus('syncing', '保存中...');
 
                 // タイムスタンプ更新
@@ -321,9 +452,9 @@
                 // ローカル保存
                 try {
                     localStorage.setItem('fxAppState', JSON.stringify(appState));
-                    console.log('✅ ローカル保存完了');
+                    logDebug('ローカル保存完了');
                 } catch (error) {
-                    console.error('❌ ローカル保存失敗:', error);
+                    logDebug('ローカル保存失敗', error);
                     updateSyncStatus('disconnected', 'ローカル保存失敗');
                     reject(error);
                     return;
@@ -343,17 +474,17 @@
                     const rootRef = window.firebaseRef(window.firebaseDatabase, 'fxApp');
                     window.firebaseSet(rootRef, updates)
                         .then(() => {
-                            console.log('✅ Firebase保存完了');
+                            logDebug('Firebase保存完了');
                             updateSyncStatus('connected', '保存完了');
                             resolve();
                         })
                         .catch(error => {
-                            console.error('❌ Firebase保存失敗:', error);
+                            logDebug('Firebase保存失敗', error);
                             updateSyncStatus('connected', 'ローカル保存のみ完了');
                             resolve();
                         });
                 } else {
-                    console.log('⚠️ Firebase未接続 - ローカルのみ保存');
+                    logDebug('Firebase未接続 - ローカルのみ保存');
                     updateSyncStatus('disconnected', 'ローカルのみ保存');
                     resolve();
                 }
@@ -362,7 +493,7 @@
 
         // 強制同期
         function forceSync() {
-            console.log('🔄 強制同期開始...');
+            logDebug('強制同期開始');
             updateSyncStatus('syncing', '強制同期中...');
             
             if (!window.firebaseDatabase) {
@@ -375,7 +506,11 @@
                 .then(snapshot => {
                     if (snapshot.exists()) {
                         const remoteData = snapshot.val();
-                        console.log('📥 リモートデータ取得:', remoteData);
+                        logDebug('リモートデータ取得', {
+                            remoteDeviceId: remoteData.deviceId?.substr(-8),
+                            remoteLastUpdate: new Date(remoteData.lastUpdate).toLocaleTimeString(),
+                            scenarioCount: Object.values(remoteData.scenarios || {}).flat().length
+                        });
                         
                         // リモートデータを強制適用
                         if (remoteData.scenarios) appState.scenarios = remoteData.scenarios;
@@ -395,12 +530,12 @@
                         setupRealtimeSync();
                         
                     } else {
-                        console.log('📭 リモートデータなし');
+                        logDebug('リモートデータなし');
                         updateSyncStatus('disconnected', 'リモートデータなし');
                     }
                 })
                 .catch(error => {
-                    console.error('❌ 強制同期失敗:', error);
+                    logDebug('強制同期失敗', error);
                     updateSyncStatus('disconnected', '強制同期失敗');
                 });
         }
@@ -418,9 +553,12 @@
                         appState.deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                     }
                     
-                    console.log('✅ ローカルデータ読み込み完了');
+                    logDebug('ローカルデータ読み込み完了', {
+                        deviceId: appState.deviceId.substr(-8),
+                        scenarioCount: Object.values(appState.scenarios).flat().length
+                    });
                 } catch (error) {
-                    console.error('❌ ローカルデータ読み込み失敗:', error);
+                    logDebug('ローカルデータ読み込み失敗', error);
                 }
             }
             updateUI();
@@ -522,6 +660,12 @@
             
             appState.currentScenario = scenarioKey;
             
+            logDebug('新しいシナリオ追加', {
+                name: scenarioName,
+                key: scenarioKey,
+                currency: appState.currentCurrency
+            });
+            
             updateUI();
             saveData();
             closeAddScenarioModal();
@@ -570,12 +714,14 @@
             if (e.target.classList.contains('modal')) {
                 e.target.classList.remove('active');
             }
+            if (e.target.classList.contains('debug-overlay')) {
+                closeDebugOverlay();
+            }
         });
 
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 FXアプリ初期化開始');
-            console.log('デバイスID:', appState.deviceId);
+            logDebug('FXアプリ初期化開始', { deviceId: appState.deviceId.substr(-8) });
             
             // データ読み込み
             loadData();
@@ -588,7 +734,7 @@
             // 定期的な同期チェック（30秒ごと）
             setInterval(() => {
                 if (isConnected && Date.now() - lastSyncTimestamp > 30000) {
-                    console.log('🔄 定期同期チェック実行');
+                    logDebug('定期同期チェック実行');
                     forceSync();
                 }
             }, 30000);
@@ -599,14 +745,14 @@
             if (realtimeListener && window.firebaseDatabase) {
                 const rootRef = window.firebaseRef(window.firebaseDatabase, 'fxApp');
                 window.firebaseOff(rootRef, 'value', realtimeListener);
-                console.log('📴 ページ終了時にリスナーをクリーンアップ');
+                logDebug('ページ終了時にリスナーをクリーンアップ');
             }
         });
 
         // ページが再表示された時にリアルタイム同期を再開
         document.addEventListener('visibilitychange', function() {
             if (!document.hidden && isConnected) {
-                console.log('👁️ ページが再表示 - 強制同期実行');
+                logDebug('ページが再表示 - 強制同期実行');
                 setTimeout(() => {
                     forceSync();
                 }, 500);
