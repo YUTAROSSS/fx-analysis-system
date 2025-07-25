@@ -212,7 +212,15 @@
             }
         }
 
-        /* 画像ボタンの基本スタイル - 各シナリオ独立で色分け */
+        /* シナリオボタンとステータス表示のコンテナ */
+        .scenario-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        /* 画像ボタンの基本スタイル */
         .image-btn {
             padding: 8px 16px;
             border: 2px solid #dee2e6;
@@ -224,20 +232,80 @@
             min-width: 80px;
             font-weight: 600;
             position: relative;
-            color: white !important;
+            background: #4285f4;
+            color: white;
         }
 
         /* 選択中のシナリオは影で表現 */
         .image-btn.selected {
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            transform: translateY(-3px);
         }
 
-        /* 画像が見つからない場合（最優先） */
+        /* 画像が見つからない場合 */
         .image-btn.missing {
             background: #f8d7da !important;
             border-color: #dc3545 !important;
             color: #721c24 !important;
+        }
+
+        /* ステータス表示ラベル */
+        .status-label {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        .status-considering {
+            background: #007bff;
+            color: white;
+        }
+
+        .status-skip {
+            background: #6c757d;
+            color: white;
+        }
+
+        .status-missed {
+            background: #6c757d;
+            color: white;
+        }
+
+        .status-pending {
+            background: #dc3545;
+            color: white;
+        }
+
+        .status-holding {
+            background: #dc3545;
+            color: white;
+        }
+
+        .status-completed {
+            background: #6c757d;
+            color: white;
+        }
+
+        /* 自動保存インジケーター */
+        .auto-save-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 12px;
+            background: #28a745;
+            color: white;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .auto-save-indicator.show {
+            opacity: 1;
         }
 
         /* 通貨ペア名表示 */
@@ -311,7 +379,7 @@
             padding: 20px;
         }
 
-        /* チャート周辺のナビゲーション - 常に3つのボタンを表示 */
+        /* チャート周辺のナビゲーション */
         .chart-navigation {
             display: flex;
             justify-content: center;
@@ -347,7 +415,7 @@
             transform: none;
         }
 
-        /* トップへ戻るボタン - 常に表示 */
+        /* トップへ戻るボタン */
         .return-top-btn {
             padding: 10px 20px;
             background: #28a745;
@@ -655,12 +723,12 @@
             padding: 10px 20px;
         }
 
-        /* テキストコピーエリア */
+        /* テキストコピーエリア - ChatGPT分析ボタンの下に表示 */
         .copy-text-area {
             background: #f8f9fa;
             border: 2px solid #28a745;
             padding: 20px;
-            margin-top: 20px;
+            margin-top: 15px;
             border-radius: 12px;
             display: none;
         }
@@ -976,11 +1044,22 @@
             .currency-mgmt-btn {
                 width: 100%;
             }
+
+            .scenario-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- 自動保存インジケーター -->
+        <div class="auto-save-indicator" id="autoSaveIndicator">
+            💾 データを自動保存しました
+        </div>
+
         <!-- ヘッダー -->
         <div class="header">
             <h1>🔍 FX通貨ペア分析システム</h1>
@@ -991,21 +1070,6 @@
 
         <!-- メインコンテンツ -->
         <div class="main-content">
-            <!-- テキストコピーエリア -->
-            <div class="copy-text-area" id="copyTextArea">
-                <h3>📋 ChatGPT用テキスト</h3>
-                <p style="font-size: 12px; color: #6c757d; margin-bottom: 10px;">
-                    以下のテキストをコピーしてChatGPTに貼り付けてください
-                </p>
-                <textarea class="copy-textarea" id="copyTextarea" readonly></textarea>
-                <div class="copy-controls">
-                    <button class="copy-btn copy-all-btn" onclick="copyAllText()">📋 全文コピー</button>
-                    <button class="copy-btn copy-memo-btn" onclick="copyMemoOnly()">📝 分析メモのみコピー</button>
-                    <button class="copy-btn copy-scenarios-btn" onclick="copyScenariosOnly()">🎯 シナリオのみコピー</button>
-                    <button class="copy-btn close-copy-btn" onclick="closeCopyArea()">✕ 閉じる</button>
-                </div>
-            </div>
-
             <!-- 通貨ペア選択 -->
             <div class="currency-selector">
                 <div class="currency-selector-header">
@@ -1052,7 +1116,7 @@
                     <img id="chartImage" class="chart-image" style="display: none;" alt="チャート画像">
                 </div>
                 
-                <!-- チャート周辺のナビゲーション - 常に3つのボタンを表示 -->
+                <!-- チャート周辺のナビゲーション -->
                 <div class="chart-navigation">
                     <button class="chart-nav-btn" onclick="previousPage()" id="prevBtn" disabled>
                         ← 前のチャート
@@ -1144,6 +1208,21 @@
                                 <button class="prompt-btn save-prompt-btn" onclick="saveFixedPrompt()">💾 プロンプト保存</button>
                                 <button class="prompt-btn reset-prompt-btn" onclick="resetFixedPrompt()">🔄 デフォルトに戻す</button>
                                 <button class="prompt-btn chatgpt-analysis-btn" onclick="sendToChatGPTBrowser()">🤖 ChatGPT分析</button>
+                            </div>
+                            
+                            <!-- テキストコピーエリア - ChatGPT分析ボタンの下に配置 -->
+                            <div class="copy-text-area" id="copyTextArea">
+                                <h3>📋 ChatGPT用テキスト</h3>
+                                <p style="font-size: 12px; color: #6c757d; margin-bottom: 10px;">
+                                    以下のテキストをコピーしてChatGPTに貼り付けてください
+                                </p>
+                                <textarea class="copy-textarea" id="copyTextarea" readonly></textarea>
+                                <div class="copy-controls">
+                                    <button class="copy-btn copy-all-btn" onclick="copyAllText()">📋 全文コピー</button>
+                                    <button class="copy-btn copy-memo-btn" onclick="copyMemoOnly()">📝 分析メモのみコピー</button>
+                                    <button class="copy-btn copy-scenarios-btn" onclick="copyScenariosOnly()">🎯 シナリオのみコピー</button>
+                                    <button class="copy-btn close-copy-btn" onclick="closeCopyArea()">✕ 閉じる</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1376,6 +1455,48 @@
 
 具体的で実践的なアドバイスをお願いします。`;
 
+        // 自動保存機能
+        function saveData() {
+            const dataToSave = {
+                currencyData: currencyData,
+                allImages: allImages,
+                currentCurrency: currentCurrency,
+                currentImage: currentImage,
+                currentPageNum: currentPageNum,
+                uploadedImages: uploadedImages,
+                lastSaved: new Date().toISOString()
+            };
+            
+            localStorage.setItem('fx_analysis_data', JSON.stringify(dataToSave));
+            showAutoSaveIndicator();
+        }
+
+        function loadData() {
+            const savedData = localStorage.getItem('fx_analysis_data');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    currencyData = data.currencyData || currencyData;
+                    allImages = data.allImages || allImages;
+                    currentCurrency = data.currentCurrency || currentCurrency;
+                    currentImage = data.currentImage || currentImage;
+                    currentPageNum = data.currentPageNum || currentPageNum;
+                    uploadedImages = data.uploadedImages || uploadedImages;
+                    console.log('データを復元しました:', data.lastSaved);
+                } catch (error) {
+                    console.error('データの復元に失敗しました:', error);
+                }
+            }
+        }
+
+        function showAutoSaveIndicator() {
+            const indicator = document.getElementById('autoSaveIndicator');
+            indicator.classList.add('show');
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+        }
+
         // 動的に総ページ数を計算
         function getTotalPages() {
             return allImages.length;
@@ -1383,6 +1504,7 @@
 
         // ページ初期化
         function initializePage() {
+            loadData(); // データを復元
             updateCurrencyTabs();
             updateDisplay();
             updatePageInfo();
@@ -1456,6 +1578,7 @@
             updateImageButtons();
             loadCurrentImage();
             updateCustomScenarios();
+            saveData(); // 自動保存
         }
 
         // 画像選択
@@ -1474,39 +1597,36 @@
                 currentPageNum = imageIndex + 1;
                 updatePageInfo();
             }
+            saveData(); // 自動保存
         }
 
-        // 分析ステータスに基づく色を取得
-        function getStatusColor(status) {
-            const statusColors = {
-                'considering': '#007bff',    // 青
-                'skip': '#6c757d',          // グレー
-                'missed': '#6c757d',        // グレー  
-                'pending': '#dc3545',       // 赤
-                'holding': '#dc3545',       // 赤
-                'completed': '#6c757d'      // グレー
+        // ステータステキストの取得
+        function getStatusText(status) {
+            const statusTexts = {
+                'considering': '🤔 検討中',
+                'skip': '⏭️ 見送り',
+                'missed': '😞 見逃し',
+                'pending': '📋 指値逆指値中',
+                'holding': '💼 保持中',
+                'completed': '✅ 完了'
             };
-            return statusColors[status] || '#007bff';
+            return statusTexts[status] || '🤔 検討中';
         }
 
-        // 画像ボタンの更新（各シナリオ独立版）
+        // 画像ボタンの更新（ステータス表示付き）
         function updateImageButtons() {
             const data = currencyData[currentCurrency];
             const container = document.getElementById('imageButtons');
             container.innerHTML = '';
             
             data.images.forEach((image, index) => {
+                const scenarioItem = document.createElement('div');
+                scenarioItem.className = 'scenario-item';
+                
                 const btn = document.createElement('div');
                 btn.className = 'image-btn';
                 btn.textContent = data.imageLabels[index];
                 btn.onclick = function() { selectImage(this, image); };
-                
-                // 各シナリオ独立の分析ステータスに基づいて色を設定
-                const imageStatus = data.imageStatuses[image] || 'considering';
-                const statusColor = getStatusColor(imageStatus);
-                
-                btn.style.backgroundColor = statusColor;
-                btn.style.borderColor = statusColor;
                 
                 // 現在選択中の画像は影で表現
                 if (image === currentImage) {
@@ -1519,7 +1639,15 @@
                     btn.title = '画像が見つかりません';
                 }
                 
-                container.appendChild(btn);
+                // ステータスラベルを作成
+                const imageStatus = data.imageStatuses[image] || 'considering';
+                const statusLabel = document.createElement('div');
+                statusLabel.className = `status-label status-${imageStatus}`;
+                statusLabel.textContent = getStatusText(imageStatus);
+                
+                scenarioItem.appendChild(btn);
+                scenarioItem.appendChild(statusLabel);
+                container.appendChild(scenarioItem);
             });
         }
 
@@ -1622,6 +1750,7 @@
                 displayUploadedImage(e.target.result);
                 showStatus(`${currentImage} が正常にアップロードされました！`, 'success');
                 updateCurrentImageName();
+                saveData(); // 自動保存
             };
             reader.readAsDataURL(file);
         }
@@ -1632,6 +1761,7 @@
                 delete uploadedImages[currentImage];
                 loadCurrentImage();
                 showStatus(`${currentImage} を元の画像に戻しました。`, 'info');
+                saveData(); // 自動保存
             } else {
                 showStatus('アップロードされた画像がありません。', 'error');
             }
@@ -1703,8 +1833,9 @@
             // 現在の画像のステータスのみ更新
             currencyData[currentCurrency].imageStatuses[currentImage] = status;
             
-            // 画像ボタンの色を更新
+            // 画像ボタンの表示を更新
             updateImageButtons();
+            saveData(); // 自動保存
         }
 
         // 狙う波設定
@@ -1714,6 +1845,7 @@
             });
             element.classList.add('active');
             currencyData[currentCurrency].wave = wave;
+            saveData(); // 自動保存
         }
 
         // シナリオ追加機能
@@ -1746,6 +1878,7 @@
             currencyData[currentCurrency].customScenarios.push(scenario);
             updateCustomScenarios();
             hideScenarioInput();
+            saveData(); // 自動保存
         }
 
         function deleteScenario(scenarioId) {
@@ -1755,6 +1888,7 @@
                 if (index !== -1) {
                     scenarios.splice(index, 1);
                     updateCustomScenarios();
+                    saveData(); // 自動保存
                 }
             }
         }
@@ -1794,9 +1928,6 @@
             
             // 全文を生成
             generateCopyText();
-            
-            // スクロールしてコピーエリアを表示
-            copyArea.scrollIntoView({ behavior: 'smooth' });
         }
 
         // コピー用テキストを生成
@@ -1855,11 +1986,16 @@ ${document.getElementById('analysisMemo').value || '記載なし'}
         function copyAllText() {
             const textarea = document.getElementById('copyTextarea');
             textarea.select();
-            document.execCommand('copy');
-            showStatus('全文をクリップボードにコピーしました', 'success');
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                showStatus('全文をクリップボードにコピーしました', 'success');
+            }).catch(() => {
+                // フォールバック
+                document.execCommand('copy');
+                showStatus('全文をクリップボードにコピーしました', 'success');
+            });
         }
 
-        // 分析メモのみコピー
+        // 分析メモのみコピー（修正版）
         function copyMemoOnly() {
             const memo = document.getElementById('analysisMemo').value || '記載なし';
             const fixedPrompt = document.getElementById('fixedPrompt').value || defaultFixedPrompt;
@@ -1870,14 +2006,25 @@ ${document.getElementById('analysisMemo').value || '記載なし'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📝 **${data.pair} 分析メモ**
-${memo}`;
+${memo}
+
+**注意**: この後にチャート画像をアップロードしますので、画像と合わせて総合的な分析をお願いします。`;
 
             navigator.clipboard.writeText(memoText).then(() => {
+                showStatus('分析メモをクリップボードにコピーしました', 'success');
+            }).catch(() => {
+                // フォールバック
+                const textarea = document.createElement('textarea');
+                textarea.value = memoText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
                 showStatus('分析メモをクリップボードにコピーしました', 'success');
             });
         }
 
-        // シナリオのみコピー
+        // シナリオのみコピー（修正版）
         function copyScenariosOnly() {
             const data = currencyData[currentCurrency];
             const fixedPrompt = document.getElementById('fixedPrompt').value || defaultFixedPrompt;
@@ -1896,7 +2043,18 @@ ${memo}`;
                 scenarioText += '設定されたカスタムシナリオはありません。';
             }
 
+            scenarioText += `\n**注意**: この後にチャート画像をアップロードしますので、画像と合わせて総合的な分析をお願いします。`;
+
             navigator.clipboard.writeText(scenarioText).then(() => {
+                showStatus('カスタムシナリオをクリップボードにコピーしました', 'success');
+            }).catch(() => {
+                // フォールバック
+                const textarea = document.createElement('textarea');
+                textarea.value = scenarioText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
                 showStatus('カスタムシナリオをクリップボードにコピーしました', 'success');
             });
         }
@@ -1940,6 +2098,7 @@ ${memo}`;
                 updatePageInfo();
                 closeAddImageModal();
                 showStatus(`${label} を ${currencyData[currency].pair} に追加しました！`, 'success');
+                saveData(); // 自動保存
             };
             reader.readAsDataURL(file);
         }
@@ -2051,6 +2210,7 @@ ${memo}`;
             updatePageInfo();
             closeDeleteImageModal();
             showStatus(`${scenarioName} を削除しました。`, 'info');
+            saveData(); // 自動保存
         }
 
         // 通貨ペア管理機能
@@ -2096,6 +2256,7 @@ ${memo}`;
             updateCurrencySelectors();
             closeAddCurrencyModal();
             showStatus(`${display} を追加しました！`, 'success');
+            saveData(); // 自動保存
         }
 
         function showDeleteCurrencyModal() {
@@ -2142,6 +2303,7 @@ ${memo}`;
             updatePageInfo();
             closeDeleteCurrencyModal();
             showStatus(`通貨ペアを削除しました。`, 'info');
+            saveData(); // 自動保存
         }
 
         function updateCurrencySelectors() {
@@ -2177,6 +2339,7 @@ ${memo}`;
             
             // スクロールをトップに戻す
             window.scrollTo({ top: 0, behavior: 'smooth' });
+            saveData(); // 自動保存
         }
 
         // ページナビゲーション
@@ -2221,9 +2384,10 @@ ${memo}`;
             loadCurrentImage();
             updateCurrentImageInfo();
             updateCurrentImageName();
+            saveData(); // 自動保存
         }
 
-        // ページ情報の更新（常に3つのボタンを表示）
+        // ページ情報の更新
         function updatePageInfo() {
             const totalPages = getTotalPages();
             document.getElementById('currentPage').textContent = currentPageNum;
@@ -2316,6 +2480,7 @@ ${memo}`;
         function autoSaveMemo() {
             const currentMemo = document.getElementById('analysisMemo').value;
             currencyData[currentCurrency].memo = currentMemo;
+            saveData(); // メモ変更時も自動保存
         }
 
         // ページ読み込み時の初期化
