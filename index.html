@@ -2145,4 +2145,359 @@ ${memo}
             
             const scenarioName = data.imageLabels[imageIndex];
             
-            if (!confirm(`${currencyData[currency].pair} の「${scenarioName}」を削除しますか？\nこの操作は取り消せません
+            if (!confirm(`${currencyData[currency].pair} の「${scenarioName}」を削除しますか？\nこの操作は取り消せません。`)) {
+                return;
+            }
+            
+            // 画像とラベルを削除
+            data.images.splice(imageIndex, 1);
+            data.imageLabels.splice(imageIndex, 1);
+            delete data.imageStatuses[imageName]; // 画像ステータスも削除
+            
+            // allImagesからも削除
+            const allImageIndex = allImages.indexOf(imageName);
+            if (allImageIndex !== -1) {
+                allImages.splice(allImageIndex, 1);
+            }
+            
+            // アップロード画像も削除
+            delete uploadedImages[imageName];
+            
+            // 現在の画像が削除された場合、最初の画像に切り替え
+            if (currentImage === imageName) {
+                if (data.images.length > 0) {
+                    currentImage = data.images[0];
+                } else {
+                    // 画像がない場合は他の通貨ペアの最初の画像に切り替え
+                    const remainingCurrencies = Object.keys(currencyData).filter(c => currencyData[c].images.length > 0);
+                    if (remainingCurrencies.length > 0) {
+                        currentCurrency = remainingCurrencies[0];
+                        currentImage = currencyData[currentCurrency].images[0];
+                    }
+                }
+            }
+            
+            // 現在の通貨ペアの場合は表示を更新
+            if (currentCurrency === currency) {
+                updateImageButtons();
+                loadCurrentImage();
+            }
+            
+            updatePageInfo();
+            closeDeleteImageModal();
+            showStatus(`${scenarioName} を削除しました。`, 'info');
+            saveData(); // 自動保存
+        }
+
+        // 通貨ペア管理機能
+        function showAddCurrencyModal() {
+            document.getElementById('addCurrencyModal').classList.add('active');
+        }
+
+        function closeAddCurrencyModal() {
+            document.getElementById('addCurrencyModal').classList.remove('active');
+            document.getElementById('newCurrencyName').value = '';
+            document.getElementById('newCurrencyDisplay').value = '';
+            document.getElementById('newCurrencyTimeframe').value = '';
+        }
+
+        function addNewCurrency() {
+            const name = document.getElementById('newCurrencyName').value.trim().toUpperCase();
+            const display = document.getElementById('newCurrencyDisplay').value.trim();
+            const timeframe = document.getElementById('newCurrencyTimeframe').value.trim();
+            
+            if (!name || !display || !timeframe) {
+                alert('全ての項目を入力してください。');
+                return;
+            }
+            
+            if (currencyData[name]) {
+                alert('この通貨ペアは既に存在します。');
+                return;
+            }
+            
+            currencyData[name] = {
+                pair: display,
+                status: 'considering',
+                wave: 'unselected',
+                timeframe: timeframe,
+                images: [],
+                imageLabels: [],
+                imageStatuses: {},
+                memo: '',
+                customScenarios: []
+            };
+            
+            updateCurrencyTabs();
+            updateCurrencySelectors();
+            closeAddCurrencyModal();
+            showStatus(`${display} を追加しました！`, 'success');
+            saveData(); // 自動保存
+        }
+
+        function showDeleteCurrencyModal() {
+            updateCurrencySelectors();
+            document.getElementById('deleteCurrencyModal').classList.add('active');
+        }
+
+        function closeDeleteCurrencyModal() {
+            document.getElementById('deleteCurrencyModal').classList.remove('active');
+        }
+
+        function deleteCurrency() {
+            const currency = document.getElementById('deleteCurrency').value;
+            
+            if (!currency) {
+                alert('削除する通貨ペアを選択してください。');
+                return;
+            }
+            
+            if (!confirm(`${currencyData[currency].pair} を完全に削除しますか？\nこの操作は取り消せません。`)) {
+                return;
+            }
+            
+            // 関連画像をallImagesから削除
+            currencyData[currency].images.forEach(imageName => {
+                const index = allImages.indexOf(imageName);
+                if (index !== -1) {
+                    allImages.splice(index, 1);
+                }
+                delete uploadedImages[imageName];
+            });
+            
+            delete currencyData[currency];
+            
+            // 現在の通貨が削除された場合、最初の通貨に切り替え
+            if (currentCurrency === currency) {
+                const remainingCurrencies = Object.keys(currencyData);
+                if (remainingCurrencies.length > 0) {
+                    selectCurrency(remainingCurrencies[0]);
+                }
+            }
+            
+            updateCurrencyTabs();
+            updatePageInfo();
+            closeDeleteCurrencyModal();
+            showStatus(`通貨ペアを削除しました。`, 'info');
+            saveData(); // 自動保存
+        }
+
+        function updateCurrencySelectors() {
+            const selectors = ['targetCurrency', 'deleteCurrency'];
+            
+            selectors.forEach(selectorId => {
+                const selector = document.getElementById(selectorId);
+                if (selector) {
+                    selector.innerHTML = '';
+                    
+                    Object.keys(currencyData).forEach(currency => {
+                        const option = document.createElement('option');
+                        option.value = currency;
+                        option.textContent = currencyData[currency].pair;
+                        selector.appendChild(option);
+                    });
+                }
+            });
+        }
+
+        // トップへ戻る関数
+        function returnToTop() {
+            currentPageNum = 1;
+            currentCurrency = 'USDJPY';
+            currentImage = 'USDJPY.jpeg';
+            
+            updateCurrencyTabs();
+            updateDisplay();
+            updateImageButtons();
+            loadCurrentImage();
+            updateCustomScenarios();
+            updatePageInfo();
+            
+            // スクロールをトップに戻す
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            saveData(); // 自動保存
+        }
+
+        // ページナビゲーション
+        function nextPage() {
+            const totalPages = getTotalPages();
+            if (currentPageNum < totalPages) {
+                currentPageNum++;
+                const nextImageName = allImages[currentPageNum - 1];
+                switchToImagePage(nextImageName);
+                updatePageInfo();
+            }
+        }
+
+        function previousPage() {
+            if (currentPageNum > 1) {
+                currentPageNum--;
+                const prevImageName = allImages[currentPageNum - 1];
+                switchToImagePage(prevImageName);
+                updatePageInfo();
+            }
+        }
+
+        function switchToImagePage(imageName) {
+            currentImage = imageName;
+            
+            for (const [currency, data] of Object.entries(currencyData)) {
+                if (data.images.includes(imageName)) {
+                    if (currentCurrency !== currency) {
+                        currentCurrency = currency;
+                        updateCurrencyTabs();
+                        updateDisplay();
+                        updateCustomScenarios();
+                    }
+                    
+                    // 画像ボタンの選択状態を更新
+                    updateImageButtons();
+                    
+                    break;
+                }
+            }
+            
+            loadCurrentImage();
+            updateCurrentImageInfo();
+            updateCurrentImageName();
+            generateCopyText(); // ページ切り替え時にコピーテキストを更新
+            saveData(); // 自動保存
+        }
+
+        // ページ情報の更新
+        function updatePageInfo() {
+            const totalPages = getTotalPages();
+            document.getElementById('currentPage').textContent = currentPageNum;
+            document.getElementById('totalPages').textContent = totalPages;
+            
+            // 前へボタンと次へボタンの状態を更新
+            document.getElementById('prevBtn').disabled = currentPageNum === 1;
+            document.getElementById('nextBtn').disabled = currentPageNum === totalPages;
+        }
+
+        // チャートモーダル
+        function openChartModal() {
+            const modal = document.getElementById('chartModal');
+            modal.classList.add('active');
+            
+            const modalChart = document.getElementById('modalChart');
+            const chartImage = document.getElementById('chartImage');
+            
+            if (chartImage.style.display !== 'none' && chartImage.src) {
+                modalChart.src = chartImage.src;
+            } else {
+                modalChart.src = 'data:image/svg+xml;base64,' + btoa(`
+                    <svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#f8f9fa"/>
+                        <text x="400" y="280" text-anchor="middle" font-size="24" fill="#6c757d">
+                            ${currencyData[currentCurrency].pair} チャート
+                        </text>
+                        <text x="400" y="320" text-anchor="middle" font-size="16" fill="#6c757d">
+                            ${currentImage} が見つかりません
+                        </text>
+                    </svg>
+                `);
+            }
+        }
+
+        function closeChartModal() {
+            document.getElementById('chartModal').classList.remove('active');
+        }
+
+        // ユーティリティ関数
+        function shareAnalysis() {
+            const data = currencyData[currentCurrency];
+            const currentImageStatus = data.imageStatuses[currentImage] || 'considering';
+            const statusText = {
+                'considering': '🤔 検討中', 'skip': '⏭️ 見送り', 'missed': '😞 見逃し',
+                'pending': '📋 指値逆指値中', 'holding': '💼 保持中', 'completed': '✅ 完了'
+            };
+            
+            const waveText = {
+                'unselected': '未選択', '1h': '1時間足', '4h': '4時間足', '1d': '日足'
+            };
+            
+            let shareText = `${data.pair} 分析レポート\n`;
+            shareText += `画像: ${currentImage}\n`;
+            shareText += `ステータス: ${statusText[currentImageStatus]}\n`;
+            shareText += `狙う波: ${waveText[data.wave]}\n\n`;
+            shareText += `分析メモ:\n${document.getElementById('analysisMemo').value}\n\n`;
+            
+            if (data.customScenarios.length > 0) {
+                shareText += `カスタムシナリオ:\n`;
+                data.customScenarios.forEach(scenario => {
+                    shareText += `・${scenario.title}: ${scenario.desc}\n`;
+                });
+            }
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: `${data.pair} 分析レポート`,
+                    text: shareText,
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(shareText);
+                alert('分析内容をクリップボードにコピーしました');
+            }
+        }
+
+        // 自動更新機能
+        function updateTimestamp() {
+            const now = new Date();
+            const timeString = now.toLocaleString('ja-JP', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+            
+            document.getElementById('lastUpdate').textContent = timeString;
+            document.getElementById('footerUpdate').textContent = timeString;
+        }
+
+        function autoSaveMemo() {
+            const currentMemo = document.getElementById('analysisMemo').value;
+            currencyData[currentCurrency].memo = currentMemo;
+            generateCopyText(); // メモ変更時にコピーテキストを更新
+            saveData(); // メモ変更時も自動保存
+        }
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+            updateTimestamp();
+            setInterval(updateTimestamp, 300000);
+            setInterval(autoSaveMemo, 5000);
+        });
+
+        // イベントリスナー
+        document.getElementById('chartModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeChartModal();
+            }
+        });
+
+        // モーダル外クリックで閉じる
+        document.querySelectorAll('.management-modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') {
+                previousPage();
+            } else if (e.key === 'ArrowRight') {
+                nextPage();
+            } else if (e.key === 'Escape') {
+                closeChartModal();
+                hideScenarioInput();
+                document.querySelectorAll('.management-modal').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
