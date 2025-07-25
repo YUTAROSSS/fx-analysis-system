@@ -212,6 +212,7 @@
             }
         }
 
+        /* 画像ボタンの基本スタイル */
         .image-btn {
             padding: 8px 16px;
             border: 2px solid #dee2e6;
@@ -223,59 +224,60 @@
             min-width: 80px;
             font-weight: 600;
             position: relative;
-            background: #f8f9fa;
-            color: #495057;
+            background: #f8f9fa !important;
+            color: #495057 !important;
         }
 
-        /* 基本の active 状態（選択中）の共通設定 */
-        .image-btn.active {
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        /* 分析ステータス別の色設定 */
+        /* 分析ステータス別の色設定（!importantで確実に適用） */
         /* 検討中 - 青 */
         .image-btn.status-considering {
-            background: #007bff;
-            color: white;
-            border-color: #007bff;
+            background: #007bff !important;
+            color: white !important;
+            border-color: #007bff !important;
         }
 
         .image-btn.status-considering.active {
-            background: #0056b3;
-            border-color: #0056b3;
+            background: #0056b3 !important;
+            border-color: #0056b3 !important;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         /* 見逃し、見送り、完了 - グレー */
         .image-btn.status-missed,
         .image-btn.status-skip,
         .image-btn.status-completed {
-            background: #6c757d;
-            color: white;
-            border-color: #6c757d;
+            background: #6c757d !important;
+            color: white !important;
+            border-color: #6c757d !important;
         }
 
         .image-btn.status-missed.active,
         .image-btn.status-skip.active,
         .image-btn.status-completed.active {
-            background: #495057;
-            border-color: #495057;
+            background: #495057 !important;
+            border-color: #495057 !important;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         /* 指値逆指値中、保持中 - 赤 */
         .image-btn.status-pending,
         .image-btn.status-holding {
-            background: #dc3545;
-            color: white;
-            border-color: #dc3545;
+            background: #dc3545 !important;
+            color: white !important;
+            border-color: #dc3545 !important;
         }
 
         .image-btn.status-pending.active,
         .image-btn.status-holding.active {
-            background: #c82333;
-            border-color: #c82333;
+            background: #c82333 !important;
+            border-color: #c82333 !important;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
+        /* 画像が見つからない場合（最優先） */
         .image-btn.missing {
             background: #f8d7da !important;
             border-color: #dc3545 !important;
@@ -1488,7 +1490,7 @@
             }
         }
 
-        // 画像ボタンの更新（修正版）
+        // 画像ボタンの更新（完全修正版）
         function updateImageButtons() {
             const data = currencyData[currentCurrency];
             const container = document.getElementById('imageButtons');
@@ -1500,7 +1502,11 @@
                 btn.textContent = data.imageLabels[index];
                 btn.onclick = function() { selectImage(this, image); };
                 
-                // 分析ステータスに応じてクラスを追加
+                // まず基本クラスを設定
+                btn.classList.add('image-btn');
+                
+                // 分析ステータスに応じてクラスを追加（確実に適用）
+                btn.classList.remove('status-considering', 'status-skip', 'status-missed', 'status-pending', 'status-holding', 'status-completed');
                 btn.classList.add(`status-${data.status}`);
                 
                 // 現在選択中の画像かどうかチェック
@@ -1685,7 +1691,7 @@
             updateCurrentImageName();
         }
 
-        // ステータス設定（画像ボタンの色も更新）
+        // ステータス設定（画像ボタンの色も更新）- 修正版
         function setStatus(element, status) {
             document.querySelectorAll('.status-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -1693,7 +1699,7 @@
             element.classList.add('active');
             currencyData[currentCurrency].status = status;
             
-            // 画像ボタンの色を更新
+            // 画像ボタンの色を更新（修正版）
             updateImageButtons();
         }
 
