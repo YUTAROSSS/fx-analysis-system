@@ -220,10 +220,10 @@
             margin-bottom: 8px;
         }
 
-        /* 画像ボタンの基本スタイル - 常に青色で統一 */
+        /* 画像ボタンの基本スタイル - 常に青色で統一（!important で強制） */
         .image-btn {
             padding: 8px 16px;
-            border: 2px solid #dee2e6;
+            border: 2px solid #4285f4 !important;
             border-radius: 8px;
             cursor: pointer;
             font-size: 11px;
@@ -232,14 +232,16 @@
             min-width: 80px;
             font-weight: 600;
             position: relative;
-            background: #4285f4;
-            color: white;
+            background: #4285f4 !important;
+            color: white !important;
         }
 
         /* 選択中のシナリオは影で表現（色は変更しない） */
         .image-btn.selected {
             box-shadow: 0 8px 16px rgba(0,0,0,0.4);
             transform: translateY(-3px);
+            background: #4285f4 !important;
+            color: white !important;
         }
 
         /* 画像が見つからない場合のみ色を変更 */
@@ -723,13 +725,36 @@
             padding: 10px 20px;
         }
 
-        /* テキストコピーエリア - 常時表示 */
+        /* 折り畳み可能なテキストコピーエリア */
+        .copy-text-toggle {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 15px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .copy-text-toggle:hover {
+            background: #218838;
+        }
+
         .copy-text-area {
             background: #f8f9fa;
             border: 2px solid #28a745;
             padding: 20px;
             margin-top: 15px;
             border-radius: 12px;
+            display: none;
+        }
+
+        .copy-text-area.active {
+            display: block;
         }
 
         .copy-textarea {
@@ -774,6 +799,11 @@
         .copy-scenarios-btn {
             background: #ffc107;
             color: #212529;
+        }
+
+        .close-copy-btn {
+            background: #6c757d;
+            color: white;
         }
 
         /* 画像差し替えセクション */
@@ -1200,8 +1230,12 @@
                                 <button class="prompt-btn chatgpt-analysis-btn" onclick="sendToChatGPTBrowser()">🤖 ChatGPT分析</button>
                             </div>
                             
-                            <!-- テキストコピーエリア - 常時表示 -->
-                            <div class="copy-text-area">
+                            <!-- 折り畳み可能なテキストコピーエリア -->
+                            <button class="copy-text-toggle" onclick="toggleCopyTextArea()">
+                                📋 ChatGPT用テキストを表示/非表示
+                            </button>
+                            
+                            <div class="copy-text-area" id="copyTextArea">
                                 <h3>📋 ChatGPT用テキスト</h3>
                                 <p style="font-size: 12px; color: #6c757d; margin-bottom: 10px;">
                                     以下のテキストをコピーしてChatGPTに貼り付けてください
@@ -1211,6 +1245,7 @@
                                     <button class="copy-btn copy-all-btn" onclick="copyAllText()">📋 全文コピー</button>
                                     <button class="copy-btn copy-memo-btn" onclick="copyMemoOnly()">📝 分析メモのみコピー</button>
                                     <button class="copy-btn copy-scenarios-btn" onclick="copyScenariosOnly()">🎯 シナリオのみコピー</button>
+                                    <button class="copy-btn close-copy-btn" onclick="closeCopyArea()">✕ 閉じる</button>
                                 </div>
                             </div>
                         </div>
@@ -1602,7 +1637,7 @@
             return statusTexts[status] || '🤔 検討中';
         }
 
-        // 画像ボタンの更新（ステータスに関係なく青色で統一）
+        // 画像ボタンの更新（ステータスに関係なく青色で統一・!important で強制）
         function updateImageButtons() {
             const data = currencyData[currentCurrency];
             const container = document.getElementById('imageButtons');
@@ -1628,7 +1663,7 @@
                     btn.title = '画像が見つかりません';
                 }
                 
-                // ステータスラベルを作成（色は変更しない）
+                // ステータスラベルを作成
                 const imageStatus = data.imageStatuses[image] || 'considering';
                 const statusLabel = document.createElement('div');
                 statusLabel.className = `status-label status-${imageStatus}`;
@@ -1911,6 +1946,22 @@
             showStatus('ChatGPTが新しいタブで開かれました。下記のテキストをコピーして貼り付けてください。', 'success');
         }
 
+        // テキストコピーエリアの表示/非表示切り替え
+        function toggleCopyTextArea() {
+            const copyArea = document.getElementById('copyTextArea');
+            if (copyArea.classList.contains('active')) {
+                copyArea.classList.remove('active');
+            } else {
+                copyArea.classList.add('active');
+                generateCopyText(); // 表示時にテキストを生成
+            }
+        }
+
+        // テキストコピーエリアを閉じる
+        function closeCopyArea() {
+            document.getElementById('copyTextArea').classList.remove('active');
+        }
+
         // コピー用テキストを生成
         function generateCopyText() {
             const data = currencyData[currentCurrency];
@@ -1971,7 +2022,7 @@ ${document.getElementById('analysisMemo').value || '記載なし'}
             });
         }
 
-        // 分析メモのみコピー
+        // 分析メモのみコピー（修正版）
         function copyMemoOnly() {
             const memo = document.getElementById('analysisMemo').value || '記載なし';
             const fixedPrompt = document.getElementById('fixedPrompt').value || defaultFixedPrompt;
@@ -2000,7 +2051,7 @@ ${memo}
             });
         }
 
-        // シナリオのみコピー
+        // シナリオのみコピー（修正版）
         function copyScenariosOnly() {
             const data = currencyData[currentCurrency];
             const fixedPrompt = document.getElementById('fixedPrompt').value || defaultFixedPrompt;
