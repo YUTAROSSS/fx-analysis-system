@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FX通貨ペア分析管理システム</title>
+    <title>FX通貨ペア分析システム</title>
     
     <!-- Firebase SDK -->
     <script type="module">
       import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-      import { getDatabase, ref, set, get, onValue, off } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+      import { getDatabase, ref, set, get, onValue, push } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
       const firebaseConfig = {
         apiKey: "AIzaSyBMwI1i8DSnFYSBhz_zv80oGYaRmqvXEzA",
@@ -29,7 +29,7 @@
         window.firebaseSet = set;
         window.firebaseGet = get;
         window.firebaseOnValue = onValue;
-        window.firebaseOff = off;
+        window.firebasePush = push;
         console.log('✅ Firebase初期化成功');
       } catch (error) {
         console.error('❌ Firebase初期化エラー:', error);
@@ -68,16 +68,20 @@
         
         .status-label { padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; white-space: nowrap; }
         .status-considering { background: #007bff; color: white; }
-        .status-skip { background: #6c757d; color: white; }
-        .status-missed { background: #6c757d; color: white; }
-        .status-pending { background: #dc3545; color: white; }
-        .status-holding { background: #dc3545; color: white; }
-        .status-completed { background: #6c757d; color: white; }
         
         .sync-status { position: fixed; top: 10px; right: 20px; padding: 8px 12px; border-radius: 6px; font-size: 12px; z-index: 1000; }
         .sync-status.connected { background: #28a745; color: white; }
         .sync-status.disconnected { background: #dc3545; color: white; }
         .sync-status.syncing { background: #ffc107; color: #212529; }
+        
+        .currency-display { text-align: center; margin: 20px 0; font-size: 24px; font-weight: 700; color: #2c3e50; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 100%; }
+        .modal h3 { margin-bottom: 20px; color: #2c3e50; }
+        .modal input { width: 100%; padding: 12px; border: 1px solid #dee2e6; border-radius: 6px; margin-bottom: 15px; font-size: 14px; }
+        .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -114,7 +118,10 @@
                 <div class="image-buttons" id="imageButtons"></div>
             </div>
             
-            <!-- デバッグボタン -->
+            <!-- 通貨ペア表示 -->
+            <div class="currency-display" id="currencyDisplay">USD/JPY</div>
+            
+            <!-- テスト機能 -->
             <div class="section">
                 <div class="section-header">
                     <div class="section-title">🔧 テスト機能</div>
@@ -122,48 +129,66 @@
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <button class="mgmt-btn" style="background: #17a2b8; color: white;" onclick="testFirebaseConnection()">Firebase接続テスト</button>
                     <button class="mgmt-btn" style="background: #28a745; color: white;" onclick="manualSave()">手動保存</button>
-                    <button class="mgmt-btn" style="background: #6f42c1; color: white;" onclick="forceSyncData()">強制同期</button>
+                    <button class="mgmt-btn" style="background: #6f42c1; color: white;" onclick="addTestScenario()">テストシナリオ追加</button>
+                    <button class="mgmt-btn" style="background: #ffc107; color: #212529;" onclick="showCurrentData()">現在データ表示</button>
                     <button class="mgmt-btn" style="background: #dc3545; color: white;" onclick="resetAllData()">完全リセット</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- シナリオ追加モーダル -->
+    <div class="modal" id="addScenarioModal">
+        <div class="modal-content">
+            <h3>➕ シナリオ追加</h3>
+            <input type="text" id="newScenarioName" placeholder="シナリオ名 (例: シナリオ4)">
+            <div class="modal-buttons">
+                <button class="mgmt-btn" style="background: #6c757d; color: white;" onclick="closeAddScenarioModal()">キャンセル</button>
+                <button class="mgmt-btn add-btn" onclick="addNewScenario()">追加</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // シンプルなデータ構造に変更
-        let appData = {
-            currencies: {
-                USDJPY: { 
-                    pair: "USD/JPY", 
-                    images: ["USDJPY.jpeg", "USDJPY2.jpeg", "USDJPY3.jpeg"],
-                    labels: ["シナリオ1", "シナリオ2", "シナリオ3"]
-                },
-                EURUSD: { 
-                    pair: "EUR/USD", 
-                    images: ["EURUSD.jpeg", "EURUSD2.jpeg"],
-                    labels: ["シナリオ1", "シナリオ2"]
-                },
-                GBPUSD: { 
-                    pair: "GBP/USD", 
-                    images: ["GBPUSD.jpeg", "GBPUSD2.jpeg", "GBPUSD3.jpeg", "GBPUSD4.jpeg"],
-                    labels: ["シナリオ1", "シナリオ2", "シナリオ3", "シナリオ4"]
-                }
-            },
+        // 非常にシンプルなデータ構造
+        let appState = {
             currentCurrency: "USDJPY",
-            currentImage: "USDJPY.jpeg",
-            lastUpdated: Date.now()
+            currentScenario: "scenario1",
+            currencies: {
+                USDJPY: "USD/JPY",
+                EURUSD: "EUR/USD", 
+                GBPUSD: "GBP/USD",
+                AUDUSD: "AUD/USD",
+                SILVER: "SILVER",
+                GOLD: "GOLD"
+            },
+            scenarios: {
+                USDJPY: ["scenario1", "scenario2", "scenario3"],
+                EURUSD: ["scenario1", "scenario2"],
+                GBPUSD: ["scenario1", "scenario2", "scenario3", "scenario4"],
+                AUDUSD: ["scenario1", "scenario2"],
+                SILVER: ["scenario1", "scenario2"],
+                GOLD: ["scenario1"]
+            },
+            scenarioLabels: {
+                scenario1: "シナリオ1",
+                scenario2: "シナリオ2", 
+                scenario3: "シナリオ3",
+                scenario4: "シナリオ4"
+            },
+            lastUpdate: Date.now()
         };
 
-        let isFirebaseConnected = false;
+        let isConnected = false;
 
         function updateSyncStatus(status, message) {
             const statusDiv = document.getElementById('syncStatus');
             statusDiv.textContent = message;
             statusDiv.className = `sync-status ${status}`;
-            isFirebaseConnected = (status === 'connected');
+            isConnected = (status === 'connected');
         }
 
-        // Firebase接続テスト（シンプル版）
+        // Firebase接続テスト
         function testFirebaseConnection() {
             console.log('🔧 Firebase接続テスト開始...');
             updateSyncStatus('syncing', 'テスト中...');
@@ -174,10 +199,11 @@
                 return;
             }
 
-            const testRef = window.firebaseRef(window.firebaseDatabase, 'test');
+            // シンプルなテストデータ
+            const testRef = window.firebaseRef(window.firebaseDatabase, 'connectionTest');
             const testData = {
-                message: "Hello Firebase",
-                timestamp: Date.now()
+                status: "connected",
+                time: Date.now()
             };
 
             window.firebaseSet(testRef, testData)
@@ -196,24 +222,22 @@
                 })
                 .catch(error => {
                     console.error('❌ Firebase操作失敗:', error);
-                    updateSyncStatus('disconnected', '接続エラー');
+                    updateSyncStatus('disconnected', '接続エラー: ' + error.message);
                 });
         }
 
-        // シンプルな保存関数
-        function saveDataSync() {
+        // データ保存（最もシンプル）
+        function saveData() {
             return new Promise((resolve, reject) => {
                 console.log('💾 データ保存開始...');
                 updateSyncStatus('syncing', '保存中...');
 
-                const saveData = {
-                    ...appData,
-                    lastUpdated: Date.now()
-                };
+                // タイムスタンプ更新
+                appState.lastUpdate = Date.now();
 
                 // ローカル保存
                 try {
-                    localStorage.setItem('fx_app_data', JSON.stringify(saveData));
+                    localStorage.setItem('fxAppState', JSON.stringify(appState));
                     console.log('✅ ローカル保存完了');
                 } catch (error) {
                     console.error('❌ ローカル保存失敗:', error);
@@ -222,10 +246,28 @@
                     return;
                 }
 
-                // Firebase保存
-                if (window.firebaseDatabase) {
-                    const dataRef = window.firebaseRef(window.firebaseDatabase, 'appData');
-                    window.firebaseSet(dataRef, saveData)
+                // Firebase保存（フラット構造）
+                if (window.firebaseDatabase && isConnected) {
+                    // 各項目を個別に保存
+                    const updates = {};
+                    updates['currentCurrency'] = appState.currentCurrency;
+                    updates['currentScenario'] = appState.currentScenario;
+                    updates['lastUpdate'] = appState.lastUpdate;
+                    
+                    // 通貨データを個別保存
+                    Object.keys(appState.currencies).forEach(key => {
+                        updates[`currencies/${key}`] = appState.currencies[key];
+                    });
+                    
+                    // シナリオデータを個別保存
+                    Object.keys(appState.scenarios).forEach(currency => {
+                        appState.scenarios[currency].forEach((scenario, index) => {
+                            updates[`scenarios/${currency}/${index}`] = scenario;
+                        });
+                    });
+
+                    const rootRef = window.firebaseRef(window.firebaseDatabase, 'fxApp');
+                    window.firebaseSet(rootRef, updates)
                         .then(() => {
                             console.log('✅ Firebase保存完了');
                             updateSyncStatus('connected', '保存完了');
@@ -233,13 +275,12 @@
                         })
                         .catch(error => {
                             console.error('❌ Firebase保存失敗:', error);
-                            updateSyncStatus('disconnected', 'Firebase保存失敗');
-                            // ローカル保存は成功しているのでresolve
-                            resolve();
+                            updateSyncStatus('connected', 'ローカル保存のみ完了');
+                            resolve(); // ローカル保存は成功
                         });
                 } else {
-                    console.log('⚠️ Firebase未接続');
-                    updateSyncStatus('disconnected', 'Firebase未接続');
+                    console.log('⚠️ Firebase未接続 - ローカルのみ保存');
+                    updateSyncStatus('disconnected', 'ローカルのみ保存');
                     resolve();
                 }
             });
@@ -247,102 +288,65 @@
 
         // データ読み込み
         function loadData() {
-            console.log('📖 データ読み込み開始...');
-            
-            if (window.firebaseDatabase) {
-                const dataRef = window.firebaseRef(window.firebaseDatabase, 'appData');
-                window.firebaseGet(dataRef)
-                    .then(snapshot => {
-                        if (snapshot.exists()) {
-                            const firebaseData = snapshot.val();
-                            const localData = getLocalData();
-                            
-                            // 新しいデータを適用
-                            if (firebaseData.lastUpdated > localData.lastUpdated) {
-                                console.log('📥 Firebaseデータを適用');
-                                appData = firebaseData;
-                            } else {
-                                console.log('📥 ローカルデータを適用');
-                                appData = localData;
-                            }
-                            
-                            updateSyncStatus('connected', 'データ読み込み完了');
-                        } else {
-                            console.log('📥 Firebaseデータなし');
-                            appData = getLocalData();
-                            updateSyncStatus('disconnected', 'Firebaseデータなし');
-                        }
-                        updateUI();
-                    })
-                    .catch(error => {
-                        console.error('❌ Firebase読み込み失敗:', error);
-                        appData = getLocalData();
-                        updateSyncStatus('disconnected', 'Firebase読み込み失敗');
-                        updateUI();
-                    });
-            } else {
-                appData = getLocalData();
-                updateSyncStatus('disconnected', 'Firebase未初期化');
-                updateUI();
-            }
-        }
-
-        function getLocalData() {
-            const saved = localStorage.getItem('fx_app_data');
+            const saved = localStorage.getItem('fxAppState');
             if (saved) {
                 try {
-                    return JSON.parse(saved);
+                    const loadedState = JSON.parse(saved);
+                    appState = { ...appState, ...loadedState };
+                    console.log('✅ ローカルデータ読み込み完了');
                 } catch (error) {
-                    console.error('❌ ローカルデータ解析失敗:', error);
+                    console.error('❌ ローカルデータ読み込み失敗:', error);
                 }
             }
-            return appData; // デフォルトデータを返す
+            updateUI();
         }
 
         function updateUI() {
             updateCurrencyTabs();
-            updateImageButtons();
+            updateScenarioButtons();
+            updateCurrencyDisplay();
         }
 
         function updateCurrencyTabs() {
             const container = document.getElementById('currencyTabs');
             container.innerHTML = '';
             
-            Object.keys(appData.currencies).forEach(currency => {
+            Object.keys(appState.currencies).forEach(currencyKey => {
                 const tab = document.createElement('div');
-                tab.className = 'currency-tab' + (currency === appData.currentCurrency ? ' active' : '');
-                tab.textContent = appData.currencies[currency].pair;
+                tab.className = 'currency-tab' + (currencyKey === appState.currentCurrency ? ' active' : '');
+                tab.textContent = appState.currencies[currencyKey];
                 tab.onclick = function() { 
-                    appData.currentCurrency = currency;
-                    appData.currentImage = appData.currencies[currency].images[0];
+                    appState.currentCurrency = currencyKey;
+                    if (appState.scenarios[currencyKey] && appState.scenarios[currencyKey].length > 0) {
+                        appState.currentScenario = appState.scenarios[currencyKey][0];
+                    }
                     updateUI();
-                    saveDataSync();
+                    saveData();
                 };
                 container.appendChild(tab);
             });
         }
 
-        function updateImageButtons() {
+        function updateScenarioButtons() {
             const container = document.getElementById('imageButtons');
             container.innerHTML = '';
             
-            const currentData = appData.currencies[appData.currentCurrency];
-            if (!currentData) return;
+            const currentScenarios = appState.scenarios[appState.currentCurrency] || [];
             
-            currentData.images.forEach((image, index) => {
+            currentScenarios.forEach(scenarioKey => {
                 const scenarioItem = document.createElement('div');
                 scenarioItem.className = 'scenario-item';
                 
                 const btn = document.createElement('div');
                 btn.className = 'image-btn';
-                btn.textContent = currentData.labels[index] || `シナリオ${index + 1}`;
+                btn.textContent = appState.scenarioLabels[scenarioKey] || scenarioKey;
                 btn.onclick = function() { 
-                    appData.currentImage = image;
-                    updateImageButtons();
-                    saveDataSync();
+                    appState.currentScenario = scenarioKey;
+                    updateScenarioButtons();
+                    saveData();
                 };
                 
-                if (image === appData.currentImage) {
+                if (scenarioKey === appState.currentScenario) {
                     btn.classList.add('selected');
                 }
                 
@@ -356,9 +360,53 @@
             });
         }
 
+        function updateCurrencyDisplay() {
+            const display = document.getElementById('currencyDisplay');
+            display.textContent = appState.currencies[appState.currentCurrency] || appState.currentCurrency;
+        }
+
+        // テストシナリオ追加
+        function addTestScenario() {
+            showAddImageModal();
+        }
+
+        function showAddImageModal() {
+            document.getElementById('addScenarioModal').classList.add('active');
+            document.getElementById('newScenarioName').focus();
+        }
+
+        function closeAddScenarioModal() {
+            document.getElementById('addScenarioModal').classList.remove('active');
+            document.getElementById('newScenarioName').value = '';
+        }
+
+        function addNewScenario() {
+            const scenarioName = document.getElementById('newScenarioName').value.trim();
+            if (!scenarioName) {
+                alert('シナリオ名を入力してください。');
+                return;
+            }
+
+            const scenarioKey = 'scenario' + Date.now();
+            appState.scenarioLabels[scenarioKey] = scenarioName;
+            
+            if (!appState.scenarios[appState.currentCurrency]) {
+                appState.scenarios[appState.currentCurrency] = [];
+            }
+            appState.scenarios[appState.currentCurrency].push(scenarioKey);
+            
+            appState.currentScenario = scenarioKey;
+            
+            updateUI();
+            saveData();
+            closeAddScenarioModal();
+            
+            alert(`✅ "${scenarioName}" を ${appState.currencies[appState.currentCurrency]} に追加しました！`);
+        }
+
         // 手動保存
         function manualSave() {
-            saveDataSync()
+            saveData()
                 .then(() => {
                     alert('✅ データを手動保存しました！');
                 })
@@ -367,50 +415,49 @@
                 });
         }
 
-        // 強制同期
-        function forceSyncData() {
-            loadData();
-            setTimeout(() => {
-                saveDataSync();
-            }, 1000);
+        // 現在データ表示
+        function showCurrentData() {
+            console.log('=== 現在のアプリ状態 ===');
+            console.log(JSON.stringify(appState, null, 2));
+            alert('現在のデータをコンソールに表示しました。F12で確認してください。');
         }
 
         // 完全リセット
         function resetAllData() {
-            if (confirm('全てのデータをリセットしますか？')) {
+            if (confirm('全てのデータをリセットしますか？この操作は取り消せません。')) {
                 localStorage.clear();
                 if (window.firebaseDatabase) {
-                    const dataRef = window.firebaseRef(window.firebaseDatabase, 'appData');
-                    window.firebaseSet(dataRef, null);
+                    const rootRef = window.firebaseRef(window.firebaseDatabase, 'fxApp');
+                    window.firebaseSet(rootRef, null);
                 }
                 location.reload();
             }
         }
 
-        // 共有機能（ダミー）
-        function shareAnalysis() {
-            alert('共有機能（開発中）');
-        }
-
-        // モーダル関数（ダミー）
+        // ダミー関数
+        function shareAnalysis() { alert('共有機能（開発中）'); }
         function showAddCurrencyModal() { alert('通貨ペア追加（開発中）'); }
         function showDeleteCurrencyModal() { alert('通貨ペア削除（開発中）'); }
-        function showAddImageModal() { alert('シナリオ追加（開発中）'); }
         function showDeleteImageModal() { alert('シナリオ削除（開発中）'); }
+
+        // モーダルクリック時の閉じる処理
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
+            }
+        });
 
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 アプリ初期化開始');
+            console.log('🚀 FXアプリ初期化開始');
             
-            // Firebase接続確認
+            // データ読み込み
+            loadData();
+            
+            // Firebase接続テスト
             setTimeout(() => {
                 testFirebaseConnection();
             }, 1000);
-            
-            // データ読み込み
-            setTimeout(() => {
-                loadData();
-            }, 2000);
         });
     </script>
 </body>
