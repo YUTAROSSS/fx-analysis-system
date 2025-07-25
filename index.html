@@ -62,6 +62,12 @@
         
         .currency-display { text-align: center; margin: 20px 0; font-size: 24px; font-weight: 700; color: #2c3e50; }
         
+        /* チャートエリア */
+        .chart-area { display: flex; flex-direction: column; align-items: center; margin: 20px 0; }
+        .chart-container { width: 100%; max-width: 800px; height: 400px; border: 2px solid #e9ecef; border-radius: 12px; overflow: hidden; cursor: pointer; background: white; }
+        .chart-image { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .chart-placeholder { width: 100%; height: 100%; background: #f8f9fa; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 16px; font-weight: 600; flex-direction: column; text-align: center; padding: 20px; }
+        
         .control-section { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
         .status-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .status-btn { padding: 10px 12px; border: 2px solid #dee2e6; background: white; border-radius: 8px; cursor: pointer; font-size: 12px; text-align: center; font-weight: 600; }
@@ -79,14 +85,22 @@
         .copy-area.active { display: block; }
         .copy-textarea { width: 100%; height: 200px; padding: 12px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 12px; font-family: monospace; }
         
+        .sync-status { position: fixed; top: 10px; right: 20px; padding: 8px 12px; border-radius: 6px; font-size: 12px; z-index: 1000; }
+        .sync-status.connected { background: #28a745; color: white; }
+        .sync-status.disconnected { background: #dc3545; color: white; }
+        .sync-status.syncing { background: #ffc107; color: #212529; }
+        
         @media (max-width: 767px) {
             .main-content { padding: 15px; }
             .status-buttons { grid-template-columns: repeat(2, 1fr); }
+            .chart-container { height: 300px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="sync-status" id="syncStatus">接続確認中...</div>
+        
         <div class="header">
             <h1>🔍 FX通貨ペア分析システム</h1>
         </div>
@@ -103,11 +117,25 @@
                 <div class="section-title">シナリオ選択</div>
                 <button class="btn btn-success" onclick="addScenario()">➕ シナリオ追加</button>
                 <button class="btn btn-warning" onclick="forceFirebaseSave()">🔥 Firebase強制保存</button>
+                <button class="btn btn-danger" onclick="fixScenarioKeys()">🔧 シナリオキー修正</button>
                 <div class="scenario-buttons" id="scenarioButtons"></div>
             </div>
             
             <!-- 通貨ペア表示 -->
             <div class="currency-display" id="currencyDisplay">USD/JPY</div>
+
+            <!-- チャートエリア -->
+            <div class="chart-area">
+                <div class="chart-container" onclick="openChartModal()">
+                    <div class="chart-placeholder" id="chartDisplay">
+                        📈 USD/JPY チャート
+                        <small style="margin-top: 10px; display: block;">
+                            画像ファイルを配置してください
+                        </small>
+                    </div>
+                    <img id="chartImage" class="chart-image" style="display: none;" alt="チャート画像">
+                </div>
+            </div>
 
             <!-- 分析コントロール -->
             <div class="control-section">
@@ -146,35 +174,163 @@
     </div>
 
     <script>
-        // **重要：シナリオキーを通貨ペア別にユニークにする**
+        // ★ 完全にユニークなシナリオキーシステム
         let appState = {
             currentCurrency: "USDJPY",
-            currentScenario: "USDJPY_scenario1", // ★ 通貨ペア+シナリオのユニークキー
+            currentScenario: "USDJPY-scenario1", // ★ ハイフン区切りでより明確に
             currencies: {
                 USDJPY: "USD/JPY",
                 EURUSD: "EUR/USD", 
                 GBPUSD: "GBP/USD"
             },
-            // ★ 通貨ペア別にユニークなシナリオキーを使用
             scenarios: {
-                USDJPY: ["USDJPY_scenario1", "USDJPY_scenario2", "USDJPY_scenario3"],
-                EURUSD: ["EURUSD_scenario1", "EURUSD_scenario2"],
-                GBPUSD: ["GBPUSD_scenario1", "GBPUSD_scenario2", "GBPUSD_scenario3"]
+                USDJPY: ["USDJPY-scenario1", "USDJPY-scenario2", "USDJPY-scenario3"],
+                EURUSD: ["EURUSD-scenario1", "EURUSD-scenario2"],
+                GBPUSD: ["GBPUSD-scenario1", "GBPUSD-scenario2", "GBPUSD-scenario3"]
             },
             scenarioLabels: {
-                USDJPY_scenario1: "シナリオ1", USDJPY_scenario2: "シナリオ2", USDJPY_scenario3: "シナリオ3",
-                EURUSD_scenario1: "シナリオ1", EURUSD_scenario2: "シナリオ2",
-                GBPUSD_scenario1: "シナリオ1", GBPUSD_scenario2: "シナリオ2", GBPUSD_scenario3: "シナリオ3"
+                "USDJPY-scenario1": "シナリオ1", "USDJPY-scenario2": "シナリオ2", "USDJPY-scenario3": "シナリオ3",
+                "EURUSD-scenario1": "シナリオ1", "EURUSD-scenario2": "シナリオ2",
+                "GBPUSD-scenario1": "シナリオ1", "GBPUSD-scenario2": "シナリオ2", "GBPUSD-scenario3": "シナリオ3"
             },
-            // ★ ユニークキーでデータを管理
+            // ★ 画像表示用データを復活
+            currencyData: {
+                'USDJPY': {
+                    pair: 'USD/JPY',
+                    images: ['USDJPY.jpeg', 'USDJPY2.jpeg', 'USDJPY3.jpeg'],
+                    imageLabels: ['シナリオ1', 'シナリオ2', 'シナリオ3']
+                },
+                'EURUSD': {
+                    pair: 'EUR/USD',
+                    images: ['EURUSD.jpeg', 'EURUSD2.jpeg'],
+                    imageLabels: ['シナリオ1', 'シナリオ2']
+                },
+                'GBPUSD': {
+                    pair: 'GBP/USD',
+                    images: ['GBPUSD.jpeg', 'GBPUSD2.jpeg', 'GBPUSD3.jpeg'],
+                    imageLabels: ['シナリオ1', 'シナリオ2', 'シナリオ3']
+                }
+            },
             scenarioMemos: {},
             scenarioStatuses: {},
+            uploadedImages: {},
             lastUpdate: Date.now(),
             deviceId: 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-            version: '3.0'
+            version: '4.0'
         };
 
         let isConnected = false;
+
+        function updateSyncStatus(status, message) {
+            const statusDiv = document.getElementById('syncStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = `sync-status ${status}`;
+            isConnected = (status === 'connected');
+        }
+
+        // ★ 古いシナリオキーを新しいキーに変換する関数
+        function fixScenarioKeys() {
+            console.log('🔧 シナリオキー修正開始...');
+            
+            const oldToNewMapping = {
+                'scenario1': {
+                    'USDJPY': 'USDJPY-scenario1',
+                    'EURUSD': 'EURUSD-scenario1', 
+                    'GBPUSD': 'GBPUSD-scenario1'
+                },
+                'scenario2': {
+                    'USDJPY': 'USDJPY-scenario2',
+                    'EURUSD': 'EURUSD-scenario2',
+                    'GBPUSD': 'GBPUSD-scenario2'
+                },
+                'scenario3': {
+                    'USDJPY': 'USDJPY-scenario3',
+                    'GBPUSD': 'GBPUSD-scenario3'
+                }
+            };
+
+            // 古いデータを新しいキーに移行
+            const newScenarioMemos = {};
+            const newScenarioStatuses = {};
+
+            Object.keys(appState.scenarioMemos || {}).forEach(oldKey => {
+                if (oldKey.startsWith('scenario') && !oldKey.includes('-')) {
+                    // 古いキー形式の場合、現在の通貨に基づいて新しいキーを生成
+                    const newKey = `${appState.currentCurrency}-${oldKey}`;
+                    newScenarioMemos[newKey] = appState.scenarioMemos[oldKey];
+                    console.log(`📝 メモ移行: ${oldKey} → ${newKey}`);
+                } else {
+                    newScenarioMemos[oldKey] = appState.scenarioMemos[oldKey];
+                }
+            });
+
+            Object.keys(appState.scenarioStatuses || {}).forEach(oldKey => {
+                if (oldKey.startsWith('scenario') && !oldKey.includes('-')) {
+                    const newKey = `${appState.currentCurrency}-${oldKey}`;
+                    newScenarioStatuses[newKey] = appState.scenarioStatuses[oldKey];
+                    console.log(`📊 ステータス移行: ${oldKey} → ${newKey}`);
+                } else {
+                    newScenarioStatuses[oldKey] = appState.scenarioStatuses[oldKey];
+                }
+            });
+
+            appState.scenarioMemos = newScenarioMemos;
+            appState.scenarioStatuses = newScenarioStatuses;
+
+            // 現在のシナリオも修正
+            if (appState.currentScenario && !appState.currentScenario.includes('-')) {
+                appState.currentScenario = `${appState.currentCurrency}-${appState.currentScenario}`;
+            }
+
+            updateUI();
+            forceFirebaseSave();
+            
+            alert('🔧 シナリオキー修正完了！\n\n各通貨ペアのシナリオが独立して管理されるようになりました。');
+        }
+
+        // Firebase保存用データクリーニング
+        function getCleanDataForFirebase() {
+            return {
+                currentCurrency: appState.currentCurrency,
+                currentScenario: appState.currentScenario,
+                currencies: appState.currencies,
+                scenarios: appState.scenarios,
+                scenarioLabels: appState.scenarioLabels,
+                scenarioMemos: appState.scenarioMemos || {},
+                scenarioStatuses: appState.scenarioStatuses || {},
+                uploadedImages: appState.uploadedImages || {},
+                lastUpdate: Date.now(),
+                deviceId: appState.deviceId,
+                version: '4.0'
+            };
+        }
+
+        function forceFirebaseSave() {
+            console.log('🔥 Firebase強制保存開始...');
+            updateSyncStatus('syncing', '🔥 強制保存中...');
+            
+            if (!window.firebaseDatabase) {
+                alert('❌ Firebase未初期化です');
+                updateSyncStatus('disconnected', 'Firebase未初期化');
+                return;
+            }
+
+            const cleanData = getCleanDataForFirebase();
+            const dataRef = window.firebaseRef(window.firebaseDatabase, 'appData');
+            
+            window.firebaseSet(dataRef, cleanData)
+                .then(() => {
+                    console.log('✅ Firebase強制保存成功');
+                    updateSyncStatus('connected', '🔥 強制保存完了');
+                    localStorage.setItem('fxAppState', JSON.stringify(appState));
+                    alert('✅ Firebase強制保存完了！');
+                })
+                .catch(error => {
+                    console.error('❌ Firebase強制保存失敗:', error);
+                    updateSyncStatus('disconnected', '強制保存失敗');
+                    alert(`❌ 保存失敗: ${error.message}`);
+                });
+        }
 
         // 初期化時にデフォルトデータを設定
         function initializeData() {
@@ -194,34 +350,12 @@
             });
         }
 
-        // Firebase強制保存
-        function forceFirebaseSave() {
-            console.log('🔥 Firebase強制保存開始...');
-            if (!window.firebaseDatabase) {
-                alert('❌ Firebase未初期化です');
-                return;
-            }
-
-            appState.lastUpdate = Date.now();
-            const dataRef = window.firebaseRef(window.firebaseDatabase, 'appData');
-            
-            window.firebaseSet(dataRef, appState)
-                .then(() => {
-                    console.log('✅ Firebase強制保存成功');
-                    localStorage.setItem('fxAppState', JSON.stringify(appState));
-                    alert('✅ Firebase強制保存完了！');
-                })
-                .catch(error => {
-                    console.error('❌ Firebase強制保存失敗:', error);
-                    alert(`❌ 保存失敗: ${error.message}`);
-                });
-        }
-
         // UI更新
         function updateUI() {
             updateCurrencyTabs();
             updateScenarioButtons();
             updateCurrencyDisplay();
+            loadCurrentImage();
             updateDisplay();
             generateCopyText();
         }
@@ -236,7 +370,7 @@
                 tab.textContent = appState.currencies[currencyKey];
                 tab.onclick = function() { 
                     appState.currentCurrency = currencyKey;
-                    // ★ 通貨切り替え時に正しいシナリオキーを設定
+                    // ★ 通貨切り替え時に正しいシナリオを選択
                     appState.currentScenario = appState.scenarios[currencyKey][0];
                     updateUI();
                     saveData();
@@ -262,6 +396,7 @@
                     appState.currentScenario = scenarioKey;
                     updateScenarioButtons();
                     updateDisplay();
+                    loadCurrentImage();
                     saveData();
                 };
                 
@@ -269,7 +404,7 @@
                     btn.classList.add('selected');
                 }
                 
-                // ★ ユニークキーでステータスを正しく取得
+                // ★ 正しいシナリオキーでステータスを取得
                 const scenarioStatus = appState.scenarioStatuses[scenarioKey] || 'considering';
                 const statusLabel = document.createElement('div');
                 statusLabel.className = `status-label status-${scenarioStatus}`;
@@ -278,6 +413,8 @@
                 scenarioItem.appendChild(btn);
                 scenarioItem.appendChild(statusLabel);
                 container.appendChild(scenarioItem);
+                
+                console.log(`🔧 シナリオボタン: ${scenarioKey} = ${scenarioStatus}`);
             });
         }
 
@@ -297,14 +434,88 @@
             display.textContent = appState.currencies[appState.currentCurrency] || appState.currentCurrency;
         }
 
+        // ★ 画像表示機能を復活
+        function loadCurrentImage() {
+            const data = appState.currencyData[appState.currentCurrency];
+            if (!data || !data.images || data.images.length === 0) {
+                showPlaceholder();
+                return;
+            }
+
+            const currentScenarios = appState.scenarios[appState.currentCurrency] || [];
+            const scenarioIndex = currentScenarios.indexOf(appState.currentScenario);
+            const imageIndex = Math.max(0, scenarioIndex);
+            const currentImageName = data.images[imageIndex] || data.images[0];
+            
+            // アップロード画像をチェック
+            if (appState.uploadedImages && appState.uploadedImages[currentImageName]) {
+                displayUploadedImage(appState.uploadedImages[currentImageName]);
+                return;
+            }
+
+            // 通常の画像パスを試行
+            const imagePaths = [`images/${currentImageName}`, currentImageName];
+            tryLoadImage(imagePaths, 0);
+        }
+
+        function tryLoadImage(paths, index) {
+            if (index >= paths.length) {
+                showPlaceholder();
+                return;
+            }
+
+            const img = new Image();
+            img.onload = function() {
+                displayImage(paths[index]);
+            };
+            img.onerror = function() {
+                tryLoadImage(paths, index + 1);
+            };
+            img.src = paths[index];
+        }
+
+        function displayImage(src) {
+            const chartImage = document.getElementById('chartImage');
+            const placeholder = document.getElementById('chartDisplay');
+            
+            chartImage.src = src;
+            chartImage.style.display = 'block';
+            placeholder.style.display = 'none';
+        }
+
+        function displayUploadedImage(src) {
+            const chartImage = document.getElementById('chartImage');
+            const placeholder = document.getElementById('chartDisplay');
+            
+            chartImage.src = src;
+            chartImage.style.display = 'block';
+            placeholder.style.display = 'none';
+        }
+
+        function showPlaceholder() {
+            const chartImage = document.getElementById('chartImage');
+            const placeholder = document.getElementById('chartDisplay');
+            
+            chartImage.style.display = 'none';
+            placeholder.style.display = 'flex';
+            
+            const currencyName = appState.currencies[appState.currentCurrency] || appState.currentCurrency;
+            placeholder.innerHTML = `
+                📈 ${currencyName} チャート
+                <small style="margin-top: 10px; display: block;">
+                    画像ファイルを配置してください
+                </small>
+            `;
+        }
+
         function updateDisplay() {
-            // ★ ユニークキーでメモを正しく取得・表示
+            // ★ 正しいシナリオキーでメモを取得
             const scenarioMemo = appState.scenarioMemos[appState.currentScenario] || '';
             document.getElementById('analysisMemo').value = scenarioMemo;
             
-            // ステータスボタンの状態を更新
             document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
             
+            // ★ 正しいシナリオキーでステータスを取得
             const currentStatus = appState.scenarioStatuses[appState.currentScenario] || 'considering';
             const statusButtons = document.querySelectorAll('.status-btn');
             const statusMap = { 'considering': 0, 'skip': 1, 'pending': 2, 'holding': 3, 'completed': 4 };
@@ -325,8 +536,9 @@
             document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
             
-            // ★ ユニークキーでステータスを保存
+            // ★ 正しいシナリオキーでステータスを保存
             appState.scenarioStatuses[appState.currentScenario] = status;
+            console.log(`📊 ステータス設定: ${appState.currentScenario} = ${status}`);
             
             updateScenarioButtons();
             generateCopyText();
@@ -335,8 +547,9 @@
 
         function saveMemo() {
             const memo = document.getElementById('analysisMemo').value;
-            // ★ ユニークキーでメモを保存
+            // ★ 正しいシナリオキーでメモを保存
             appState.scenarioMemos[appState.currentScenario] = memo;
+            console.log(`📝 メモ保存: ${appState.currentScenario} = ${memo.length}文字`);
             generateCopyText();
             saveData();
         }
@@ -346,7 +559,7 @@
             if (!scenarioName) return;
 
             // ★ 通貨ペア別のユニークキーを生成
-            const scenarioKey = `${appState.currentCurrency}_scenario${Date.now()}`;
+            const scenarioKey = `${appState.currentCurrency}-scenario${Date.now()}`;
             appState.scenarioLabels[scenarioKey] = scenarioName;
             
             if (!appState.scenarios[appState.currentCurrency]) {
@@ -400,13 +613,21 @@ ${currentMemo || '記載なし'}`;
             });
         }
 
+        function openChartModal() {
+            // 簡易的なモーダル表示（実装省略）
+            alert('チャート拡大表示（実装省略）');
+        }
+
         function debugData() {
+            console.log('🔍 現在のappState:', appState);
             const message = `=== 📱 データ確認 ===
 現在通貨: ${appState.currentCurrency}
 現在シナリオ: ${appState.currentScenario}
 総シナリオ数: ${Object.values(appState.scenarios).flat().length}個
 ステータス数: ${Object.keys(appState.scenarioStatuses).length}個
-メモ数: ${Object.keys(appState.scenarioMemos).length}個`;
+メモ数: ${Object.keys(appState.scenarioMemos).length}個
+バージョン: ${appState.version}
+Firebase接続: ${isConnected ? '✅' : '❌'}`;
             alert(message);
         }
 
@@ -415,21 +636,34 @@ ${currentMemo || '記載なし'}`;
                 alert('❌ Firebase未初期化');
                 return;
             }
+            
+            updateSyncStatus('syncing', 'テスト中...');
+            
             const dataRef = window.firebaseRef(window.firebaseDatabase, 'appData');
             window.firebaseGet(dataRef)
                 .then(snapshot => {
                     if (snapshot.exists()) {
                         const data = snapshot.val();
+                        updateSyncStatus('connected', 'Firebase接続OK');
                         alert(`✅ Firebase確認OK\nバージョン: ${data.version}\n最終更新: ${new Date(data.lastUpdate).toLocaleString()}`);
                     } else {
+                        updateSyncStatus('disconnected', 'データなし');
                         alert('❌ Firebaseデータなし');
                     }
+                })
+                .catch(error => {
+                    updateSyncStatus('disconnected', '接続エラー');
+                    alert(`❌ Firebase接続エラー: ${error.message}`);
                 });
         }
 
         function resetData() {
             if (confirm('全データをリセットしますか？')) {
                 localStorage.clear();
+                if (window.firebaseDatabase) {
+                    const dataRef = window.firebaseRef(window.firebaseDatabase, 'appData');
+                    window.firebaseSet(dataRef, null);
+                }
                 location.reload();
             }
         }
@@ -439,8 +673,13 @@ ${currentMemo || '記載なし'}`;
             localStorage.setItem('fxAppState', JSON.stringify(appState));
             
             if (window.firebaseDatabase && isConnected) {
+                const cleanData = getCleanDataForFirebase();
                 const dataRef = window.firebaseRef(window.firebaseDatabase, 'appData');
-                window.firebaseSet(dataRef, appState);
+                window.firebaseSet(dataRef, cleanData)
+                    .catch(error => {
+                        console.error('❌ 自動保存失敗:', error);
+                        updateSyncStatus('disconnected', '保存失敗');
+                    });
             }
         }
 
@@ -450,6 +689,7 @@ ${currentMemo || '記載なし'}`;
                 try {
                     const loadedState = JSON.parse(saved);
                     appState = { ...appState, ...loadedState };
+                    appState.version = '4.0'; // バージョン更新
                 } catch (error) {
                     console.error('❌ データ読み込み失敗:', error);
                 }
@@ -461,12 +701,14 @@ ${currentMemo || '記載なし'}`;
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 FXアプリ初期化開始');
+            updateSyncStatus('disconnected', '初期化中...');
             loadData();
             
             setTimeout(() => {
                 if (window.firebaseDatabase) {
-                    isConnected = true;
-                    console.log('✅ Firebase接続OK');
+                    testFirebase();
+                } else {
+                    updateSyncStatus('disconnected', 'Firebase未初期化');
                 }
             }, 1000);
         });
