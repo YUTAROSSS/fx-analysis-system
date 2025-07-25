@@ -69,7 +69,8 @@
         .image-btn, .image-btn:hover, .image-btn:focus, .image-btn:active, .image-btn.selected, .image-btn.active, .image-btn:visited, .image-btn:link, .image-btn[style] { background: #4285f4 !important; color: white !important; border-color: #4285f4 !important; }
         .image-btn.selected { box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important; transform: translateY(-3px) !important; }
         .image-btn:hover { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important; transform: translateY(-1px) !important; }
-        .image-btn.missing { background: #f8d7da !important; border-color: #dc3545 !important; color: #721c24 !important; }
+        /* missingスタイルを無効化 */
+        .image-btn.missing { background: #4285f4 !important; border-color: #4285f4 !important; color: white !important; }
         
         /* ステータスラベル */
         .status-label { padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; white-space: nowrap; }
@@ -492,45 +493,35 @@
         let currentCurrency = 'USDJPY', currentImage = 'USDJPY.jpeg', currentPageNum = 1, uploadedImages = {}, imageStatusMap = {};
         const defaultFixedPrompt = `あなたは経験豊富なFXトレーダーです。以下のチャート分析データを評価し、実用的なアドバイスを提供してください。\n\n特に以下の観点から分析をお願いします：\n1. テクニカル分析の妥当性\n2. リスク管理の観点\n3. エントリー・エグジット戦略\n4. 市場環境との整合性\n\n具体的で実践的なアドバイスをお願いします。`;
 
-        // データ同期を確実にする関数
-        function ensureDataSync() {
+        // 同期的保存関数
+        function saveDataSync() {
             return new Promise((resolve) => {
+                const dataToSave = {
+                    currencyData,
+                    allImages,
+                    currentCurrency,
+                    currentImage,
+                    currentPageNum,
+                    uploadedImages,
+                    lastSaved: new Date().toISOString()
+                };
+                
+                // 1. ローカルストレージに即座に保存
+                localStorage.setItem('fx_analysis_data', JSON.stringify(dataToSave));
+                
+                // 2. Firebaseにも確実に保存
                 if (window.firebaseDatabase && window.firebaseRef && window.firebaseSet) {
                     const userRef = window.firebaseRef(window.firebaseDatabase, 'fx_analysis_data');
-                    const dataToSave = {
-                        currencyData,
-                        allImages,
-                        currentCurrency,
-                        currentImage,
-                        currentPageNum,
-                        uploadedImages,
-                        lastSaved: new Date().toISOString(),
-                        syncId: Date.now()
-                    };
-                    
                     window.firebaseSet(userRef, dataToSave)
                         .then(() => {
-                            localStorage.setItem('fx_analysis_data', JSON.stringify(dataToSave));
-                            localStorage.setItem('last_sync_id', dataToSave.syncId);
-                            console.log('データ同期完了');
+                            console.log('Firebase同期完了');
                             resolve();
                         })
                         .catch((error) => {
                             console.error('Firebase同期エラー:', error);
-                            localStorage.setItem('fx_analysis_data', JSON.stringify(dataToSave));
                             resolve();
                         });
                 } else {
-                    const dataToSave = {
-                        currencyData,
-                        allImages,
-                        currentCurrency,
-                        currentImage,
-                        currentPageNum,
-                        uploadedImages,
-                        lastSaved: new Date().toISOString()
-                    };
-                    localStorage.setItem('fx_analysis_data', JSON.stringify(dataToSave));
                     resolve();
                 }
             });
@@ -549,35 +540,56 @@
             } catch (error) { console.error('データ保存エラー:', error); }
         }
 
+        function getLocalStorageData() {
+            const savedData = localStorage.getItem('fx_analysis_data');
+            if (savedData) {
+                try {
+                    return JSON.parse(savedData);
+                } catch (error) {
+                    console.error('ローカルデータパースエラー:', error);
+                }
+            }
+            return { lastSaved: new Date(0).toISOString() };
+        }
+
+        function applyData(data) {
+            currencyData = data.currencyData || currencyData;
+            allImages = data.allImages || allImages;
+            currentCurrency = data.currentCurrency || currentCurrency;
+            currentImage = data.currentImage || currentImage;
+            currentPageNum = data.currentPageNum || currentPageNum;
+            uploadedImages = data.uploadedImages || uploadedImages;
+        }
+
         function loadData() {
             if (window.firebaseDatabase && window.firebaseRef && window.firebaseGet) {
                 const userRef = window.firebaseRef(window.firebaseDatabase, 'fx_analysis_data');
                 window.firebaseGet(userRef).then((snapshot) => {
                     if (snapshot.exists()) {
-                        const data = snapshot.val();
-                        const lastSyncId = localStorage.getItem('last_sync_id');
+                        const firebaseData = snapshot.val();
+                        const localData = getLocalStorageData();
                         
-                        if (data.syncId && lastSyncId && data.syncId.toString() === lastSyncId) {
-                            console.log('データは既に最新です');
-                            loadFromLocalStorage();
+                        // タイムスタンプで最新データを判定
+                        const firebaseTime = new Date(firebaseData.lastSaved || 0);
+                        const localTime = new Date(localData.lastSaved || 0);
+                        
+                        if (firebaseTime >= localTime) {
+                            applyData(firebaseData);
+                            console.log('Firebaseデータを適用');
                         } else {
-                            currencyData = data.currencyData || currencyData;
-                            allImages = data.allImages || allImages;
-                            currentCurrency = data.currentCurrency || currentCurrency;
-                            currentImage = data.currentImage || currentImage;
-                            currentPageNum = data.currentPageNum || currentPageNum;
-                            uploadedImages = data.uploadedImages || uploadedImages;
-                            
-                            if (data.syncId) {
-                                localStorage.setItem('last_sync_id', data.syncId);
-                            }
-                            
-                            console.log('Firebase データ復元成功');
-                            showSyncIndicator('データ同期完了');
+                            applyData(localData);
+                            console.log('ローカルデータを適用');
                         }
-                    } else { loadFromLocalStorage(); }
-                }).catch((error) => { console.error('Firebase読み込みエラー:', error); loadFromLocalStorage(); });
-            } else { loadFromLocalStorage(); }
+                    } else {
+                        loadFromLocalStorage();
+                    }
+                }).catch((error) => {
+                    console.error('Firebase読み込みエラー:', error);
+                    loadFromLocalStorage();
+                });
+            } else {
+                loadFromLocalStorage();
+            }
         }
 
         function loadFromLocalStorage() {
@@ -585,12 +597,7 @@
             if (savedData) {
                 try {
                     const data = JSON.parse(savedData);
-                    currencyData = data.currencyData || currencyData;
-                    allImages = data.allImages || allImages;
-                    currentCurrency = data.currentCurrency || currentCurrency;
-                    currentImage = data.currentImage || currentImage;
-                    currentPageNum = data.currentPageNum || currentPageNum;
-                    uploadedImages = data.uploadedImages || uploadedImages;
+                    applyData(data);
                     console.log('ローカルデータ復元成功');
                 } catch (error) { console.error('ローカルデータの復元に失敗しました:', error); }
             }
@@ -604,7 +611,7 @@
                         const data = snapshot.val();
                         const lastSyncTime = localStorage.getItem('last_sync_timestamp');
                         if (data.lastSaved !== lastSyncTime) {
-                            currencyData = data.currencyData || currencyData; allImages = data.allImages || allImages; currentCurrency = data.currentCurrency || currentCurrency; currentImage = data.currentImage || currentImage; currentPageNum = data.currentPageNum || currentPageNum; uploadedImages = data.uploadedImages || uploadedImages;
+                            applyData(data);
                             updateCurrencyTabs(); updateDisplay(); updateImageButtons(); loadCurrentImage(); updateCustomScenarios(); updatePageInfo(); generateCopyText();
                             localStorage.setItem('last_sync_timestamp', data.lastSaved); showSyncIndicator('他のデバイスから更新');
                         }
@@ -619,42 +626,6 @@
             indicator.className = `auto-save-indicator ${type}`;
             indicator.classList.add('show');
             setTimeout(() => { indicator.classList.remove('show'); }, 3000);
-        }
-
-        // データの整合性をチェック
-        function validateDataIntegrity() {
-            let hasChanges = false;
-            
-            // 削除された画像を allImages から除去
-            allImages = allImages.filter(imageName => {
-                let exists = false;
-                for (const currency in currencyData) {
-                    if (currencyData[currency].images.includes(imageName)) {
-                        exists = true;
-                        break;
-                    }
-                }
-                if (!exists) {
-                    hasChanges = true;
-                    console.log('削除された画像を除去:', imageName);
-                }
-                return exists;
-            });
-            
-            // 現在の画像が削除されている場合の処理
-            if (currentImage && !allImages.includes(currentImage)) {
-                const currentData = currencyData[currentCurrency];
-                if (currentData && currentData.images.length > 0) {
-                    currentImage = currentData.images[0];
-                    hasChanges = true;
-                    console.log('現在の画像を修正:', currentImage);
-                }
-            }
-            
-            if (hasChanges) {
-                ensureDataSync();
-                updateImageButtons();
-            }
         }
 
         // 使用量監視機能
@@ -712,7 +683,7 @@
         // シナリオボタンの色を完全固定する監視機能
         document.addEventListener('DOMContentLoaded', function() {
             setInterval(function() {
-                document.querySelectorAll('.image-btn:not(.missing)').forEach(btn => {
+                document.querySelectorAll('.image-btn').forEach(btn => {
                     btn.style.background = '#4285f4'; btn.style.color = 'white'; btn.style.borderColor = '#4285f4';
                 });
             }, 100);
@@ -727,21 +698,15 @@
         function initializePage() {
             setTimeout(() => { enableRealtimeSync(); }, 1000);
             loadData();
-            
-            // データ整合性チェックを追加
-            setTimeout(() => {
-                validateDataIntegrity();
-                updateCurrencyTabs();
-                updateDisplay();
-                updatePageInfo();
-                updateImageButtons();
-                loadCurrentImage();
-                checkAllImageStatus();
-                loadFixedPrompt();
-                generateCopyText();
-                updateUsageDisplay();
-            }, 500);
-            
+            updateCurrencyTabs();
+            updateDisplay();
+            updatePageInfo();
+            updateImageButtons();
+            loadCurrentImage();
+            // checkAllImageStatus(); ← 削除（画像チェック機能を無効化）
+            loadFixedPrompt();
+            generateCopyText();
+            updateUsageDisplay();
             setInterval(updateUsageDisplay, 5000);
         }
 
@@ -761,8 +726,14 @@
             });
         }
 
-        function checkAllImageStatus() { allImages.forEach(imageName => { checkImageStatus(imageName); }); }
-        function checkImageStatus(imageName) { const img = new Image(); img.onload = function() { imageStatusMap[imageName] = 'loaded'; }; img.onerror = function() { imageStatusMap[imageName] = 'missing'; }; img.src = `images/${imageName}`; }
+        // 画像チェック機能を無効化
+        function checkAllImageStatus() {
+            // 何もしない - 画像チェックを無効化
+        }
+        function checkImageStatus(imageName) {
+            // 何もしない - 画像チェックを無効化
+            imageStatusMap[imageName] = 'loaded'; // 常に読み込み成功とする
+        }
 
         function selectCurrency(currency) {
             currentCurrency = currency; currentImage = currencyData[currency].images[0];
@@ -770,12 +741,17 @@
         }
 
         // 修正されたselectImage関数
-        async function selectImage(element, imageName) {
+        function selectImage(element, imageName) {
             // 削除されたシナリオかどうかチェック
+            if (!allImages.includes(imageName)) {
+                console.warn('削除された画像:', imageName);
+                updateImageButtons();
+                return;
+            }
+            
             const currentData = currencyData[currentCurrency];
             if (!currentData.images.includes(imageName)) {
-                console.warn('選択された画像は削除されています:', imageName);
-                showStatus('このシナリオは削除されています', 'warning');
+                console.warn('通貨ペアに存在しない画像:', imageName);
                 updateImageButtons();
                 return;
             }
@@ -792,7 +768,7 @@
             }
             
             generateCopyText();
-            await ensureDataSync();
+            saveData();
         }
 
         function getStatusText(status) {
@@ -800,12 +776,20 @@
             return statusTexts[status] || '🤔 検討中';
         }
 
+        // 修正されたupdateImageButtons関数（missingクラス適用を無効化）
         function updateImageButtons() {
             const data = currencyData[currentCurrency];
             const container = document.getElementById('imageButtons');
             container.innerHTML = '';
             
+            // 存在する画像のみ表示
             data.images.forEach((image, index) => {
+                // allImagesに存在しない場合はスキップ
+                if (!allImages.includes(image)) {
+                    console.warn('存在しない画像をスキップ:', image);
+                    return;
+                }
+                
                 const scenarioItem = document.createElement('div');
                 scenarioItem.className = 'scenario-item';
                 
@@ -814,17 +798,16 @@
                 btn.textContent = data.imageLabels[index];
                 btn.onclick = function() { selectImage(this, image); };
                 
-                // 選択状態は影のみで表現（色は変更しない）
                 if (image === currentImage) {
                     btn.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.3)';
                     btn.style.transform = 'translateY(-3px)';
                 }
                 
-                // 画像が見つからない場合のみ例外
-                if (imageStatusMap[image] === 'missing') {
-                    btn.classList.add('missing');
-                    btn.title = '画像が見つかりません';
-                }
+                // ★ missing チェックを削除（シナリオボタンが赤くなるのを防ぐ）
+                // if (imageStatusMap[image] === 'missing') {
+                //     btn.classList.add('missing');
+                //     btn.title = '画像が見つかりません';
+                // }
                 
                 const imageStatus = data.imageStatuses[image] || 'considering';
                 const statusLabel = document.createElement('div');
@@ -1018,7 +1001,7 @@
             if (currency && currencyData[currency]) { currencyData[currency].images.forEach((image, index) => { const option = document.createElement('option'); option.value = image; option.textContent = currencyData[currency].imageLabels[index]; imageSelector.appendChild(option); }); }
         }
 
-        // 修正されたdeleteImage関数
+        // 修正されたdeleteImage関数（同期的削除）
         async function deleteImage() {
             const currency = document.getElementById('deleteImageCurrency').value;
             const imageName = document.getElementById('deleteImageSelect').value;
@@ -1042,7 +1025,7 @@
                 return;
             }
             
-            // データ削除処理
+            // データ削除
             data.images.splice(imageIndex, 1);
             data.imageLabels.splice(imageIndex, 1);
             delete data.imageStatuses[imageName];
@@ -1053,7 +1036,7 @@
             }
             delete uploadedImages[imageName];
             
-            // 現在表示中の画像が削除された場合の処理
+            // 現在の画像処理
             if (currentImage === imageName) {
                 if (data.images.length > 0) {
                     currentImage = data.images[0];
@@ -1069,8 +1052,8 @@
                 }
             }
             
-            // 確実にデータを同期
-            await ensureDataSync();
+            // ★同期的に保存を待つ
+            await saveDataSync();
             
             // UI更新
             if (currentCurrency === currency) {
@@ -1167,4 +1150,3 @@
     </script>
 </body>
 </html>
-
