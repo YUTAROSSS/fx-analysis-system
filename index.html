@@ -192,6 +192,7 @@
             align-items: center;
             justify-content: center;
             margin: 20px 0;
+            position: relative;
         }
 
         .chart-container {
@@ -241,6 +242,41 @@
             flex-direction: column;
             text-align: center;
             padding: 20px;
+        }
+
+        /* チャート周辺のナビゲーション */
+        .chart-navigation {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .chart-nav-btn {
+            padding: 10px 20px;
+            background: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-nav-btn:hover {
+            background: #3367d6;
+            transform: translateY(-2px);
+        }
+
+        .chart-nav-btn:disabled {
+            background: #dee2e6;
+            color: #6c757d;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .chart-info {
@@ -352,7 +388,7 @@
 
         @media (min-width: 768px) {
             .memo-scenario-area {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1fr 1fr 1fr;
             }
         }
 
@@ -480,14 +516,13 @@
         .prompt-settings {
             background: #e8f4fd;
             border: 2px solid #007bff;
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 15px;
             border-radius: 12px;
         }
 
         .prompt-textarea {
             width: 100%;
-            height: 120px;
+            height: 180px;
             padding: 12px;
             border: 1px solid #dee2e6;
             border-radius: 8px;
@@ -521,6 +556,14 @@
         .reset-prompt-btn {
             background: #6c757d;
             color: white;
+        }
+
+        .chatgpt-analysis-btn {
+            background: #28a745;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 20px;
         }
 
         /* テキストコピーエリア */
@@ -667,7 +710,7 @@
             padding: 15px 20px;
             border-top: 1px solid #e9ecef;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
@@ -676,28 +719,6 @@
         .page-info {
             color: #6c757d;
             font-size: 12px;
-        }
-
-        .nav-controls {
-            display: flex;
-            gap: 8px;
-        }
-
-        .nav-btn {
-            padding: 8px 16px;
-            background: #4285f4;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-btn:disabled {
-            background: #dee2e6;
-            color: #6c757d;
-            cursor: not-allowed;
         }
 
         /* モーダル */
@@ -866,6 +887,16 @@
                 width: 100%;
                 margin-bottom: 5px;
             }
+
+            .chart-navigation {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .chart-nav-btn {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -876,30 +907,11 @@
             <h1>🔍 FX通貨ペア分析システム</h1>
             <div class="header-controls">
                 <button class="btn btn-secondary" onclick="shareAnalysis()">📤 共有</button>
-                <button class="btn btn-primary" onclick="sendToChatGPTBrowser()">🤖 ChatGPT分析</button>
             </div>
         </div>
 
         <!-- メインコンテンツ -->
         <div class="main-content">
-            <!-- 固定プロンプト設定 -->
-            <div class="prompt-settings">
-                <h3>🔧 ChatGPT用固定プロンプト設定</h3>
-                <textarea class="prompt-textarea" id="fixedPrompt" placeholder="ChatGPTに送信する際の固定プロンプトを設定してください...">あなたは経験豊富なFXトレーダーです。以下のチャート分析データを評価し、実用的なアドバイスを提供してください。
-
-特に以下の観点から分析をお願いします：
-1. テクニカル分析の妥当性
-2. リスク管理の観点
-3. エントリー・エグジット戦略
-4. 市場環境との整合性
-
-具体的で実践的なアドバイスをお願いします。</textarea>
-                <div class="prompt-controls">
-                    <button class="prompt-btn save-prompt-btn" onclick="saveFixedPrompt()">💾 プロンプト保存</button>
-                    <button class="prompt-btn reset-prompt-btn" onclick="resetFixedPrompt()">🔄 デフォルトに戻す</button>
-                </div>
-            </div>
-
             <!-- テキストコピーエリア -->
             <div class="copy-text-area" id="copyTextArea">
                 <h3>📋 ChatGPT用テキスト</h3>
@@ -948,6 +960,17 @@
                     </div>
                     <img id="chartImage" class="chart-image" style="display: none;" alt="チャート画像">
                 </div>
+                
+                <!-- チャート周辺のナビゲーション -->
+                <div class="chart-navigation">
+                    <button class="chart-nav-btn" onclick="previousPage()" id="prevBtn" disabled>
+                        ← 前のチャート
+                    </button>
+                    <button class="chart-nav-btn" onclick="nextPage()" id="nextBtn">
+                        次のチャート →
+                    </button>
+                </div>
+                
                 <div class="chart-info">
                     <strong>時間軸:</strong> <span id="timeframe">4時間足</span> | 
                     <strong>更新:</strong> <span id="lastUpdate">2025-07-24 14:30</span>
@@ -983,7 +1006,7 @@
                     </div>
                 </div>
 
-                <!-- 分析メモとカスタムシナリオ -->
+                <!-- 分析メモ、カスタムシナリオ、固定プロンプト -->
                 <div class="memo-scenario-area">
                     <div class="control-section">
                         <div class="section-title">📝 分析メモ</div>
@@ -1006,6 +1029,27 @@
                             
                             <div id="customScenariosContainer">
                                 <!-- カスタムシナリオが動的に追加される -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 固定プロンプト設定 -->
+                    <div class="control-section">
+                        <div class="section-title">🤖 ChatGPT固定プロンプト</div>
+                        <div class="prompt-settings">
+                            <textarea class="prompt-textarea" id="fixedPrompt" placeholder="ChatGPTに送信する際の固定プロンプトを設定してください...">あなたは経験豊富なFXトレーダーです。以下のチャート分析データを評価し、実用的なアドバイスを提供してください。
+
+特に以下の観点から分析をお願いします：
+1. テクニカル分析の妥当性
+2. リスク管理の観点
+3. エントリー・エグジット戦略
+4. 市場環境との整合性
+
+具体的で実践的なアドバイスをお願いします。</textarea>
+                            <div class="prompt-controls">
+                                <button class="prompt-btn save-prompt-btn" onclick="saveFixedPrompt()">💾 プロンプト保存</button>
+                                <button class="prompt-btn reset-prompt-btn" onclick="resetFixedPrompt()">🔄 デフォルトに戻す</button>
+                                <button class="prompt-btn chatgpt-analysis-btn" onclick="sendToChatGPTBrowser()">🤖 ChatGPT分析</button>
                             </div>
                         </div>
                     </div>
@@ -1053,10 +1097,6 @@
             <div class="page-info">
                 ページ <span id="currentPage">1</span> / <span id="totalPages">14</span> | 
                 最終更新: <span id="footerUpdate">2025-07-24 14:30</span>
-            </div>
-            <div class="nav-controls">
-                <button class="nav-btn" onclick="previousPage()" id="prevBtn" disabled>← 前へ</button>
-                <button class="nav-btn" onclick="nextPage()" id="nextBtn">次へ →</button>
             </div>
         </div>
     </div>
@@ -2035,7 +2075,6 @@ ${memo}`;
             updateTimestamp();
             setInterval(updateTimestamp, 300000);
             setInterval(autoSaveMemo, 5000);
-            
         });
 
         // イベントリスナー
