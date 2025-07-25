@@ -212,7 +212,7 @@
             }
         }
 
-        /* 画像ボタンの基本スタイル */
+        /* 画像ボタンの基本スタイル - 各シナリオ独立で色分け */
         .image-btn {
             padding: 8px 16px;
             border: 2px solid #dee2e6;
@@ -224,57 +224,13 @@
             min-width: 80px;
             font-weight: 600;
             position: relative;
-            background: #f8f9fa !important;
-            color: #495057 !important;
-        }
-
-        /* 分析ステータス別の色設定（!importantで確実に適用） */
-        /* 検討中 - 青 */
-        .image-btn.status-considering {
-            background: #007bff !important;
             color: white !important;
-            border-color: #007bff !important;
         }
 
-        .image-btn.status-considering.active {
-            background: #0056b3 !important;
-            border-color: #0056b3 !important;
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        /* 見逃し、見送り、完了 - グレー */
-        .image-btn.status-missed,
-        .image-btn.status-skip,
-        .image-btn.status-completed {
-            background: #6c757d !important;
-            color: white !important;
-            border-color: #6c757d !important;
-        }
-
-        .image-btn.status-missed.active,
-        .image-btn.status-skip.active,
-        .image-btn.status-completed.active {
-            background: #495057 !important;
-            border-color: #495057 !important;
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        /* 指値逆指値中、保持中 - 赤 */
-        .image-btn.status-pending,
-        .image-btn.status-holding {
-            background: #dc3545 !important;
-            color: white !important;
-            border-color: #dc3545 !important;
-        }
-
-        .image-btn.status-pending.active,
-        .image-btn.status-holding.active {
-            background: #c82333 !important;
-            border-color: #c82333 !important;
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        /* 選択中のシナリオは影で表現 */
+        .image-btn.selected {
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+            transform: translateY(-2px);
         }
 
         /* 画像が見つからない場合（最優先） */
@@ -355,12 +311,13 @@
             padding: 20px;
         }
 
-        /* チャート周辺のナビゲーション */
+        /* チャート周辺のナビゲーション - 常に3つのボタンを表示 */
         .chart-navigation {
             display: flex;
             justify-content: center;
             gap: 15px;
             margin-top: 15px;
+            flex-wrap: wrap;
         }
 
         .chart-nav-btn {
@@ -390,9 +347,9 @@
             transform: none;
         }
 
-        /* GOLDの最終ページ用トップへ戻るボタン */
+        /* トップへ戻るボタン - 常に表示 */
         .return-top-btn {
-            padding: 12px 24px;
+            padding: 10px 20px;
             background: #28a745;
             color: white;
             border: none;
@@ -1095,13 +1052,16 @@
                     <img id="chartImage" class="chart-image" style="display: none;" alt="チャート画像">
                 </div>
                 
-                <!-- チャート周辺のナビゲーション -->
-                <div class="chart-navigation" id="chartNavigation">
+                <!-- チャート周辺のナビゲーション - 常に3つのボタンを表示 -->
+                <div class="chart-navigation">
                     <button class="chart-nav-btn" onclick="previousPage()" id="prevBtn" disabled>
                         ← 前のチャート
                     </button>
                     <button class="chart-nav-btn" onclick="nextPage()" id="nextBtn">
                         次のチャート →
+                    </button>
+                    <button class="return-top-btn" onclick="returnToTop()">
+                        🏠 トップへ戻る
                     </button>
                 </div>
                 
@@ -1309,7 +1269,7 @@
             'GOLD.png'
         ];
 
-        // 通貨ペアデータ（動的に管理）
+        // 通貨ペアデータ（動的に管理） - 各シナリオごとに独立したステータスを管理
         let currencyData = {
             'USDJPY': {
                 pair: 'USD/JPY',
@@ -1318,6 +1278,11 @@
                 timeframe: '4時間足',
                 images: ['USDJPY.jpeg', 'USDJPY2.jpeg', 'USDJPY3.jpeg'],
                 imageLabels: ['シナリオ1', 'シナリオ2', 'シナリオ3'],
+                imageStatuses: {
+                    'USDJPY.jpeg': 'considering',
+                    'USDJPY2.jpeg': 'considering',
+                    'USDJPY3.jpeg': 'considering'
+                },
                 memo: '',
                 customScenarios: []
             },
@@ -1328,6 +1293,10 @@
                 timeframe: '日足',
                 images: ['EURUSD.jpeg', 'EURUSD2.jpeg'],
                 imageLabels: ['シナリオ1', 'シナリオ2'],
+                imageStatuses: {
+                    'EURUSD.jpeg': 'considering',
+                    'EURUSD2.jpeg': 'considering'
+                },
                 memo: '',
                 customScenarios: []
             },
@@ -1338,6 +1307,12 @@
                 timeframe: '4時間足',
                 images: ['GBPUSD.jpeg', 'GBPUSD2.jpeg', 'GBPUSD3.jpeg', 'GBPUSD4.jpeg'],
                 imageLabels: ['シナリオ1', 'シナリオ2', 'シナリオ3', 'シナリオ4'],
+                imageStatuses: {
+                    'GBPUSD.jpeg': 'considering',
+                    'GBPUSD2.jpeg': 'considering',
+                    'GBPUSD3.jpeg': 'considering',
+                    'GBPUSD4.jpeg': 'considering'
+                },
                 memo: '',
                 customScenarios: []
             },
@@ -1348,6 +1323,10 @@
                 timeframe: '日足',
                 images: ['AUDUSD.jpeg', 'AUDUSD2.jpeg'],
                 imageLabels: ['シナリオ1', 'シナリオ2'],
+                imageStatuses: {
+                    'AUDUSD.jpeg': 'considering',
+                    'AUDUSD2.jpeg': 'considering'
+                },
                 memo: '',
                 customScenarios: []
             },
@@ -1358,6 +1337,10 @@
                 timeframe: '4時間足',
                 images: ['SILVER.jpeg', 'SILVER2.jpeg'],
                 imageLabels: ['シナリオ1', 'シナリオ2'],
+                imageStatuses: {
+                    'SILVER.jpeg': 'considering',
+                    'SILVER2.jpeg': 'considering'
+                },
                 memo: '',
                 customScenarios: []
             },
@@ -1368,6 +1351,9 @@
                 timeframe: '日足',
                 images: ['GOLD.png'],
                 imageLabels: ['シナリオ1'],
+                imageStatuses: {
+                    'GOLD.png': 'considering'
+                },
                 memo: '',
                 customScenarios: []
             }
@@ -1490,7 +1476,20 @@
             }
         }
 
-        // 画像ボタンの更新（完全修正版）
+        // 分析ステータスに基づく色を取得
+        function getStatusColor(status) {
+            const statusColors = {
+                'considering': '#007bff',    // 青
+                'skip': '#6c757d',          // グレー
+                'missed': '#6c757d',        // グレー  
+                'pending': '#dc3545',       // 赤
+                'holding': '#dc3545',       // 赤
+                'completed': '#6c757d'      // グレー
+            };
+            return statusColors[status] || '#007bff';
+        }
+
+        // 画像ボタンの更新（各シナリオ独立版）
         function updateImageButtons() {
             const data = currencyData[currentCurrency];
             const container = document.getElementById('imageButtons');
@@ -1502,16 +1501,16 @@
                 btn.textContent = data.imageLabels[index];
                 btn.onclick = function() { selectImage(this, image); };
                 
-                // まず基本クラスを設定
-                btn.classList.add('image-btn');
+                // 各シナリオ独立の分析ステータスに基づいて色を設定
+                const imageStatus = data.imageStatuses[image] || 'considering';
+                const statusColor = getStatusColor(imageStatus);
                 
-                // 分析ステータスに応じてクラスを追加（確実に適用）
-                btn.classList.remove('status-considering', 'status-skip', 'status-missed', 'status-pending', 'status-holding', 'status-completed');
-                btn.classList.add(`status-${data.status}`);
+                btn.style.backgroundColor = statusColor;
+                btn.style.borderColor = statusColor;
                 
-                // 現在選択中の画像かどうかチェック
+                // 現在選択中の画像は影で表現
                 if (image === currentImage) {
-                    btn.classList.add('active');
+                    btn.classList.add('selected');
                 }
                 
                 // 画像が見つからない場合
@@ -1656,6 +1655,9 @@
             document.getElementById('currentPair').textContent = data.pair;
             document.getElementById('timeframe').textContent = data.timeframe;
             
+            // 現在の画像の分析ステータスに基づいてステータスボタンを更新
+            const currentImageStatus = data.imageStatuses[currentImage] || 'considering';
+            
             // ステータスボタン更新
             document.querySelectorAll('.status-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -1667,7 +1669,7 @@
                 'pending': 3, 'holding': 4, 'completed': 5
             };
             
-            const statusIndex = statusMap[data.status] || 0;
+            const statusIndex = statusMap[currentImageStatus] || 0;
             if (statusButtons[statusIndex]) {
                 statusButtons[statusIndex].classList.add('active');
             }
@@ -1691,15 +1693,17 @@
             updateCurrentImageName();
         }
 
-        // ステータス設定（画像ボタンの色も更新）- 修正版
+        // ステータス設定（現在の画像のステータスのみ更新）
         function setStatus(element, status) {
             document.querySelectorAll('.status-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             element.classList.add('active');
-            currencyData[currentCurrency].status = status;
             
-            // 画像ボタンの色を更新（修正版）
+            // 現在の画像のステータスのみ更新
+            currencyData[currentCurrency].imageStatuses[currentImage] = status;
+            
+            // 画像ボタンの色を更新
             updateImageButtons();
         }
 
@@ -1798,6 +1802,8 @@
         // コピー用テキストを生成
         function generateCopyText() {
             const data = currencyData[currentCurrency];
+            const currentImageStatus = data.imageStatuses[currentImage] || 'considering';
+            
             const statusText = {
                 'considering': '🤔 検討中', 'skip': '⏭️ 見送り', 'missed': '😞 見逃し',
                 'pending': '📋 現在指値中', 'holding': '💼 保持中', 'completed': '✅ 完了'
@@ -1818,7 +1824,7 @@
 📊 **基本情報**
 ・通貨ペア: ${data.pair}
 ・現在の画像: ${currentImage}
-・分析ステータス: ${statusText[data.status]}
+・分析ステータス: ${statusText[currentImageStatus]}
 ・狙う波: ${waveText[data.wave]}
 ・時間軸: ${data.timeframe}
 ・分析日時: ${new Date().toLocaleString('ja-JP')}
@@ -1923,6 +1929,7 @@ ${memo}`;
                 
                 currencyData[currency].images.push(imageName);
                 currencyData[currency].imageLabels.push(label);
+                currencyData[currency].imageStatuses[imageName] = 'considering'; // 新しい画像のステータスを初期化
                 allImages.push(imageName);
                 uploadedImages[imageName] = e.target.result;
                 
@@ -2010,6 +2017,7 @@ ${memo}`;
             // 画像とラベルを削除
             data.images.splice(imageIndex, 1);
             data.imageLabels.splice(imageIndex, 1);
+            delete data.imageStatuses[imageName]; // 画像ステータスも削除
             
             // allImagesからも削除
             const allImageIndex = allImages.indexOf(imageName);
@@ -2079,6 +2087,7 @@ ${memo}`;
                 timeframe: timeframe,
                 images: [],
                 imageLabels: [],
+                imageStatuses: {},
                 memo: '',
                 customScenarios: []
             };
@@ -2153,11 +2162,6 @@ ${memo}`;
             });
         }
 
-        // GOLDの最終ページかどうかを判定する関数
-        function isGoldLastPage() {
-            return currentImage === 'GOLD.png' && currentPageNum === getTotalPages();
-        }
-
         // トップへ戻る関数
         function returnToTop() {
             currentPageNum = 1;
@@ -2219,36 +2223,15 @@ ${memo}`;
             updateCurrentImageName();
         }
 
+        // ページ情報の更新（常に3つのボタンを表示）
         function updatePageInfo() {
             const totalPages = getTotalPages();
             document.getElementById('currentPage').textContent = currentPageNum;
             document.getElementById('totalPages').textContent = totalPages;
             
+            // 前へボタンと次へボタンの状態を更新
             document.getElementById('prevBtn').disabled = currentPageNum === 1;
             document.getElementById('nextBtn').disabled = currentPageNum === totalPages;
-            
-            // GOLDの最終ページの場合、ナビゲーションボタンを変更
-            const chartNavigation = document.getElementById('chartNavigation');
-            
-            if (isGoldLastPage()) {
-                chartNavigation.innerHTML = `
-                    <button class="chart-nav-btn" onclick="previousPage()" id="prevBtn">
-                        ← 前のチャート
-                    </button>
-                    <button class="return-top-btn" onclick="returnToTop()">
-                        🏠 トップへ戻る
-                    </button>
-                `;
-            } else {
-                chartNavigation.innerHTML = `
-                    <button class="chart-nav-btn" onclick="previousPage()" id="prevBtn" ${currentPageNum === 1 ? 'disabled' : ''}>
-                        ← 前のチャート
-                    </button>
-                    <button class="chart-nav-btn" onclick="nextPage()" id="nextBtn" ${currentPageNum === totalPages ? 'disabled' : ''}>
-                        次のチャート →
-                    </button>
-                `;
-            }
         }
 
         // チャートモーダル
@@ -2283,6 +2266,7 @@ ${memo}`;
         // ユーティリティ関数
         function shareAnalysis() {
             const data = currencyData[currentCurrency];
+            const currentImageStatus = data.imageStatuses[currentImage] || 'considering';
             const statusText = {
                 'considering': '🤔 検討中', 'skip': '⏭️ 見送り', 'missed': '😞 見逃し',
                 'pending': '📋 指値逆指値中', 'holding': '💼 保持中', 'completed': '✅ 完了'
@@ -2294,7 +2278,7 @@ ${memo}`;
             
             let shareText = `${data.pair} 分析レポート\n`;
             shareText += `画像: ${currentImage}\n`;
-            shareText += `ステータス: ${statusText[data.status]}\n`;
+            shareText += `ステータス: ${statusText[currentImageStatus]}\n`;
             shareText += `狙う波: ${waveText[data.wave]}\n\n`;
             shareText += `分析メモ:\n${document.getElementById('analysisMemo').value}\n\n`;
             
