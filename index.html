@@ -135,6 +135,38 @@
             border: 1px solid #e9ecef;
         }
 
+        .image-selector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .scenario-management-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .scenario-mgmt-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .add-scenario-mgmt-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .delete-scenario-mgmt-btn {
+            background: #dc3545;
+            color: white;
+        }
+
         .image-buttons {
             display: flex;
             flex-wrap: wrap;
@@ -159,6 +191,7 @@
             text-align: center;
             min-width: 80px;
             font-weight: 600;
+            position: relative;
         }
 
         .image-btn.active {
@@ -897,6 +930,15 @@
                 width: 100%;
                 justify-content: center;
             }
+
+            .scenario-management-buttons {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .scenario-mgmt-btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -937,7 +979,13 @@
 
             <!-- チャート選択 -->
             <div class="image-selector">
-                <div class="section-title">チャート選択</div>
+                <div class="image-selector-header">
+                    <div class="section-title">チャート選択</div>
+                    <div class="scenario-management-buttons">
+                        <button class="scenario-mgmt-btn add-scenario-mgmt-btn" onclick="showAddImageModal()">➕ シナリオ追加</button>
+                        <button class="scenario-mgmt-btn delete-scenario-mgmt-btn" onclick="showDeleteImageModal()">🗑️ シナリオ削除</button>
+                    </div>
+                </div>
                 <div class="image-buttons" id="imageButtons">
                     <!-- JavaScript で動的に生成 -->
                 </div>
@@ -1063,11 +1111,10 @@
                     <h3>🔧 通貨ペア・画像管理</h3>
                     <div class="management-controls">
                         <button class="mgmt-btn add-currency-btn" onclick="showAddCurrencyModal()">➕ 通貨ペア追加</button>
-                        <button class="mgmt-btn add-image-btn" onclick="showAddImageModal()">🖼️ 画像追加</button>
                         <button class="mgmt-btn delete-currency-btn" onclick="showDeleteCurrencyModal()">🗑️ 通貨ペア削除</button>
                     </div>
                     <p style="font-size: 12px; color: #6c757d;">
-                        通貨ペアの追加・削除、各通貨ペアへの画像追加が可能です
+                        通貨ペアの追加・削除が可能です
                     </p>
                 </div>
 
@@ -1123,18 +1170,36 @@
         </div>
     </div>
 
-    <!-- 画像追加モーダル -->
+    <!-- シナリオ追加モーダル -->
     <div class="management-modal" id="addImageModal">
         <div class="management-modal-content">
-            <h3>🖼️ 画像追加</h3>
+            <h3>🖼️ シナリオ追加</h3>
             <select id="targetCurrency" class="management-input">
                 <!-- JavaScript で動的に生成 -->
             </select>
             <input type="file" id="newImageFile" class="management-input" accept="image/*">
-            <input type="text" id="newImageLabel" class="management-input" placeholder="画像ラベル (例: シナリオ3)">
+            <input type="text" id="newImageLabel" class="management-input" placeholder="シナリオ名 (例: シナリオ3)">
             <div class="management-buttons">
                 <button class="mgmt-btn" style="background: #6c757d; color: white;" onclick="closeAddImageModal()">キャンセル</button>
                 <button class="mgmt-btn add-image-btn" onclick="addNewImage()">追加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- シナリオ削除モーダル -->
+    <div class="management-modal" id="deleteImageModal">
+        <div class="management-modal-content">
+            <h3>🗑️ シナリオ削除</h3>
+            <p style="color: #dc3545; margin-bottom: 15px;">⚠️ 削除すると復元できません</p>
+            <select id="deleteImageCurrency" class="management-input">
+                <!-- JavaScript で動的に生成 -->
+            </select>
+            <select id="deleteImageSelect" class="management-input">
+                <!-- JavaScript で動的に生成 -->
+            </select>
+            <div class="management-buttons">
+                <button class="mgmt-btn" style="background: #6c757d; color: white;" onclick="closeDeleteImageModal()">キャンセル</button>
+                <button class="mgmt-btn delete-currency-btn" onclick="deleteImage()">削除</button>
             </div>
         </div>
     </div>
@@ -1340,9 +1405,11 @@
         function selectImage(element, imageName) {
             currentImage = imageName;
             
+            // 全てのボタンのactiveクラスを削除
             document.querySelectorAll('.image-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
+            // 選択されたボタンにactiveクラスを追加
             element.classList.add('active');
             
             loadCurrentImage();
@@ -1364,37 +1431,17 @@
             
             data.images.forEach((image, index) => {
                 const btn = document.createElement('div');
-                btn.className = 'image-btn' + (image === currentImage ? ' active' : '');
+                btn.className = 'image-btn';
                 btn.textContent = data.imageLabels[index];
                 btn.onclick = function() { selectImage(this, image); };
                 
-                // 分析ステータスに応じて色を変更（現在の通貨ペアのみ）
-                const status = data.status;
-                if (status === 'skip' || status === 'missed' || status === 'completed') {
-                    btn.style.backgroundColor = '#6c757d';
-                    btn.style.color = 'white';
-                    btn.style.borderColor = '#6c757d';
-                    if (btn.classList.contains('active')) {
-                        btn.style.backgroundColor = '#495057';
-                        btn.style.borderColor = '#495057';
-                    }
-                } else if (status === 'pending' || status === 'holding') {
-                    btn.style.backgroundColor = '#dc3545';
-                    btn.style.color = 'white';
-                    btn.style.borderColor = '#dc3545';
-                    if (btn.classList.contains('active')) {
-                        btn.style.backgroundColor = '#c82333';
-                        btn.style.borderColor = '#c82333';
-                    }
-                } else if (status === 'considering') {
-                    btn.style.backgroundColor = '#007bff';
-                    btn.style.color = 'white';
-                    btn.style.borderColor = '#007bff';
-                    if (btn.classList.contains('active')) {
-                        btn.style.backgroundColor = '#0056b3';
-                        btn.style.borderColor = '#0056b3';
-                    }
+                // 現在選択中の画像かどうかチェック
+                if (image === currentImage) {
+                    btn.classList.add('active');
                 }
+                
+                // 分析ステータスに応じて色を変更（現在の通貨ペアのみ）
+                applyStatusColor(btn, data.status, image === currentImage);
                 
                 if (imageStatusMap[image] === 'missing') {
                     btn.classList.add('missing');
@@ -1403,6 +1450,40 @@
                 
                 container.appendChild(btn);
             });
+        }
+
+        // ステータスに応じた色を適用
+        function applyStatusColor(btn, status, isActive) {
+            // デフォルトの色をリセット
+            btn.style.backgroundColor = '';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+            
+            if (status === 'skip' || status === 'missed' || status === 'completed') {
+                btn.style.backgroundColor = '#6c757d';
+                btn.style.color = 'white';
+                btn.style.borderColor = '#6c757d';
+                if (isActive) {
+                    btn.style.backgroundColor = '#495057';
+                    btn.style.borderColor = '#495057';
+                }
+            } else if (status === 'pending' || status === 'holding') {
+                btn.style.backgroundColor = '#dc3545';
+                btn.style.color = 'white';
+                btn.style.borderColor = '#dc3545';
+                if (isActive) {
+                    btn.style.backgroundColor = '#c82333';
+                    btn.style.borderColor = '#c82333';
+                }
+            } else if (status === 'considering') {
+                btn.style.backgroundColor = '#007bff';
+                btn.style.color = 'white';
+                btn.style.borderColor = '#007bff';
+                if (isActive) {
+                    btn.style.backgroundColor = '#0056b3';
+                    btn.style.borderColor = '#0056b3';
+                }
+            }
         }
 
         // 現在の画像を読み込み
@@ -1776,6 +1857,156 @@ ${memo}`;
             });
         }
 
+        // シナリオ管理機能
+        function showAddImageModal() {
+            updateCurrencySelectors();
+            document.getElementById('addImageModal').classList.add('active');
+        }
+
+        function closeAddImageModal() {
+            document.getElementById('addImageModal').classList.remove('active');
+            document.getElementById('newImageFile').value = '';
+            document.getElementById('newImageLabel').value = '';
+        }
+
+        function addNewImage() {
+            const currency = document.getElementById('targetCurrency').value;
+            const file = document.getElementById('newImageFile').files[0];
+            const label = document.getElementById('newImageLabel').value.trim();
+            
+            if (!currency || !file || !label) {
+                alert('全ての項目を入力してください。');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageName = `${currency}_${Date.now()}.${file.name.split('.').pop()}`;
+                
+                currencyData[currency].images.push(imageName);
+                currencyData[currency].imageLabels.push(label);
+                allImages.push(imageName);
+                uploadedImages[imageName] = e.target.result;
+                
+                if (currentCurrency === currency) {
+                    updateImageButtons();
+                }
+                
+                updatePageInfo();
+                closeAddImageModal();
+                showStatus(`${label} を ${currencyData[currency].pair} に追加しました！`, 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showDeleteImageModal() {
+            updateImageSelectors();
+            document.getElementById('deleteImageModal').classList.add('active');
+        }
+
+        function closeDeleteImageModal() {
+            document.getElementById('deleteImageModal').classList.remove('active');
+        }
+
+        function updateImageSelectors() {
+            const currencySelector = document.getElementById('deleteImageCurrency');
+            const imageSelector = document.getElementById('deleteImageSelect');
+            
+            // 通貨ペア選択肢を更新
+            currencySelector.innerHTML = '';
+            Object.keys(currencyData).forEach(currency => {
+                const option = document.createElement('option');
+                option.value = currency;
+                option.textContent = currencyData[currency].pair;
+                currencySelector.appendChild(option);
+            });
+            
+            // 通貨ペア変更時に画像選択肢を更新
+            currencySelector.onchange = function() {
+                updateImageSelectOptions();
+            };
+            
+            // 初期表示時の画像選択肢を更新
+            updateImageSelectOptions();
+        }
+
+        function updateImageSelectOptions() {
+            const currency = document.getElementById('deleteImageCurrency').value;
+            const imageSelector = document.getElementById('deleteImageSelect');
+            
+            imageSelector.innerHTML = '';
+            
+            if (currency && currencyData[currency]) {
+                currencyData[currency].images.forEach((image, index) => {
+                    const option = document.createElement('option');
+                    option.value = image;
+                    option.textContent = currencyData[currency].imageLabels[index];
+                    imageSelector.appendChild(option);
+                });
+            }
+        }
+
+        function deleteImage() {
+            const currency = document.getElementById('deleteImageCurrency').value;
+            const imageName = document.getElementById('deleteImageSelect').value;
+            
+            if (!currency || !imageName) {
+                alert('削除するシナリオを選択してください。');
+                return;
+            }
+            
+            const data = currencyData[currency];
+            const imageIndex = data.images.indexOf(imageName);
+            
+            if (imageIndex === -1) {
+                alert('選択されたシナリオが見つかりません。');
+                return;
+            }
+            
+            const scenarioName = data.imageLabels[imageIndex];
+            
+            if (!confirm(`${currencyData[currency].pair} の「${scenarioName}」を削除しますか？\nこの操作は取り消せません。`)) {
+                return;
+            }
+            
+            // 画像とラベルを削除
+            data.images.splice(imageIndex, 1);
+            data.imageLabels.splice(imageIndex, 1);
+            
+            // allImagesからも削除
+            const allImageIndex = allImages.indexOf(imageName);
+            if (allImageIndex !== -1) {
+                allImages.splice(allImageIndex, 1);
+            }
+            
+            // アップロード画像も削除
+            delete uploadedImages[imageName];
+            
+            // 現在の画像が削除された場合、最初の画像に切り替え
+            if (currentImage === imageName) {
+                if (data.images.length > 0) {
+                    currentImage = data.images[0];
+                } else {
+                    // 画像がない場合は他の通貨ペアの最初の画像に切り替え
+                    const remainingCurrencies = Object.keys(currencyData).filter(c => currencyData[c].images.length > 0);
+                    if (remainingCurrencies.length > 0) {
+                        currentCurrency = remainingCurrencies[0];
+                        currentImage = currencyData[currentCurrency].images[0];
+                    }
+                }
+            }
+            
+            // 現在の通貨ペアの場合は表示を更新
+            if (currentCurrency === currency) {
+                updateImageButtons();
+                loadCurrentImage();
+            }
+            
+            updatePageInfo();
+            closeDeleteImageModal();
+            showStatus(`${scenarioName} を削除しました。`, 'info');
+        }
+
         // 通貨ペア管理機能
         function showAddCurrencyModal() {
             document.getElementById('addCurrencyModal').classList.add('active');
@@ -1818,47 +2049,6 @@ ${memo}`;
             updateCurrencySelectors();
             closeAddCurrencyModal();
             showStatus(`${display} を追加しました！`, 'success');
-        }
-
-        function showAddImageModal() {
-            updateCurrencySelectors();
-            document.getElementById('addImageModal').classList.add('active');
-        }
-
-        function closeAddImageModal() {
-            document.getElementById('addImageModal').classList.remove('active');
-            document.getElementById('newImageFile').value = '';
-            document.getElementById('newImageLabel').value = '';
-        }
-
-        function addNewImage() {
-            const currency = document.getElementById('targetCurrency').value;
-            const file = document.getElementById('newImageFile').files[0];
-            const label = document.getElementById('newImageLabel').value.trim();
-            
-            if (!currency || !file || !label) {
-                alert('全ての項目を入力してください。');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const imageName = `${currency}_${Date.now()}.${file.name.split('.').pop()}`;
-                
-                currencyData[currency].images.push(imageName);
-                currencyData[currency].imageLabels.push(label);
-                allImages.push(imageName);
-                uploadedImages[imageName] = e.target.result;
-                
-                if (currentCurrency === currency) {
-                    updateImageButtons();
-                }
-                
-                updatePageInfo();
-                closeAddImageModal();
-                showStatus(`${label} を ${currencyData[currency].pair} に追加しました！`, 'success');
-            };
-            reader.readAsDataURL(file);
         }
 
         function showDeleteCurrencyModal() {
@@ -1958,15 +2148,8 @@ ${memo}`;
                         updateCustomScenarios();
                     }
                     
-                    document.querySelectorAll('.image-btn').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    
-                    const imageIndex = data.images.indexOf(imageName);
-                    const imageButtons = document.querySelectorAll('.image-btn');
-                    if (imageButtons[imageIndex]) {
-                        imageButtons[imageIndex].classList.add('active');
-                    }
+                    // 画像ボタンの選択状態を更新
+                    updateImageButtons();
                     
                     break;
                 }
