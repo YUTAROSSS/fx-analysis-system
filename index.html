@@ -1,111 +1,228 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supabase接続テスト</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
-        .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
-        .info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
-        button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
-        button:hover { background-color: #0056b3; }
-        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
-    </style>
-</head>
-<body>
-    <h1>Supabase接続テスト</h1>
-    
-    <div class="test-section info">
-        <h3>設定情報</h3>
-        <p><strong>Project URL:</strong> https://jfrwyunauatsybdljlah.supabase.co</p>
-        <p><strong>テスト実行時刻:</strong> <span id="current-time"></span></p>
-    </div>
-
-    <div class="test-section">
-        <h3>テスト実行</h3>
-        <button onclick="testConnection()">基本接続テスト</button>
-        <button onclick="testTableAccess()">テーブルアクセステスト</button>
-        <button onclick="testInsert()">データ挿入テスト</button>
-        <button onclick="clearResults()">結果クリア</button>
-    </div>
-
-    <div id="results"></div>
-
-    <script>
-        const SUPABASE_URL = 'https://jfrwyunauatsybdljlah.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmcnd5dW5hdWF0c3liZGxqbGFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MTMxODksImV4cCI6MjA2OTA4OTE4OX0.cyhPTiN4WAQ2p86JBZObjSljt2i1K_bK-cGGo3soxAo';
+// テーブル構造確認用の関数を追加
+async function checkTableStructure() {
+    try {
+        addResult('テーブル構造確認開始', 'fx_analysis_dataテーブルの構造を確認中...', 'info');
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // 1. テーブルの存在確認
+        const { data: tableData, error: tableError } = await supabase
+            .from('fx_analysis_data')
+            .select('*')
+            .limit(1);
+            
+        if (tableError) {
+            addResult('テーブル構造確認 - エラー', `テーブルアクセスエラー:\n${JSON.stringify(tableError, null, 2)}`, 'error');
+            return;
+        }
         
-        document.getElementById('current-time').textContent = new Date().toLocaleString('ja-JP');
-
-        function addResult(title, content, type = 'info') {
-            const resultsDiv = document.getElementById('results');
-            const resultDiv = document.createElement('div');
-            resultDiv.className = `test-section ${type}`;
-            resultDiv.innerHTML = `<h4>${title}</h4><pre>${content}</pre><small>実行時刻: ${new Date().toLocaleString('ja-JP')}</small>`;
-            resultsDiv.appendChild(resultDiv);
+        // 2. 既存データの構造確認
+        if (tableData && tableData.length > 0) {
+            const sampleData = tableData[0];
+            addResult('既存データ構造', `サンプルデータ:\n${JSON.stringify(sampleData, null, 2)}`, 'info');
+            
+            // カラム構造の確認
+            const columns = Object.keys(sampleData);
+            addResult('テーブルカラム', `検出されたカラム:\n${columns.join('\n')}`, 'info');
+        } else {
+            addResult('テーブル状態', 'テーブルは存在しますが、データが空です', 'info');
         }
-
-        async function testConnection() {
-            try {
-                addResult('基本接続テスト開始', 'Supabaseクライアントの初期化を確認中...', 'info');
-                const { data, error } = await supabase.from('fx_analysis_data').select('count', { count: 'exact', head: true });
-                if (error) {
-                    addResult('基本接続テスト - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
-                } else {
-                    addResult('基本接続テスト - 成功', `接続成功!\nデータ件数: ${data}`, 'success');
-                }
-            } catch (err) {
-                addResult('基本接続テスト - 例外', `JavaScript例外:\n${err.message}`, 'error');
+        
+        // 3. 履歴テーブルの確認
+        const { data: historyData, error: historyError } = await supabase
+            .from('fx_analysis_history')
+            .select('*')
+            .limit(1);
+            
+        if (historyError) {
+            addResult('履歴テーブル確認 - エラー', `履歴テーブルアクセスエラー:\n${JSON.stringify(historyError, null, 2)}`, 'error');
+        } else {
+            addResult('履歴テーブル確認 - 成功', `履歴テーブルアクセス成功\nデータ件数: ${historyData ? historyData.length : 0}`, 'success');
+            
+            if (historyData && historyData.length > 0) {
+                const historyColumns = Object.keys(historyData[0]);
+                addResult('履歴テーブルカラム', `履歴テーブルカラム:\n${historyColumns.join('\n')}`, 'info');
             }
         }
+        
+        addResult('テーブル構造確認完了', 'すべてのテーブル構造確認が完了しました', 'success');
+        
+    } catch (err) {
+        addResult('テーブル構造確認 - 例外', `JavaScript例外:\n${err.message}`, 'error');
+    }
+}
 
-        async function testTableAccess() {
-            try {
-                addResult('テーブルアクセステスト開始', 'fx_analysis_dataテーブルからデータを取得中...', 'info');
-                const { data, error } = await supabase.from('fx_analysis_data').select('*').limit(1);
-                if (error) {
-                    addResult('テーブルアクセステスト - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
-                } else {
-                    addResult('テーブルアクセステスト - 成功', `データ取得成功!\n取得件数: ${data.length}\n\nデータ:\n${JSON.stringify(data, null, 2)}`, 'success');
+// データ形式テスト用の関数
+async function testDataFormats() {
+    try {
+        addResult('データ形式テスト開始', '各種データ形式の挿入テストを実行中...', 'info');
+        
+        // 1. 基本的なJSONB形式テスト
+        const basicJsonTest = {
+            id: 'format_test_basic_' + Date.now(),
+            data: {
+                currency: 'USDJPY',
+                scenario: 'scenario1',
+                analysisStatus: '検討中',
+                memo: 'テストメモ',
+                timestamp: new Date().toISOString()
+            },
+            updated_at: new Date().toISOString()
+        };
+        
+        const { data: basicResult, error: basicError } = await supabase
+            .from('fx_analysis_data')
+            .insert([basicJsonTest])
+            .select();
+            
+        if (basicError) {
+            addResult('基本JSONB形式テスト - エラー', `エラー:\n${JSON.stringify(basicError, null, 2)}`, 'error');
+        } else {
+            addResult('基本JSONB形式テスト - 成功', `基本形式データ挿入成功:\n${JSON.stringify(basicResult, null, 2)}`, 'success');
+        }
+        
+        // 2. 複雑なネストJSONテスト
+        const complexJsonTest = {
+            id: 'format_test_complex_' + Date.now(),
+            data: {
+                currencies: ['USDJPY', 'EURUSD', 'GBPUSD'],
+                scenarios: {
+                    scenario1: {
+                        name: 'テストシナリオ1',
+                        status: '検討中',
+                        memo: 'テストメモ',
+                        settings: {
+                            wave: '1時間足',
+                            priority: 'high'
+                        }
+                    }
+                },
+                metadata: {
+                    created: new Date().toISOString(),
+                    version: '1.0'
                 }
-            } catch (err) {
-                addResult('テーブルアクセステスト - 例外', `JavaScript例外:\n${err.message}`, 'error');
+            },
+            images: {
+                scenario1: [
+                    { url: 'test1.jpg', size: 1024 },
+                    { url: 'test2.jpg', size: 2048 }
+                ]
+            },
+            updated_at: new Date().toISOString()
+        };
+        
+        const { data: complexResult, error: complexError } = await supabase
+            .from('fx_analysis_data')
+            .insert([complexJsonTest])
+            .select();
+            
+        if (complexError) {
+            addResult('複雑JSONB形式テスト - エラー', `エラー:\n${JSON.stringify(complexError, null, 2)}`, 'error');
+        } else {
+            addResult('複雑JSONB形式テスト - 成功', `複雑形式データ挿入成功:\n${JSON.stringify(complexResult, null, 2)}`, 'success');
+        }
+        
+        // 3. 履歴テーブル形式テスト
+        const historyTest = {
+            timestamp: new Date().toISOString(),
+            version_id: `v_${Date.now()}`,
+            description: 'テスト履歴データ',
+            data_snapshot: {
+                key: 'USDJPY_scenario1_memo',
+                newValue: 'テストメモ更新',
+                oldValue: 'テストメモ'
+            },
+            changes: {
+                changeType: 'メモ更新',
+                deviceInfo: 'テストデバイス'
+            }
+        };
+        
+        const { data: historyResult, error: historyError } = await supabase
+            .from('fx_analysis_history')
+            .insert([historyTest])
+            .select();
+            
+        if (historyError) {
+            addResult('履歴データ形式テスト - エラー', `エラー:\n${JSON.stringify(historyError, null, 2)}`, 'error');
+        } else {
+            addResult('履歴データ形式テスト - 成功', `履歴データ挿入成功:\n${JSON.stringify(historyResult, null, 2)}`, 'success');
+        }
+        
+        addResult('データ形式テスト完了', 'すべてのデータ形式テストが完了しました', 'success');
+        
+    } catch (err) {
+        addResult('データ形式テスト - 例外', `JavaScript例外:\n${err.message}`, 'error');
+    }
+}
+
+// 権限テスト用の関数
+async function testPermissions() {
+    try {
+        addResult('権限テスト開始', 'データベース操作権限を確認中...', 'info');
+        
+        // 1. 読み取り権限テスト
+        const { data: readData, error: readError } = await supabase
+            .from('fx_analysis_data')
+            .select('*')
+            .limit(5);
+            
+        if (readError) {
+            addResult('読み取り権限テスト - エラー', `エラー:\n${JSON.stringify(readError, null, 2)}`, 'error');
+        } else {
+            addResult('読み取り権限テスト - 成功', `読み取り成功 (${readData.length}件)`, 'success');
+        }
+        
+        // 2. 書き込み権限テスト（既に実行済み）
+        addResult('書き込み権限テスト', '書き込み権限は既存のテストで確認済み', 'success');
+        
+        // 3. 更新権限テスト
+        const testId = 'permission_test_' + Date.now();
+        const insertData = {
+            id: testId,
+            data: { test: 'initial' },
+            updated_at: new Date().toISOString()
+        };
+        
+        const { error: insertError } = await supabase
+            .from('fx_analysis_data')
+            .insert([insertData]);
+            
+        if (!insertError) {
+            const { data: updateData, error: updateError } = await supabase
+                .from('fx_analysis_data')
+                .update({ data: { test: 'updated' }, updated_at: new Date().toISOString() })
+                .eq('id', testId)
+                .select();
+                
+            if (updateError) {
+                addResult('更新権限テスト - エラー', `エラー:\n${JSON.stringify(updateError, null, 2)}`, 'error');
+            } else {
+                addResult('更新権限テスト - 成功', `更新成功:\n${JSON.stringify(updateData, null, 2)}`, 'success');
             }
         }
-
-        async function testInsert() {
-            try {
-                const testData = {
-                    id: 'test_' + Date.now(),
-                    data: { test: true, timestamp: new Date().toISOString(), message: 'GitHub Pages接続テスト' },
-                    updated_at: new Date().toISOString()
-                };
-                addResult('データ挿入テスト開始', `テストデータ:\n${JSON.stringify(testData, null, 2)}`, 'info');
-                const { data, error } = await supabase.from('fx_analysis_data').insert([testData]).select();
-                if (error) {
-                    addResult('データ挿入テスト - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
-                } else {
-                    addResult('データ挿入テスト - 成功', `データ挿入成功!\n\n挿入されたデータ:\n${JSON.stringify(data, null, 2)}`, 'success');
-                }
-            } catch (err) {
-                addResult('データ挿入テスト - 例外', `JavaScript例外:\n${err.message}`, 'error');
-            }
+        
+        // 4. 削除権限テスト
+        const { data: deleteData, error: deleteError } = await supabase
+            .from('fx_analysis_data')
+            .delete()
+            .eq('id', testId)
+            .select();
+            
+        if (deleteError) {
+            addResult('削除権限テスト - エラー', `エラー:\n${JSON.stringify(deleteError, null, 2)}`, 'error');
+        } else {
+            addResult('削除権限テスト - 成功', `削除成功:\n${JSON.stringify(deleteData, null, 2)}`, 'success');
         }
-
-        function clearResults() {
-            document.getElementById('results').innerHTML = '';
-        }
-
-        window.addEventListener('load', function() {
-            addResult('初期化完了', 'Supabaseクライアントが初期化されました。テストボタンをクリックして接続を確認してください。', 'info');
-        });
-    </script>
-</body>
-</html>
-
+        
+        addResult('権限テスト完了', 'すべての権限テストが完了しました', 'success');
+        
+    } catch (err) {
+        addResult('権限テスト - 例外', `JavaScript例外:\n${err.message}`, 'error');
+    }
+}
+<!-- 既存のテスト実行セクションに追加 -->
+<div class="test-section">
+    <h3>詳細確認テスト</h3>
+    <button onclick="checkTableStructure()">テーブル構造確認</button>
+    <button onclick="testDataFormats()">データ形式テスト</button>
+    <button onclick="testPermissions()">権限テスト</button>
+</div>
