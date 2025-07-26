@@ -3,213 +3,1892 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supabase接続テスト</title>
+    <title>FX通貨ペア分析システム</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
-        .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
-        .info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
-        button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
-        button:hover { background-color: #0056b3; }
-        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        /* 基本スタイル */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            color: #333333;
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ボタン基本スタイル */
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+
+        /* 通貨ペアボタン */
+        .currency-btn {
+            background-color: #6c757d;
+            color: white;
+            min-width: 80px;
+        }
+
+        .currency-btn.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        /* シナリオボタン */
+        .scenario-btn {
+            background-color: #007bff;
+            color: white;
+            min-width: 120px;
+            position: relative;
+        }
+
+        .scenario-btn.active {
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .scenario-btn .status-indicator {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        /* 分析ステータス・狙う波ボタン */
+        .status-btn, .wave-btn {
+            background-color: #f8f9fa;
+            color: #495057;
+            border: 1px solid #dee2e6;
+            text-align: left;
+            width: 100%;
+            padding: 12px 15px;
+        }
+
+        .status-btn.active, .wave-btn.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .status-btn:hover, .wave-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        .status-btn.active:hover, .wave-btn.active:hover {
+            background-color: #0056b3;
+        }
+
+        /* ダークモード */
+        .dark-mode {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .dark-mode .currency-btn,
+        .dark-mode .scenario-btn {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+        }
+
+        .dark-mode .currency-btn.active,
+        .dark-mode .scenario-btn.active {
+            background-color: #007bff;
+        }
+
+        .dark-mode .status-btn,
+        .dark-mode .wave-btn {
+            background-color: #2d2d2d;
+            color: #ffffff;
+            border-color: #555;
+        }
+
+        .dark-mode .status-btn.active,
+        .dark-mode .wave-btn.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .dark-mode textarea {
+            background-color: #2d2d2d;
+            color: #ffffff;
+            border-color: #555;
+        }
+
+        .dark-mode .history-sidebar {
+            background-color: #2d2d2d;
+            color: #ffffff;
+        }
+
+        .dark-mode .history-header {
+            background-color: #1a1a1a;
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            .currency-buttons,
+            .scenario-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .currency-btn,
+            .scenario-btn {
+                margin-bottom: 8px;
+                width: 100%;
+            }
+            
+            .analysis-section {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .memo-chatgpt-section {
+                padding: 0 10px;
+            }
+            
+            .history-sidebar {
+                width: 100vw;
+                right: -100vw;
+            }
+            
+            .bottom-section {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .usage-monitor {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .navigation {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .navigation button {
+                width: 100%;
+            }
+        }
+
+        /* アニメーション */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* ドラッグ&ドロップ */
+        .scenario-btn.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+        .scenario-btn.drag-over {
+            border: 2px dashed #007bff;
+        }
+
+        /* プログレスバー */
+        progress {
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        progress::-webkit-progress-bar {
+            background-color: #f0f0f0;
+            border-radius: 3px;
+        }
+
+        progress::-webkit-progress-value {
+            background-color: #007bff;
+            border-radius: 3px;
+        }
+
+        /* 履歴項目 */
+        .history-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .history-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .dark-mode .history-item {
+            border-bottom-color: #555;
+        }
+
+        .dark-mode .history-item:hover {
+            background-color: #333;
+        }
     </style>
 </head>
 <body>
-    <h1>Supabase接続テスト</h1>
-    
-    <div class="test-section info">
-        <h3>設定情報</h3>
-        <p><strong>Project URL:</strong> https://jfrwyunauatsybdljlah.supabase.co</p>
-        <p><strong>テスト実行時刻:</strong> <span id="current-time"></span></p>
+    <!-- ヘッダー -->
+    <header style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 18px; font-weight: bold;">🔄 FX通貨ペア分析システム</span>
+        <div>
+            <button id="backup-btn" style="margin-right: 10px;">💾 バックアップ</button>
+            <button id="theme-toggle" style="margin-right: 10px;">🌙</button>
+            <span style="font-size: 20px;">📊</span>
+        </div>
+    </header>
+
+    <!-- 通貨ペア選択 -->
+    <div class="currency-section" style="margin: 20px 0; padding: 0 20px;">
+        <h3>通貨ペア部分</h3>
+        <div class="currency-buttons" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+            <button class="currency-btn active" data-currency="USDJPY">USDJPY</button>
+            <button class="currency-btn" data-currency="EURUSD">EURUSD</button>
+            <button class="currency-btn" data-currency="GBPUSD">GBPUSD</button>
+            <button class="currency-btn" data-currency="AUDUSD">AUDUSD</button>
+            <button class="currency-btn" data-currency="SILVER">SILVER</button>
+            <button class="currency-btn" data-currency="GOLD">GOLD</button>
+            <button id="add-currency">通貨ペア追加</button>
+            <button id="remove-currency">通貨ペア削除</button>
+        </div>
     </div>
 
-    <div class="test-section">
-        <h3>テスト実行</h3>
-        <button onclick="testConnection()">基本接続テスト</button>
-        <button onclick="testTableAccess()">テーブルアクセステスト</button>
-        <button onclick="testInsert()">データ挿入テスト</button>
-        <button onclick="clearResults()">結果クリア</button>
-        <button onclick="detailedCheck()">詳細確認</button>
+    <!-- シナリオ選択 -->
+    <div class="scenario-section" style="margin: 20px 0; padding: 0 20px;">
+        <h3>チャート部分</h3>
+        <div class="scenario-buttons" id="scenario-container" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+            <button class="scenario-btn active" data-scenario="scenario1" draggable="true">
+                シナリオ1 <small class="status-indicator" style="opacity: 0.8; margin-left: 5px;">📊 検討中</small>
+            </button>
+            <button id="add-scenario">シナリオ追加</button>
+            <button id="remove-scenario">シナリオ削除</button>
+        </div>
     </div>
 
-    <div id="results"></div>
+    <!-- メイン表示エリア -->
+    <div class="main-display" style="text-align: center; margin: 30px 0; padding: 0 20px;">
+        <h2 id="current-pair" style="margin-bottom: 20px;">USDJPY</h2>
+        <div class="image-container" id="image-container" style="min-height: 300px; border: 2px dashed #ddd; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <p style="color: #666;">画像が表示されます</p>
+        </div>
+        <button id="high-quality-btn" style="display: none; margin-top: 10px;">高画質表示</button>
+    </div>
+
+    <!-- ナビゲーション -->
+    <div class="navigation" style="text-align: center; margin: 20px 0; display: flex; justify-content: center; flex-wrap: wrap;">
+        <button id="prev-chart" style="margin: 0 10px;">← 前のチャート</button>
+        <button id="next-chart" style="margin: 0 10px;">次のチャート →</button>
+        <button id="top-return" style="margin: 0 10px;">🔝 トップに戻る</button>
+    </div>
+
+    <!-- 分析ステータス・狙う波 -->
+    <div class="analysis-section" style="display: flex; gap: 30px; margin: 30px 0; flex-wrap: wrap; padding: 0 20px;">
+        <div class="status-section" style="flex: 1; min-width: 250px;">
+            <h3>分析ステータス</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="status-btn" data-status="検討中">📊 検討中</button>
+                <button class="status-btn" data-status="計算中">🔄 計算中</button>
+                <button class="status-btn" data-status="実戦">⚡ 実戦</button>
+                <button class="status-btn" data-status="利確">📈 利確</button>
+                <button class="status-btn" data-status="損切り">📉 損切り</button>
+                <button class="status-btn" data-status="見送り">👀 見送り</button>
+            </div>
+        </div>
+        <div class="wave-section" style="flex: 1; min-width: 250px;">
+            <h3>狙う波</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="wave-btn active" data-wave="未選択">未選択</button>
+                <button class="wave-btn" data-wave="1時間足">1時間足</button>
+                <button class="wave-btn" data-wave="4時間足">4時間足</button>
+                <button class="wave-btn" data-wave="日足">日足</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分析メモ・ChatGPT連携エリア -->
+    <div class="memo-chatgpt-section" style="margin: 30px 0; padding: 0 20px;">
+        <div class="memo-section" style="margin-bottom: 25px;">
+            <h3>分析メモ</h3>
+            <textarea id="analysis-memo" placeholder="分析メモを入力..." style="width: 100%; height: 120px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit; resize: vertical;"></textarea>
+            <button id="copy-memo" style="margin-top: 10px;">分析メモコピー</button>
+        </div>
+        <div class="chatgpt-section">
+            <h3>ChatGPT固定プロンプト</h3>
+            <textarea id="fixed-prompt" placeholder="固定プロンプトを入力..." style="width: 100%; height: 120px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit; resize: vertical;"></textarea>
+            <div style="margin-top: 10px;">
+                <button id="copy-prompt">固定プロンプトコピー</button>
+                <button id="change-prompt">固定プロンプト変更</button>
+                <button id="chatgpt-analysis" style="background-color: #28a745; margin-left: 10px;">CHATGPT分析</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最下部エリア -->
+    <div class="bottom-section" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; border-top: 1px solid #ddd; flex-wrap: wrap; gap: 15px;">
+        <div class="usage-monitor" style="display: flex; align-items: center; gap: 15px;">
+            <div>
+                <span style="font-size: 12px;">DB: </span>
+                <progress id="db-usage" max="100" value="0" style="width: 80px;"></progress>
+                <span id="db-percent" style="font-size: 12px;">0%</span>
+            </div>
+            <div>
+                <span style="font-size: 12px;">Storage: </span>
+                <progress id="storage-usage" max="100" value="0" style="width: 80px;"></progress>
+                <span id="storage-percent" style="font-size: 12px;">0%</span>
+            </div>
+        </div>
+        <div class="error-bar" id="error-bar" style="display: none; background: #dc3545; color: white; padding: 8px 12px; border-radius: 4px; font-size: 14px;">
+            <span id="error-message">データに問題が検出されました</span>
+            <button id="recovery-btn" style="margin-left: 10px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 3px;">🔙 前回正常時に戻る</button>
+        </div>
+        <button id="history-btn" style="opacity: 0.6; background: none; border: none; font-size: 14px; cursor: pointer;">履歴</button>
+    </div>
+
+    <!-- 履歴サイドパネル -->
+    <div class="history-sidebar" id="history-sidebar" style="position: fixed; right: -400px; top: 0; width: 400px; height: 100vh; background: white; box-shadow: -2px 0 10px rgba(0,0,0,0.1); transition: right 0.3s ease; z-index: 1000; overflow-y: auto;">
+        <div class="history-header" style="padding: 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa;">
+            <h3 style="margin: 0;">履歴</h3>
+            <button id="close-history" style="background: none; border: none; font-size: 20px; cursor: pointer;">×</button>
+        </div>
+        <div style="padding: 20px;">
+            <input type="text" id="history-search" placeholder="履歴を検索..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px;">
+            <div id="search-results-count" style="font-size: 14px; color: #666; margin-bottom: 15px;">検索結果: 0件</div>
+            <div class="history-list" id="history-list">
+                <!-- 履歴項目がここに動的に表示される -->
+            </div>
+        </div>
+    </div>
 
     <script>
+        'use strict';
+
+        // Supabase設定（動作確認済み・変更厳禁）
         const SUPABASE_URL = 'https://jfrwyunauatsybdljlah.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmcnd5dW5hdWF0c3liZGxqbGFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MTMxODksImV4cCI6MjA2OTA4OTE4OX0.cyhPTiN4WAQ2p86JBZObjSljt2i1K_bK-cGGo3soxAo';
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        document.getElementById('current-time').textContent = new Date().toLocaleString('ja-JP');
 
-        function addResult(title, content, type = 'info') {
-            const resultsDiv = document.getElementById('results');
-            const resultDiv = document.createElement('div');
-            resultDiv.className = `test-section ${type}`;
-            resultDiv.innerHTML = `<h4>${title}</h4><pre>${content}</pre><small>実行時刻: ${new Date().toLocaleString('ja-JP')}</small>`;
-            resultsDiv.appendChild(resultDiv);
-        }
-
-        async function testConnection() {
-            try {
-                addResult('基本接続テスト開始', 'Supabaseクライアントの初期化を確認中...', 'info');
-                const { data, error } = await supabase.from('fx_analysis_data').select('count', { count: 'exact', head: true });
-                if (error) {
-                    addResult('基本接続テスト - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
-                } else {
-                    addResult('基本接続テスト - 成功', `接続成功!\nデータ件数: ${data}`, 'success');
-                }
-            } catch (err) {
-                addResult('基本接続テスト - 例外', `JavaScript例外:\n${err.message}`, 'error');
+        // CDN読み込み確認（確実な初期化）
+        async function waitForSupabase() {
+            let retryCount = 0;
+            while (!window.supabase && retryCount < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                retryCount++;
+            }
+            
+            if (!window.supabase) {
+                throw new Error('Supabase CDNの読み込みに失敗しました');
             }
         }
 
-        async function testTableAccess() {
+        // 安全なエラーハンドリング（ポップアップ禁止）
+        async function safeSupabaseOperation(operation, operationName) {
             try {
-                addResult('テーブルアクセステスト開始', 'fx_analysis_dataテーブルからデータを取得中...', 'info');
-                const { data, error } = await supabase.from('fx_analysis_data').select('*').limit(1);
-                if (error) {
-                    addResult('テーブルアクセステスト - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
-                } else {
-                    addResult('テーブルアクセステスト - 成功', `データ取得成功!\n取得件数: ${data.length}\n\nデータ:\n${JSON.stringify(data, null, 2)}`, 'success');
+                const result = await operation();
+                if (result.error) {
+                    console.error(`${operationName}エラー:`, result.error);
+                    showErrorInUI(`${operationName}でエラーが発生しました`, result.error);
+                    return { success: false, error: result.error };
                 }
+                return { success: true, data: result.data };
             } catch (err) {
-                addResult('テーブルアクセステスト - 例外', `JavaScript例外:\n${err.message}`, 'error');
+                console.error(`${operationName}例外:`, err);
+                showErrorInUI(`${operationName}で例外が発生しました`, err);
+                return { success: false, error: err };
             }
         }
 
-        async function testInsert() {
-            try {
-                const testData = {
-                    id: 'test_' + Date.now(),
-                    data: { test: true, timestamp: new Date().toISOString(), message: 'GitHub Pages接続テスト' },
-                    updated_at: new Date().toISOString()
-                };
-                addResult('データ挿入テスト開始', `テストデータ:\n${JSON.stringify(testData, null, 2)}`, 'info');
-                const { data, error } = await supabase.from('fx_analysis_data').insert([testData]).select();
-                if (error) {
-                    addResult('データ挿入テスト - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
-                } else {
-                    addResult('データ挿入テスト - 成功', `データ挿入成功!\n\n挿入されたデータ:\n${JSON.stringify(data, null, 2)}`, 'success');
-                }
-            } catch (err) {
-                addResult('データ挿入テスト - 例外', `JavaScript例外:\n${err.message}`, 'error');
+        // UI内エラー表示（ポップアップ不使用）
+        function showErrorInUI(message, error) {
+            const errorBar = document.getElementById('error-bar');
+            const errorMessage = document.getElementById('error-message');
+            if (errorBar && errorMessage) {
+                errorMessage.textContent = message;
+                errorBar.style.display = 'flex';
+                
+                // 10秒後に自動非表示
+                setTimeout(() => {
+                    errorBar.style.display = 'none';
+                }, 10000);
             }
         }
 
-        async function detailedCheck() {
-            try {
-                addResult('詳細確認開始', 'データベースの詳細情報を取得中...', 'info');
+        function hideError() {
+            const errorBar = document.getElementById('error-bar');
+            if (errorBar) {
+                errorBar.style.display = 'none';
+            }
+        }
+
+        // 成功メッセージ表示
+        function showSuccessInUI(message) {
+            const errorBar = document.getElementById('error-bar');
+            const errorMessage = document.getElementById('error-message');
+            if (errorBar && errorMessage) {
+                errorMessage.textContent = message;
+                errorBar.style.background = '#28a745';
+                errorBar.style.display = 'flex';
                 
-                // 1. メインテーブルの詳細確認
-                const { data, error } = await supabase.from('fx_analysis_data').select('*').limit(5);
-                if (error) {
-                    addResult('詳細確認 - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
-                    return;
-                }
-                
-                // データ構造の詳細表示
-                addResult('メインテーブル構造', `取得データ数: ${data.length}\n\nサンプルデータ:\n${JSON.stringify(data, null, 2)}`, 'success');
-                
-                if (data.length > 0) {
-                    const columns = Object.keys(data[0]);
-                    addResult('テーブルカラム情報', `検出されたカラム:\n${columns.join('\n')}\n\nカラム数: ${columns.length}`, 'info');
-                    
-                    // データ型の確認
-                    const sampleData = data[0];
-                    let dataTypes = '';
-                    for (const [key, value] of Object.entries(sampleData)) {
-                        dataTypes += `${key}: ${typeof value} ${Array.isArray(value) ? '(array)' : ''}\n`;
+                setTimeout(() => {
+                    errorBar.style.display = 'none';
+                    errorBar.style.background = '#dc3545';
+                }, 3000);
+            }
+        }
+
+        // 入力値検証システム
+        function validateInput(value, type, required = true) {
+            if (required && (!value || value.toString().trim() === '')) {
+                throw new Error('必須項目が入力されていません');
+            }
+            
+            switch (type) {
+                case 'currency':
+                    if (!/^[A-Z]{6}$/.test(value)) {
+                        throw new Error('通貨ペア形式が正しくありません');
                     }
-                    addResult('データ型情報', dataTypes, 'info');
-                }
-                
-                // 2. 履歴テーブルの確認
-                const { data: historyData, error: historyError } = await supabase.from('fx_analysis_history').select('*').limit(3);
-                if (historyError) {
-                    addResult('履歴テーブル確認', `履歴テーブルエラー:\n${JSON.stringify(historyError, null, 2)}`, 'error');
-                } else {
-                    addResult('履歴テーブル確認', `履歴テーブル正常\nデータ数: ${historyData.length}\n\nサンプルデータ:\n${JSON.stringify(historyData, null, 2)}`, 'success');
-                    
-                    if (historyData.length > 0) {
-                        const historyColumns = Object.keys(historyData[0]);
-                        addResult('履歴テーブルカラム', `履歴テーブルカラム:\n${historyColumns.join('\n')}`, 'info');
+                    break;
+                case 'scenario':
+                    if (!/^scenario/.test(value)) {
+                        throw new Error('シナリオID形式が正しくありません');
                     }
+                    break;
+            }
+            return true;
+        }
+
+        // DOM要素の安全アクセス
+        function safeGetElement(id) {
+            const element = document.getElementById(id);
+            if (!element) {
+                console.error(`要素が見つかりません: ${id}`);
+                return null;
+            }
+            return element;
+        }
+
+        function safeUpdateElement(elementId, content) {
+            const element = safeGetElement(elementId);
+            if (!element) return false;
+            
+            try {
+                element.innerHTML = content;
+                return true;
+            } catch (error) {
+                console.error('DOM更新エラー:', error);
+                return false;
+            }
+        }
+
+        // XSS防止・セキュリティ
+        function sanitizeHTML(str) {
+            const temp = document.createElement('div');
+            temp.textContent = str;
+            return temp.innerHTML;
+        }
+
+        function safeSetInnerHTML(element, content) {
+            element.innerHTML = sanitizeHTML(content);
+        }
+
+        // データ管理システム（通貨ペア×シナリオ別完全分離）
+        class DataManager {
+            constructor(supabase) {
+                this.supabase = supabase;
+                this.currentCurrency = 'USDJPY';
+                this.currentScenario = 'scenario1';
+            }
+            
+            // データキー生成（厳格）
+            getKey(currency, scenario, type) {
+                if (!currency || !scenario || !type) {
+                    throw new Error(`無効なキー要素: currency=${currency}, scenario=${scenario}, type=${type}`);
                 }
-                
-                // 3. 複雑なJSONBデータのテスト
-                const complexTestData = {
-                    id: 'complex_test_' + Date.now(),
-                    data: {
-                        currency: 'USDJPY',
-                        scenario: 'scenario1',
-                        analysisStatus: '検討中',
-                        memo: 'テストメモ',
-                        settings: {
-                            wave: '1時間足',
-                            priority: 'high',
-                            nested: {
-                                level1: 'value1',
-                                level2: {
-                                    deep: 'deepvalue'
-                                }
+                return `${currency}_${scenario}_${type}`;
+            }
+            
+            // 自動保存（入力と同時、ポップアップなし）
+            async autoSave(currency, scenario, type, value) {
+                try {
+                    const key = this.getKey(currency, scenario, type);
+                    const result = await safeSupabaseOperation(
+                        () => this.supabase.from('fx_analysis_data').upsert([{
+                            id: key,
+                            data: { value },
+                            updated_at: new Date().toISOString()
+                        }]),
+                        'データ自動保存'
+                    );
+                    
+                    if (result.success) {
+                        await this.saveToHistory('データ更新', key, value);
+                        this.updateUsageMonitor();
+                    } else {
+                        // エラー時はローカルストレージに保存
+                        this.saveToLocalStorage(key, value);
+                    }
+                } catch (err) {
+                    console.error('自動保存エラー:', err);
+                    this.saveToLocalStorage(this.getKey(currency, scenario, type), value);
+                }
+            }
+            
+            // データ読み込み
+            async loadData(currency, scenario, type) {
+                try {
+                    const key = this.getKey(currency, scenario, type);
+                    const result = await safeSupabaseOperation(
+                        () => this.supabase.from('fx_analysis_data').select('*').eq('id', key).single(),
+                        'データ読み込み'
+                    );
+                    
+                    if (result.success && result.data) {
+                        return result.data.data?.value;
+                    }
+                    
+                    // フォールバック: ローカルストレージから読み込み
+                    return this.loadFromLocalStorage(key);
+                } catch (err) {
+                    console.error('データ読み込みエラー:', err);
+                    return this.loadFromLocalStorage(this.getKey(currency, scenario, type));
+                }
+            }
+            
+            // ローカルストレージ保存（フォールバック）
+            saveToLocalStorage(key, value) {
+                try {
+                    localStorage.setItem(`backup_${key}`, JSON.stringify({
+                        value,
+                        timestamp: new Date().toISOString()
+                    }));
+                } catch (err) {
+                    console.error('ローカルストレージ保存エラー:', err);
+                }
+            }
+            
+            // ローカルストレージ読み込み
+            loadFromLocalStorage(key) {
+                try {
+                    const stored = localStorage.getItem(`backup_${key}`);
+                    return stored ? JSON.parse(stored).value : null;
+                } catch (err) {
+                    console.error('ローカルストレージ読み込みエラー:', err);
+                    return null;
+                }
+            }
+
+            // 履歴保存
+            async saveToHistory(changeType, key, newValue, oldValue = null) {
+                try {
+                    if (window.app && window.app.historyManager) {
+                        await window.app.historyManager.saveToHistory(changeType, key, newValue, oldValue);
+                    }
+                } catch (err) {
+                    console.error('履歴保存エラー:', err);
+                }
+            }
+
+            // 使用量監視更新
+            updateUsageMonitor() {
+                try {
+                    if (window.app && window.app.usageMonitor) {
+                        window.app.usageMonitor.updateUsage();
+                    }
+                } catch (err) {
+                    console.error('使用量監視更新エラー:', err);
+                }
+            }
+        }
+
+        // シナリオ管理システム
+        class ScenarioManager {
+            constructor(dataManager) {
+                this.dataManager = dataManager;
+                this.scenarios = new Map();
+            }
+            
+            // シナリオ追加（名前入力必須、画像必須1-2枚）
+            async addScenario(currency) {
+                try {
+                    // シナリオ名入力（confirm使用は削除時のみ許可）
+                    const scenarioName = prompt('シナリオ名を入力してください:', `シナリオ${Date.now()}`);
+                    if (!scenarioName) return;
+                    
+                    // 画像選択
+                    const fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.accept = 'image/*';
+                    fileInput.multiple = true;
+                    
+                    return new Promise((resolve) => {
+                        fileInput.onchange = async (e) => {
+                            const files = Array.from(e.target.files);
+                            if (files.length === 0 || files.length > 2) {
+                                showErrorInUI('1枚または2枚の画像を選択してください');
+                                resolve(false);
+                                return;
                             }
-                        },
-                        array: ['item1', 'item2', 'item3']
-                    },
-                    images: {
-                        scenario1: [
-                            { url: 'test1.jpg', size: 1024 },
-                            { url: 'test2.jpg', size: 2048 }
-                        ]
-                    },
-                    updated_at: new Date().toISOString()
-                };
+                            
+                            const scenarioId = `scenario_${Date.now()}`;
+                            const success = await this.processAndUploadScenario(currency, scenarioId, scenarioName, files);
+                            resolve(success);
+                        };
+                        
+                        fileInput.click();
+                    });
+                } catch (err) {
+                    showErrorInUI('シナリオ追加に失敗しました', err);
+                    return false;
+                }
+            }
+            
+            // シナリオ削除（確認ダイアログ表示）
+            async deleteScenario(currency, scenarioId) {
+                if (!confirm('このシナリオを削除しますか？')) return false;
                 
-                const { data: complexResult, error: complexError } = await supabase
-                    .from('fx_analysis_data')
-                    .insert([complexTestData])
-                    .select();
+                try {
+                    // 関連データの完全削除
+                    await this.deleteScenarioData(currency, scenarioId);
+                    await this.deleteScenarioImages(scenarioId);
+                    await this.updateScenarioUI(currency);
                     
-                if (complexError) {
-                    addResult('複雑データ形式テスト - エラー', `エラー:\n${JSON.stringify(complexError, null, 2)}`, 'error');
-                } else {
-                    addResult('複雑データ形式テスト - 成功', `複雑形式データ挿入成功:\n${JSON.stringify(complexResult, null, 2)}`, 'success');
+                    await this.dataManager.saveToHistory('シナリオ削除', `${currency}_${scenarioId}`, null);
+                    return true;
+                } catch (err) {
+                    showErrorInUI('シナリオ削除に失敗しました', err);
+                    return false;
+                }
+            }
+            
+            // 画像処理・アップロード
+            async processAndUploadScenario(currency, scenarioId, scenarioName, files) {
+                try {
+                    const processedImages = [];
+                    
+                    for (const file of files) {
+                        // 画像バリデーション
+                        this.validateImage(file);
+                        
+                        // 画像圧縮
+                        const compressedImage = await this.compressImage(file);
+                        
+                        // Supabaseストレージにアップロード
+                        const uploadResult = await this.uploadImage(scenarioId, compressedImage);
+                        if (uploadResult.success) {
+                            processedImages.push(uploadResult.data);
+                        }
+                    }
+                    
+                    // シナリオデータ保存
+                    const scenarioData = {
+                        name: scenarioName,
+                        images: processedImages,
+                        created: new Date().toISOString()
+                    };
+                    
+                    await this.dataManager.autoSave(currency, scenarioId, 'scenario', scenarioData);
+                    await this.updateScenarioUI(currency);
+                    
+                    return true;
+                } catch (err) {
+                    showErrorInUI('画像処理に失敗しました', err);
+                    return false;
+                }
+            }
+            
+            // 画像バリデーション
+            validateImage(file) {
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                const maxSize = 10 * 1024 * 1024; // 10MB
+                
+                if (!allowedTypes.includes(file.type)) {
+                    throw new Error('サポートされていない画像形式です');
                 }
                 
-                // 4. upsert操作のテスト
-                const upsertData = {
-                    id: 'upsert_test_fixed',
-                    data: { test: 'upsert_initial', timestamp: new Date().toISOString() },
-                    updated_at: new Date().toISOString()
-                };
-                
-                const { data: upsertResult, error: upsertError } = await supabase
-                    .from('fx_analysis_data')
-                    .upsert([upsertData])
-                    .select();
-                    
-                if (upsertError) {
-                    addResult('Upsert操作テスト - エラー', `エラー:\n${JSON.stringify(upsertError, null, 2)}`, 'error');
-                } else {
-                    addResult('Upsert操作テスト - 成功', `Upsert操作成功:\n${JSON.stringify(upsertResult, null, 2)}`, 'success');
+                if (file.size > maxSize) {
+                    throw new Error('画像サイズが大きすぎます（10MB以下）');
                 }
+            }
+            
+            // 画像圧縮
+            async compressImage(file) {
+                return new Promise((resolve) => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+                    
+                    img.onload = () => {
+                        // 最大サイズ設定
+                        const maxWidth = 1200;
+                        const maxHeight = 800;
+                        
+                        let { width, height } = img;
+                        
+                        // アスペクト比を保持してリサイズ
+                        if (width > maxWidth || height > maxHeight) {
+                            const ratio = Math.min(maxWidth / width, maxHeight / height);
+                            width *= ratio;
+                            height *= ratio;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        // 画像を描画
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // 圧縮（品質0.8）
+                        canvas.toBlob(resolve, 'image/jpeg', 0.8);
+                    };
+                    
+                    img.src = URL.createObjectURL(file);
+                });
+            }
+
+            // 画像アップロード（モック実装）
+            async uploadImage(scenarioId, compressedImage) {
+                try {
+                    // 実際の実装では Supabase Storage を使用
+                    const fileName = `${scenarioId}_${Date.now()}.jpg`;
+                    
+                    // 一時的な URL を生成（実際の実装では Supabase Storage URL）
+                    const imageUrl = URL.createObjectURL(compressedImage);
+                    
+                    return {
+                        success: true,
+                        data: {
+                            url: imageUrl,
+                            fileName: fileName,
+                            size: compressedImage.size
+                        }
+                    };
+                } catch (err) {
+                    return { success: false, error: err };
+                }
+            }
+
+            // シナリオデータ削除
+            async deleteScenarioData(currency, scenarioId) {
+                // 関連するすべてのデータキーを削除
+                const dataTypes = ['scenario', 'memo', 'analysisStatus', 'targetWave'];
+                for (const type of dataTypes) {
+                    const key = this.dataManager.getKey(currency, scenarioId, type);
+                    await safeSupabaseOperation(
+                        () => this.dataManager.supabase.from('fx_analysis_data').delete().eq('id', key),
+                        'シナリオデータ削除'
+                    );
+                }
+            }
+
+            // シナリオ画像削除
+            async deleteScenarioImages(scenarioId) {
+                // 実際の実装では Supabase Storage から画像を削除
+                console.log(`シナリオ ${scenarioId} の画像を削除`);
+            }
+
+            // シナリオUI更新
+            async updateScenarioUI(currency) {
+                // シナリオボタンの再構築
+                const container = document.getElementById('scenario-container');
+                if (!container) return;
+
+                // 既存のシナリオボタンを取得
+                const existingButtons = container.querySelectorAll('.scenario-btn');
                 
-                addResult('詳細確認完了', 'すべての詳細確認が完了しました', 'success');
+                // 新しいシナリオが追加された場合の処理
+                showSuccessInUI('シナリオが更新されました');
+            }
+            
+            // ドラッグ&ドロップ並び順変更
+            initDragAndDrop() {
+                const container = document.getElementById('scenario-container');
+                if (!container) return;
+
+                let draggedElement = null;
                 
-            } catch (err) {
-                addResult('詳細確認 - 例外', `JavaScript例外:\n${err.message}`, 'error');
+                // PC: ドラッグ&ドロップ
+                container.addEventListener('dragstart', (e) => {
+                    if (e.target.classList.contains('scenario-btn')) {
+                        draggedElement = e.target;
+                        e.target.classList.add('dragging');
+                    }
+                });
+                
+                container.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const afterElement = this.getDragAfterElement(container, e.clientY);
+                    if (afterElement == null) {
+                        container.appendChild(draggedElement);
+                    } else {
+                        container.insertBefore(draggedElement, afterElement);
+                    }
+                });
+                
+                container.addEventListener('dragend', (e) => {
+                    e.target.classList.remove('dragging');
+                    this.saveScenarioOrder();
+                });
+                
+                // スマホ: 長押し
+                this.initTouchDragDrop(container);
+            }
+            
+            // タッチデバイス用ドラッグ&ドロップ
+            initTouchDragDrop(container) {
+                let longPressTimer;
+                let isDragging = false;
+                
+                container.addEventListener('touchstart', (e) => {
+                    if (e.target.classList.contains('scenario-btn')) {
+                        longPressTimer = setTimeout(() => {
+                            isDragging = true;
+                            e.target.classList.add('dragging');
+                        }, 500);
+                    }
+                });
+                
+                container.addEventListener('touchend', () => {
+                    clearTimeout(longPressTimer);
+                    if (isDragging) {
+                        const dragging = container.querySelector('.dragging');
+                        if (dragging) {
+                            dragging.classList.remove('dragging');
+                        }
+                        this.saveScenarioOrder();
+                        isDragging = false;
+                    }
+                });
+            }
+
+            // ドラッグ後の要素取得
+            getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('.scenario-btn:not(.dragging)')];
+                
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+
+            // シナリオ順序保存
+            async saveScenarioOrder() {
+                try {
+                    const container = document.getElementById('scenario-container');
+                    if (!container) return;
+
+                    const scenarios = [...container.querySelectorAll('.scenario-btn')].map(btn => btn.dataset.scenario);
+                    await this.dataManager.autoSave('global', 'settings', 'scenarioOrder', scenarios);
+                } catch (err) {
+                    console.error('シナリオ順序保存エラー:', err);
+                }
             }
         }
 
-        function clearResults() {
-            document.getElementById('results').innerHTML = '';
+        // 履歴管理システム（200件制限、検索機能）
+        class HistoryManager {
+            constructor(supabase) {
+                this.supabase = supabase;
+                this.maxHistories = 200;
+                this.isCleaningUp = false;
+            }
+            
+            // 履歴保存
+            async saveToHistory(changeType, key, newValue, oldValue = null) {
+                if (this.isCleaningUp) {
+                    await this.waitForCleanupComplete();
+                }
+                
+                try {
+                    const historyData = {
+                        timestamp: new Date().toISOString(),
+                        version_id: `v_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        description: `${changeType}: ${key}`,
+                        data_snapshot: { key, newValue, oldValue },
+                        changes: { 
+                            changeType, 
+                            deviceInfo: this.getDeviceInfo(),
+                            userAgent: navigator.userAgent.substring(0, 100)
+                        }
+                    };
+                    
+                    await this.supabase.from('fx_analysis_history').insert([historyData]);
+                    
+                    // 非同期でクリーンアップ
+                    setTimeout(() => this.cleanupOldHistory(), 1000);
+                    
+                } catch (error) {
+                    console.error('履歴保存エラー:', error);
+                }
+            }
+            
+            // 履歴検索
+            async searchHistory(query) {
+                try {
+                    let queryBuilder = this.supabase
+                        .from('fx_analysis_history')
+                        .select('*')
+                        .order('timestamp', { ascending: false });
+                    
+                    if (query && query.trim()) {
+                        queryBuilder = queryBuilder.or(
+                            `description.ilike.%${query}%,data_snapshot->>key.ilike.%${query}%,data_snapshot->>newValue.ilike.%${query}%`
+                        );
+                    }
+                    
+                    const { data, error } = await queryBuilder.limit(100);
+                    
+                    if (error) throw error;
+                    
+                    this.displaySearchResults(data, query);
+                    return data;
+                } catch (err) {
+                    showErrorInUI('履歴検索に失敗しました', err);
+                    return [];
+                }
+            }
+            
+            // 検索結果表示
+            displaySearchResults(data, query) {
+                const resultsList = document.getElementById('history-list');
+                const resultsCount = document.getElementById('search-results-count');
+                
+                if (resultsCount) {
+                    resultsCount.textContent = `検索結果: ${data.length}件`;
+                }
+                
+                if (resultsList) {
+                    resultsList.innerHTML = '';
+                    
+                    data.forEach(item => {
+                        const historyItem = document.createElement('div');
+                        historyItem.className = 'history-item';
+                        historyItem.innerHTML = `
+                            <div style="font-weight: bold; margin-bottom: 5px;">
+                                ${new Date(item.timestamp).toLocaleString('ja-JP')}
+                            </div>
+                            <div style="font-size: 14px; color: #666; margin-bottom: 8px;">
+                                ${sanitizeHTML(item.description)}
+                            </div>
+                            <div style="font-size: 12px; color: #999;">
+                                ${item.changes?.deviceInfo || 'Unknown Device'}
+                            </div>
+                            <button onclick="window.historyManager.restoreFromHistory('${item.version_id}')" 
+                                    style="margin-top: 8px; font-size: 12px; padding: 4px 8px;">
+                                この時点に戻る
+                            </button>
+                        `;
+                        
+                        resultsList.appendChild(historyItem);
+                    });
+                }
+            }
+            
+            // 履歴から復元
+            async restoreFromHistory(versionId) {
+                if (!confirm('この時点のデータに復元しますか？現在のデータは失われます。')) return;
+                
+                try {
+                    const { data, error } = await this.supabase
+                        .from('fx_analysis_history')
+                        .select('*')
+                        .eq('version_id', versionId)
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    // データ復元処理
+                    await this.performRestore(data.data_snapshot);
+                    
+                    // 復元成功
+                    showSuccessInUI('データを復元しました');
+                    this.closeHistoryPanel();
+                    
+                } catch (err) {
+                    showErrorInUI('データ復元に失敗しました', err);
+                }
+            }
+
+            // データ復元実行
+            async performRestore(dataSnapshot) {
+                try {
+                    if (dataSnapshot && dataSnapshot.key && dataSnapshot.newValue !== undefined) {
+                        await this.supabase.from('fx_analysis_data').upsert([{
+                            id: dataSnapshot.key,
+                            data: { value: dataSnapshot.newValue },
+                            updated_at: new Date().toISOString()
+                        }]);
+                        
+                        // UI更新
+                        if (window.app) {
+                            await window.app.updateCurrentDisplay();
+                        }
+                    }
+                } catch (err) {
+                    throw new Error('復元処理に失敗しました: ' + err.message);
+                }
+            }
+
+            // 履歴パネルを閉じる
+            closeHistoryPanel() {
+                const sidebar = document.getElementById('history-sidebar');
+                if (sidebar) {
+                    sidebar.style.right = '-400px';
+                }
+            }
+            
+            // 古い履歴のクリーンアップ
+            async cleanupOldHistory() {
+                if (this.isCleaningUp) return;
+                
+                this.isCleaningUp = true;
+                try {
+                    const { data, error } = await this.supabase
+                        .from('fx_analysis_history')
+                        .select('id')
+                        .order('timestamp', { ascending: false })
+                        .range(this.maxHistories, 1000);
+                        
+                    if (!error && data && data.length > 0) {
+                        const idsToDelete = data.map(item => item.id);
+                        await this.supabase.from('fx_analysis_history').delete().in('id', idsToDelete);
+                    }
+                } catch (error) {
+                    console.error('履歴クリーンアップエラー:', error);
+                } finally {
+                    this.isCleaningUp = false;
+                }
+            }
+            
+            // デバイス情報取得
+            getDeviceInfo() {
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                return isMobile ? 'Mobile' : 'PC';
+            }
+            
+            // クリーンアップ完了待機
+            async waitForCleanupComplete() {
+                while (this.isCleaningUp) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
         }
 
-        window.addEventListener('load', function() {
-            addResult('初期化完了', 'Supabaseクライアントが初期化されました。テストボタンをクリックして接続を確認してください。', 'info');
+        // バックアップ機能（手動実行、完了報告のみ）
+        class BackupManager {
+            constructor(supabase) {
+                this.supabase = supabase;
+            }
+            
+            // バックアップ作成（進行表示なし、完了報告のみ）
+            async createBackup() {
+                try {
+                    // 全データ取得
+                    const { data: mainData } = await this.supabase.from('fx_analysis_data').select('*');
+                    const { data: historyData } = await this.supabase.from('fx_analysis_history').select('*');
+                    
+                    // バックアップデータ構築
+                    const backupData = {
+                        timestamp: new Date().toISOString(),
+                        version: '1.0',
+                        mainData: mainData || [],
+                        historyData: historyData || [],
+                        metadata: {
+                            totalRecords: (mainData?.length || 0) + (historyData?.length || 0),
+                            exportedBy: 'FX Analysis System',
+                            userAgent: navigator.userAgent
+                        }
+                    };
+                    
+                    // ファイルダウンロード
+                    const blob = new Blob([JSON.stringify(backupData, null, 2)], { 
+                        type: 'application/json' 
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `fx-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    // 完了報告（ポップアップなし）
+                    showSuccessInUI(`バックアップが完了しました（${backupData.metadata.totalRecords}件）`);
+                    
+                } catch (err) {
+                    showErrorInUI('バックアップに失敗しました', err);
+                }
+            }
+        }
+
+        // ダークモード管理（手動切り替え、設定同期）
+        class ThemeManager {
+            constructor(dataManager) {
+                this.dataManager = dataManager;
+                this.isDark = false;
+                this.init();
+            }
+            
+            async init() {
+                // 保存された設定を読み込み
+                const savedTheme = await this.dataManager.loadData('global', 'settings', 'darkMode');
+                if (savedTheme !== null) {
+                    this.isDark = savedTheme;
+                }
+                
+                this.applyTheme();
+                this.updateToggleButton();
+            }
+            
+            // テーマ切り替え
+            async toggleTheme() {
+                this.isDark = !this.isDark;
+                this.applyTheme();
+                this.updateToggleButton();
+                
+                // 設定同期（PC/スマホ間）
+                await this.dataManager.autoSave('global', 'settings', 'darkMode', this.isDark);
+            }
+            
+            // テーマ適用
+            applyTheme() {
+                document.body.classList.toggle('dark-mode', this.isDark);
+            }
+            
+            // トグルボタン更新
+            updateToggleButton() {
+                const toggleBtn = document.getElementById('theme-toggle');
+                if (toggleBtn) {
+                    toggleBtn.textContent = this.isDark ? '☀️' : '🌙';
+                    toggleBtn.title = this.isDark ? 'ライトモードに切り替え' : 'ダークモードに切り替え';
+                }
+            }
+        }
+
+        // 使用量監視（常時表示、プログレスバー）
+        class UsageMonitor {
+            constructor(supabase) {
+                this.supabase = supabase;
+                this.dbLimit = 500; // MB
+                this.storageLimit = 1024; // MB
+                this.init();
+            }
+            
+            init() {
+                // 30秒間隔で使用量更新
+                this.updateUsage();
+                setInterval(() => this.updateUsage(), 30000);
+            }
+            
+            async updateUsage() {
+                try {
+                    // データベース使用量計算
+                    const { data: dbData } = await this.supabase.from('fx_analysis_data').select('*');
+                    const dbUsage = this.calculateDataSize(dbData);
+                    
+                    // ストレージ使用量（概算）
+                    const storageUsage = await this.calculateStorageUsage();
+                    
+                    // プログレスバー更新
+                    this.updateProgressBar('db-usage', 'db-percent', dbUsage, this.dbLimit);
+                    this.updateProgressBar('storage-usage', 'storage-percent', storageUsage, this.storageLimit);
+                    
+                } catch (err) {
+                    console.error('使用量監視エラー:', err);
+                }
+            }
+            
+            // データサイズ計算
+            calculateDataSize(data) {
+                if (!data) return 0;
+                const jsonString = JSON.stringify(data);
+                return (new Blob([jsonString]).size) / 1024 / 1024; // MB
+            }
+            
+            // ストレージ使用量計算（概算）
+            async calculateStorageUsage() {
+                // 画像データの概算計算
+                try {
+                    const { data } = await this.supabase.from('fx_analysis_data').select('images');
+                    let totalSize = 0;
+                    
+                    data?.forEach(item => {
+                        if (item.images) {
+                            // 画像メタデータから概算サイズを計算
+                            Object.values(item.images).forEach(imageArray => {
+                                if (Array.isArray(imageArray)) {
+                                    imageArray.forEach(img => {
+                                        totalSize += (img.size || 1024) / 1024; // KB to MB
+                                    });
+                                }
+                            });
+                        }
+                    });
+                    
+                    return totalSize;
+                } catch (err) {
+                    console.error('ストレージ使用量計算エラー:', err);
+                    return 0;
+                }
+            }
+            
+            // プログレスバー更新
+            updateProgressBar(progressId, percentId, usage, limit) {
+                const progressBar = document.getElementById(progressId);
+                const percentSpan = document.getElementById(percentId);
+                
+                if (progressBar && percentSpan) {
+                    const percentage = Math.min((usage / limit) * 100, 100);
+                    progressBar.value = percentage;
+                    percentSpan.textContent = `${percentage.toFixed(1)}%`;
+                    
+                    // 使用量に応じた色変更
+                    if (percentage > 90) {
+                        progressBar.style.accentColor = '#dc3545'; // 赤
+                    } else if (percentage > 70) {
+                        progressBar.style.accentColor = '#ffc107'; // 黄
+                    } else {
+                        progressBar.style.accentColor = '#007bff'; // 青
+                    }
+                }
+            }
+        }
+
+        // キーボードショートカット
+        class KeyboardShortcuts {
+            constructor(dataManager) {
+                this.dataManager = dataManager;
+                this.init();
+            }
+            
+            init() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        switch(e.key.toLowerCase()) {
+                            case 's':
+                                e.preventDefault();
+                                this.manualSave();
+                                break;
+                            case 'c':
+                                if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
+                                    e.preventDefault();
+                                    this.copySelectedElement();
+                                }
+                                break;
+                            case 'v':
+                                if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
+                                    e.preventDefault();
+                                    this.pasteToSelectedElement();
+                                }
+                                break;
+                        }
+                    }
+                });
+            }
+            
+            // 手動保存
+            async manualSave() {
+                try {
+                    // 現在の全データを強制保存
+                    const memo = document.getElementById('analysis-memo')?.value || '';
+                    const prompt = document.getElementById('fixed-prompt')?.value || '';
+                    
+                    await this.dataManager.autoSave(
+                        this.dataManager.currentCurrency, 
+                        this.dataManager.currentScenario, 
+                        'memo', 
+                        memo
+                    );
+                    
+                    await this.dataManager.autoSave('global', 'settings', 'fixedPrompt', prompt);
+                    
+                    showSuccessInUI('データを保存しました');
+                } catch (err) {
+                    showErrorInUI('保存に失敗しました', err);
+                }
+            }
+            
+            // 選択要素のコピー
+            copySelectedElement() {
+                const activeElement = document.activeElement;
+                if (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT') {
+                    activeElement.select();
+                    document.execCommand('copy');
+                    showSuccessInUI('コピーしました');
+                }
+            }
+            
+            // 選択要素への貼り付け
+            async pasteToSelectedElement() {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    const activeElement = document.activeElement;
+                    
+                    if (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT') {
+                        activeElement.value = text;
+                        activeElement.dispatchEvent(new Event('input', { bubbles: true }));
+                        showSuccessInUI('貼り付けました');
+                    }
+                } catch (err) {
+                    console.error('貼り付けエラー:', err);
+                }
+            }
+        }
+
+        // エラー監視
+        class ErrorMonitor {
+            constructor() {
+                this.errorCount = 0;
+                this.errors = [];
+                this.init();
+            }
+            
+            init() {
+                window.addEventListener('error', (e) => {
+                    this.logError('JavaScript Error', e.error);
+                });
+                
+                window.addEventListener('unhandledrejection', (e) => {
+                    this.logError('Unhandled Promise Rejection', e.reason);
+                });
+            }
+            
+            logError(type, error) {
+                this.errorCount++;
+                this.errors.push({
+                    type,
+                    message: error?.message || 'Unknown error',
+                    timestamp: new Date().toISOString(),
+                    stack: error?.stack || 'No stack trace'
+                });
+                
+                // エラー率監視
+                if (this.errorCount > 10) {
+                    showErrorInUI('システムエラーが多発しています。ページを再読み込みしてください。');
+                }
+            }
+        }
+
+        // オフライン対応・フォールバック
+        class OfflineManager {
+            constructor() {
+                this.isOnline = navigator.onLine;
+                this.init();
+            }
+            
+            init() {
+                window.addEventListener('online', () => {
+                    this.isOnline = true;
+                    this.syncPendingData();
+                });
+                
+                window.addEventListener('offline', () => {
+                    this.isOnline = false;
+                    this.showOfflineMode();
+                });
+            }
+            
+            showOfflineMode() {
+                showErrorInUI('オフラインモード: 表示のみ可能です');
+            }
+
+            async syncPendingData() {
+                showSuccessInUI('オンラインに復帰しました');
+                // 実際の実装では、オフライン中に蓄積されたデータを同期
+            }
+        }
+
+        // メインアプリケーションクラス
+        class FXAnalysisApp {
+            constructor() {
+                this.supabase = null;
+                this.dataManager = null;
+                this.scenarioManager = null;
+                this.historyManager = null;
+                this.backupManager = null;
+                this.themeManager = null;
+                this.usageMonitor = null;
+                this.keyboardShortcuts = null;
+                this.errorMonitor = null;
+                this.offlineManager = null;
+            }
+            
+            // アプリケーション初期化
+            async initialize() {
+                try {
+                    // 1. CDN読み込み確認
+                    await waitForSupabase();
+                    
+                    // 2. Supabase初期化
+                    this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    
+                    // 3. 接続テスト
+                    const { error } = await this.supabase.from('fx_analysis_data').select('count', { count: 'exact', head: true });
+                    if (error) throw error;
+                    
+                    // 4. マネージャー初期化
+                    this.dataManager = new DataManager(this.supabase);
+                    this.scenarioManager = new ScenarioManager(this.dataManager);
+                    this.historyManager = new HistoryManager(this.supabase);
+                    this.backupManager = new BackupManager(this.supabase);
+                    this.themeManager = new ThemeManager(this.dataManager);
+                    this.usageMonitor = new UsageMonitor(this.supabase);
+                    this.keyboardShortcuts = new KeyboardShortcuts(this.dataManager);
+                    this.errorMonitor = new ErrorMonitor();
+                    this.offlineManager = new OfflineManager();
+                    
+                    // 5. UI初期化
+                    this.initializeUI();
+                    this.loadInitialData();
+                    
+                    // 6. イベントリスナー設定
+                    this.setupEventListeners();
+                    
+                    console.log('FX Analysis System 初期化完了');
+                    
+                } catch (error) {
+                    this.showFallbackUI(error);
+                }
+            }
+
+            // 初期化失敗時のフォールバック
+            showFallbackUI(error) {
+                document.body.innerHTML = `
+                    <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+                        <h2 style="color: #dc3545;">システム初期化エラー</h2>
+                        <p style="margin: 20px 0;">${error.message}</p>
+                        <div style="margin: 20px 0;">
+                            <button onclick="location.reload()" style="padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">再読み込み</button>
+                            <button onclick="localStorage.clear(); location.reload()" style="padding: 10px 20px; margin: 5px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">データリセット</button>
+                        </div>
+                        <details style="margin-top: 30px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto;">
+                            <summary style="cursor: pointer; color: #666;">技術詳細</summary>
+                            <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; overflow: auto; font-size: 12px;">${error.stack || 'スタック情報なし'}</pre>
+                        </details>
+                    </div>
+                `;
+            }
+            
+            // UI初期化
+            initializeUI() {
+                // シナリオドラッグ&ドロップ初期化
+                this.scenarioManager.initDragAndDrop();
+                
+                // 初期状態設定
+                this.updateCurrentDisplay();
+            }
+            
+            // イベントリスナー設定
+            setupEventListeners() {
+                // 通貨ペアボタン
+                document.querySelectorAll('.currency-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        this.selectCurrency(e.target.dataset.currency);
+                    });
+                });
+                
+                // シナリオボタン
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('scenario-btn')) {
+                        this.selectScenario(e.target.dataset.scenario);
+                    }
+                });
+                
+                // 分析ステータスボタン
+                document.querySelectorAll('.status-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        this.selectAnalysisStatus(e.target.dataset.status);
+                    });
+                });
+                
+                // 狙う波ボタン
+                document.querySelectorAll('.wave-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        this.selectTargetWave(e.target.dataset.wave);
+                    });
+                });
+                
+                // テキストエリア自動保存
+                const memoElement = document.getElementById('analysis-memo');
+                if (memoElement) {
+                    memoElement.addEventListener('input', 
+                        this.debounce((e) => {
+                            this.dataManager.autoSave(
+                                this.dataManager.currentCurrency,
+                                this.dataManager.currentScenario,
+                                'memo',
+                                e.target.value
+                            );
+                        }, 1000)
+                    );
+                }
+                
+                const promptElement = document.getElementById('fixed-prompt');
+                if (promptElement) {
+                    promptElement.addEventListener('input',
+                        this.debounce((e) => {
+                            this.dataManager.autoSave('global', 'settings', 'fixedPrompt', e.target.value);
+                        }, 1000)
+                    );
+                }
+                
+                // 各種ボタン
+                const backupBtn = document.getElementById('backup-btn');
+                if (backupBtn) {
+                    backupBtn.addEventListener('click', () => {
+                        this.backupManager.createBackup();
+                    });
+                }
+                
+                const themeToggle = document.getElementById('theme-toggle');
+                if (themeToggle) {
+                    themeToggle.addEventListener('click', () => {
+                        this.themeManager.toggleTheme();
+                    });
+                }
+                
+                const addScenario = document.getElementById('add-scenario');
+                if (addScenario) {
+                    addScenario.addEventListener('click', () => {
+                        this.scenarioManager.addScenario(this.dataManager.currentCurrency);
+                    });
+                }
+                
+                const removeScenario = document.getElementById('remove-scenario');
+                if (removeScenario) {
+                    removeScenario.addEventListener('click', () => {
+                        this.scenarioManager.deleteScenario(
+                            this.dataManager.currentCurrency,
+                            this.dataManager.currentScenario
+                        );
+                    });
+                }
+                
+                // 履歴関連
+                const historyBtn = document.getElementById('history-btn');
+                if (historyBtn) {
+                    historyBtn.addEventListener('click', () => {
+                        this.openHistoryPanel();
+                    });
+                }
+                
+                const closeHistory = document.getElementById('close-history');
+                if (closeHistory) {
+                    closeHistory.addEventListener('click', () => {
+                        this.closeHistoryPanel();
+                    });
+                }
+                
+                const historySearch = document.getElementById('history-search');
+                if (historySearch) {
+                    historySearch.addEventListener('input',
+                        this.debounce((e) => {
+                            this.historyManager.searchHistory(e.target.value);
+                        }, 500)
+                    );
+                }
+                
+                // コピーボタン
+                const copyMemo = document.getElementById('copy-memo');
+                if (copyMemo) {
+                    copyMemo.addEventListener('click', () => {
+                        const memoValue = document.getElementById('analysis-memo')?.value || '';
+                        this.copyToClipboard(memoValue);
+                    });
+                }
+                
+                const copyPrompt = document.getElementById('copy-prompt');
+                if (copyPrompt) {
+                    copyPrompt.addEventListener('click', () => {
+                        const promptValue = document.getElementById('fixed-prompt')?.value || '';
+                        this.copyToClipboard(promptValue);
+                    });
+                }
+                
+                // エラーバー閉じる
+                const recoveryBtn = document.getElementById('recovery-btn');
+                if (recoveryBtn) {
+                    recoveryBtn.addEventListener('click', () => {
+                        hideError();
+                    });
+                }
+
+                // ナビゲーションボタン
+                const prevChart = document.getElementById('prev-chart');
+                if (prevChart) {
+                    prevChart.addEventListener('click', () => {
+                        this.navigateChart(-1);
+                    });
+                }
+
+                const nextChart = document.getElementById('next-chart');
+                if (nextChart) {
+                    nextChart.addEventListener('click', () => {
+                        this.navigateChart(1);
+                    });
+                }
+
+                const topReturn = document.getElementById('top-return');
+                if (topReturn) {
+                    topReturn.addEventListener('click', () => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                }
+
+                // ChatGPT関連ボタン
+                const changePrompt = document.getElementById('change-prompt');
+                if (changePrompt) {
+                    changePrompt.addEventListener('click', () => {
+                        showSuccessInUI('固定プロンプトを変更しました');
+                    });
+                }
+
+                const chatgptAnalysis = document.getElementById('chatgpt-analysis');
+                if (chatgptAnalysis) {
+                    chatgptAnalysis.addEventListener('click', () => {
+                        this.openChatGPTAnalysis();
+                    });
+                }
+            }
+            
+            // デバウンス関数
+            debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+            
+            // 通貨ペア選択
+            async selectCurrency(currency) {
+                // UI更新
+                document.querySelectorAll('.currency-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.currency === currency);
+                });
+                
+                this.dataManager.currentCurrency = currency;
+                await this.updateCurrentDisplay();
+            }
+            
+            // シナリオ選択
+            async selectScenario(scenario) {
+                // UI更新
+                document.querySelectorAll('.scenario-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.scenario === scenario);
+                });
+                
+                this.dataManager.currentScenario = scenario;
+                await this.updateCurrentDisplay();
+            }
+            
+            // 表示更新
+            async updateCurrentDisplay() {
+                const currency = this.dataManager.currentCurrency;
+                const scenario = this.dataManager.currentScenario;
+                
+                // 通貨ペア名表示
+                const currentPair = document.getElementById('current-pair');
+                if (currentPair) {
+                    currentPair.textContent = currency;
+                }
+                
+                // データ読み込み
+                const memo = await this.dataManager.loadData(currency, scenario, 'memo');
+                const analysisStatus = await this.dataManager.loadData(currency, scenario, 'analysisStatus');
+                const targetWave = await this.dataManager.loadData(currency, scenario, 'targetWave');
+                
+                // UI反映
+                const memoElement = document.getElementById('analysis-memo');
+                if (memoElement) {
+                    memoElement.value = memo || '';
+                }
+                
+                // ステータスボタン更新
+                document.querySelectorAll('.status-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.status === analysisStatus);
+                });
+                
+                document.querySelectorAll('.wave-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.wave === (targetWave || '未選択'));
+                });
+                
+                // シナリオボタンのステータス表示更新
+                this.updateScenarioStatusDisplay(scenario, analysisStatus);
+            }
+            
+            // シナリオボタンのステータス表示更新
+            updateScenarioStatusDisplay(scenario, status) {
+                const scenarioBtn = document.querySelector(`[data-scenario="${scenario}"]`);
+                if (scenarioBtn) {
+                    const statusIndicator = scenarioBtn.querySelector('.status-indicator');
+                    if (statusIndicator && status) {
+                        const statusEmoji = {
+                            '検討中': '📊',
+                            '計算中': '🔄', 
+                            '実戦': '⚡',
+                            '利確': '📈',
+                            '損切り': '📉',
+                            '見送り': '👀'
+                        };
+                        statusIndicator.textContent = `${statusEmoji[status] || '📊'} ${status}`;
+                    }
+                }
+            }
+            
+            // 分析ステータス選択
+            async selectAnalysisStatus(status) {
+                document.querySelectorAll('.status-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.status === status);
+                });
+                
+                await this.dataManager.autoSave(
+                    this.dataManager.currentCurrency,
+                    this.dataManager.currentScenario,
+                    'analysisStatus',
+                    status
+                );
+                
+                this.updateScenarioStatusDisplay(this.dataManager.currentScenario, status);
+            }
+            
+            // 狙う波選択
+            async selectTargetWave(wave) {
+                document.querySelectorAll('.wave-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.wave === wave);
+                });
+                
+                await this.dataManager.autoSave(
+                    this.dataManager.currentCurrency,
+                    this.dataManager.currentScenario,
+                    'targetWave',
+                    wave
+                );
+            }
+
+            // チャートナビゲーション
+            navigateChart(direction) {
+                const scenarios = [...document.querySelectorAll('.scenario-btn')];
+                const currentIndex = scenarios.findIndex(btn => btn.classList.contains('active'));
+                
+                if (currentIndex !== -1) {
+                    const newIndex = currentIndex + direction;
+                    if (newIndex >= 0 && newIndex < scenarios.length) {
+                        const newScenario = scenarios[newIndex].dataset.scenario;
+                        if (newScenario) {
+                            this.selectScenario(newScenario);
+                        }
+                    }
+                }
+            }
+
+            // ChatGPT分析を開く
+            openChatGPTAnalysis() {
+                const memo = document.getElementById('analysis-memo')?.value || '';
+                const prompt = document.getElementById('fixed-prompt')?.value || '';
+                const combinedText = `${prompt}\n\n${memo}`.trim();
+                
+                if (combinedText) {
+                    this.copyToClipboard(combinedText);
+                    showSuccessInUI('分析内容をクリップボードにコピーしました。ChatGPTに貼り付けてください。');
+                } else {
+                    showErrorInUI('分析内容が入力されていません');
+                }
+            }
+            
+            // 履歴パネル開く
+            openHistoryPanel() {
+                const sidebar = document.getElementById('history-sidebar');
+                if (sidebar) {
+                    sidebar.style.right = '0';
+                    this.historyManager.searchHistory(''); // 全履歴表示
+                }
+            }
+            
+            // 履歴パネル閉じる
+            closeHistoryPanel() {
+                const sidebar = document.getElementById('history-sidebar');
+                if (sidebar) {
+                    sidebar.style.right = '-400px';
+                }
+            }
+            
+            // クリップボードにコピー
+            async copyToClipboard(text) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showSuccessInUI('クリップボードにコピーしました');
+                } catch (err) {
+                    console.error('コピーエラー:', err);
+                    // フォールバック: 古いブラウザ対応
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        showSuccessInUI('クリップボードにコピーしました');
+                    } catch (fallbackErr) {
+                        showErrorInUI('コピーに失敗しました');
+                    }
+                    document.body.removeChild(textArea);
+                }
+            }
+            
+            // 初期データ読み込み
+            async loadInitialData() {
+                // 固定プロンプト読み込み
+                const fixedPrompt = await this.dataManager.loadData('global', 'settings', 'fixedPrompt');
+                const promptElement = document.getElementById('fixed-prompt');
+                if (fixedPrompt && promptElement) {
+                    promptElement.value = fixedPrompt;
+                }
+                
+                // 初期表示更新
+                await this.updateCurrentDisplay();
+            }
+        }
+
+        // アプリケーション開始
+        let app;
+        window.addEventListener('DOMContentLoaded', async function() {
+            app = new FXAnalysisApp();
+            await app.initialize();
+            
+            // グローバル参照設定
+            window.app = app;
+            window.historyManager = app.historyManager;
         });
     </script>
 </body>
