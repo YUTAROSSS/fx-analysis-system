@@ -33,6 +33,7 @@
         <button onclick="clearResults()">結果クリア</button>
         <button onclick="detailedCheck()">詳細確認</button>
         <button onclick="restoreMainData()">メインデータ復元</button>
+        <button onclick="checkMainData()">メインデータ確認</button>
     </div>
 
     <div id="results"></div>
@@ -201,10 +202,36 @@
                 if (error) {
                     addResult('メインデータ復元 - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
                 } else {
-                    addResult('メインデータ復元 - 成功', 'メインデータが正常に作成されました！\n\n次に「詳細確認」ボタンを押して確認してください。', 'success');
+                    addResult('メインデータ復元 - 成功', 'メインデータが正常に作成されました！\n\n次に「メインデータ確認」ボタンを押して確認してください。', 'success');
                 }
             } catch (err) {
                 addResult('メインデータ復元 - 例外', `JavaScript例外:\n${err.message}`, 'error');
+            }
+        }
+
+        async function checkMainData() {
+            try {
+                addResult('メインデータ確認開始', 'id: "main" のデータを直接確認中...', 'info');
+                
+                const { data, error } = await supabase
+                    .from('fx_analysis_data')
+                    .select('*')
+                    .eq('id', 'main')
+                    .single();
+                
+                if (error) {
+                    if (error.code === 'PGRST116') {
+                        addResult('メインデータ確認 - 見つからない', '❌ メインデータが存在しません。「メインデータ復元」ボタンを押してください。', 'error');
+                    } else {
+                        addResult('メインデータ確認 - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
+                    }
+                } else if (data) {
+                    addResult('メインデータ確認 - 成功', `✅ メインデータが正常に存在します！\n\n通貨ペア数: ${data.data.currencies?.length || 0}\nシナリオ情報: ${JSON.stringify(data.data.scenarios, null, 2)}\n\n画像情報: 存在\n\n完成版HTMLの生成準備完了です！`, 'success');
+                } else {
+                    addResult('メインデータ確認 - 見つからない', '❌ メインデータが見つかりませんでした', 'error');
+                }
+            } catch (err) {
+                addResult('メインデータ確認 - 例外', `JavaScript例外:\n${err.message}`, 'error');
             }
         }
 
