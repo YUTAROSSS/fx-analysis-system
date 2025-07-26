@@ -2,215 +2,109 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supabase接続テスト</title>
+    <title>メインデータ復元</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
-        .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
-        .info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
-        button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
-        button:hover { background-color: #0056b3; }
-        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
-    </style>
 </head>
 <body>
-    <h1>Supabase接続テスト</h1>
-    
-    <div class="test-section info">
-        <h3>設定情報</h3>
-        <p><strong>Project URL:</strong> https://jfrwyunauatsybdljlah.supabase.co</p>
-        <p><strong>テスト実行時刻:</strong> <span id="current-time"></span></p>
-    </div>
-
-    <div class="test-section">
-        <h3>テスト実行</h3>
-        <button onclick="testConnection()">基本接続テスト</button>
-        <button onclick="testTableAccess()">テーブルアクセステスト</button>
-        <button onclick="testInsert()">データ挿入テスト</button>
-        <button onclick="clearResults()">結果クリア</button>
-        <button onclick="detailedCheck()">詳細確認</button>
-    </div>
-
-    <div id="results"></div>
+    <h1>FX分析システム - メインデータ復元</h1>
+    <button onclick="restoreMainData()" style="padding: 20px; font-size: 18px; background: green; color: white;">メインデータを復元</button>
+    <div id="result" style="margin-top: 20px; font-size: 16px;"></div>
 
     <script>
-        const SUPABASE_URL = 'https://jfrwyunauatsybdljlah.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmcnd5dW5hdWF0c3liZGxqbGFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MTMxODksImV4cCI6MjA2OTA4OTE4OX0.cyhPTiN4WAQ2p86JBZObjSljt2i1K_bK-cGGo3soxAo';
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        document.getElementById('current-time').textContent = new Date().toLocaleString('ja-JP');
+        const supabase = window.supabase.createClient(
+            'https://jfrwyunauatsybdljlah.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmcnd5dW5hdWF0c3liZGxqbGFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MTMxODksImV4cCI6MjA2OTA4OTE4OX0.cyhPTiN4WAQ2p86JBZObjSljt2i1K_bK-cGGo3soxAo'
+        );
 
-        function addResult(title, content, type = 'info') {
-            const resultsDiv = document.getElementById('results');
-            const resultDiv = document.createElement('div');
-            resultDiv.className = `test-section ${type}`;
-            resultDiv.innerHTML = `<h4>${title}</h4><pre>${content}</pre><small>実行時刻: ${new Date().toLocaleString('ja-JP')}</small>`;
-            resultsDiv.appendChild(resultDiv);
-        }
+        async function restoreMainData() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'メインデータを復元中...';
 
-        async function testConnection() {
             try {
-                addResult('基本接続テスト開始', 'Supabaseクライアントの初期化を確認中...', 'info');
-                const { data, error } = await supabase.from('fx_analysis_data').select('count', { count: 'exact', head: true });
-                if (error) {
-                    addResult('基本接続テスト - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
-                } else {
-                    addResult('基本接続テスト - 成功', `接続成功!\nデータ件数: ${data}`, 'success');
-                }
-            } catch (err) {
-                addResult('基本接続テスト - 例外', `JavaScript例外:\n${err.message}`, 'error');
-            }
-        }
-
-        async function testTableAccess() {
-            try {
-                addResult('テーブルアクセステスト開始', 'fx_analysis_dataテーブルからデータを取得中...', 'info');
-                const { data, error } = await supabase.from('fx_analysis_data').select('*').limit(1);
-                if (error) {
-                    addResult('テーブルアクセステスト - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
-                } else {
-                    addResult('テーブルアクセステスト - 成功', `データ取得成功!\n取得件数: ${data.length}\n\nデータ:\n${JSON.stringify(data, null, 2)}`, 'success');
-                }
-            } catch (err) {
-                addResult('テーブルアクセステスト - 例外', `JavaScript例外:\n${err.message}`, 'error');
-            }
-        }
-
-        async function testInsert() {
-            try {
-                const testData = {
-                    id: 'test_' + Date.now(),
-                    data: { test: true, timestamp: new Date().toISOString(), message: 'GitHub Pages接続テスト' },
-                    updated_at: new Date().toISOString()
-                };
-                addResult('データ挿入テスト開始', `テストデータ:\n${JSON.stringify(testData, null, 2)}`, 'info');
-                const { data, error } = await supabase.from('fx_analysis_data').insert([testData]).select();
-                if (error) {
-                    addResult('データ挿入テスト - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
-                } else {
-                    addResult('データ挿入テスト - 成功', `データ挿入成功!\n\n挿入されたデータ:\n${JSON.stringify(data, null, 2)}`, 'success');
-                }
-            } catch (err) {
-                addResult('データ挿入テスト - 例外', `JavaScript例外:\n${err.message}`, 'error');
-            }
-        }
-
-        async function detailedCheck() {
-            try {
-                addResult('詳細確認開始', 'データベースの詳細情報を取得中...', 'info');
-                
-                // 1. メインテーブルの詳細確認
-                const { data, error } = await supabase.from('fx_analysis_data').select('*').limit(5);
-                if (error) {
-                    addResult('詳細確認 - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
-                    return;
-                }
-                
-                // データ構造の詳細表示
-                addResult('メインテーブル構造', `取得データ数: ${data.length}\n\nサンプルデータ:\n${JSON.stringify(data, null, 2)}`, 'success');
-                
-                if (data.length > 0) {
-                    const columns = Object.keys(data[0]);
-                    addResult('テーブルカラム情報', `検出されたカラム:\n${columns.join('\n')}\n\nカラム数: ${columns.length}`, 'info');
-                    
-                    // データ型の確認
-                    const sampleData = data[0];
-                    let dataTypes = '';
-                    for (const [key, value] of Object.entries(sampleData)) {
-                        dataTypes += `${key}: ${typeof value} ${Array.isArray(value) ? '(array)' : ''}\n`;
-                    }
-                    addResult('データ型情報', dataTypes, 'info');
-                }
-                
-                // 2. 履歴テーブルの確認
-                const { data: historyData, error: historyError } = await supabase.from('fx_analysis_history').select('*').limit(3);
-                if (historyError) {
-                    addResult('履歴テーブル確認', `履歴テーブルエラー:\n${JSON.stringify(historyError, null, 2)}`, 'error');
-                } else {
-                    addResult('履歴テーブル確認', `履歴テーブル正常\nデータ数: ${historyData.length}\n\nサンプルデータ:\n${JSON.stringify(historyData, null, 2)}`, 'success');
-                    
-                    if (historyData.length > 0) {
-                        const historyColumns = Object.keys(historyData[0]);
-                        addResult('履歴テーブルカラム', `履歴テーブルカラム:\n${historyColumns.join('\n')}`, 'info');
-                    }
-                }
-                
-                // 3. 複雑なJSONBデータのテスト
-                const complexTestData = {
-                    id: 'complex_test_' + Date.now(),
-                    data: {
-                        currency: 'USDJPY',
-                        scenario: 'scenario1',
-                        analysisStatus: '検討中',
-                        memo: 'テストメモ',
-                        settings: {
-                            wave: '1時間足',
-                            priority: 'high',
-                            nested: {
-                                level1: 'value1',
-                                level2: {
-                                    deep: 'deepvalue'
-                                }
-                            }
-                        },
-                        array: ['item1', 'item2', 'item3']
+                // メインデータの構造
+                const mainData = {
+                    scenarios: {
+                        "GOLD": ["scenario1"],
+                        "AUDUSD": ["scenario1", "scenario2"],
+                        "EURUSD": ["scenario1", "scenario2"],
+                        "GBPUSD": ["scenario1", "scenario2", "scenario3", "scenario4"],
+                        "SILVER": ["scenario1", "scenario2"],
+                        "USDJPY": ["scenario1", "scenario2", "scenario3"]
                     },
+                    currencies: ["USDJPY", "EURUSD", "GBPUSD", "AUDUSD", "SILVER", "GOLD"],
+                    waveSettings: {},
+                    scenarioMemos: {},
+                    scenarioLabels: {
+                        "scenario1": "シナリオ1",
+                        "scenario2": "シナリオ2",
+                        "scenario3": "シナリオ3",
+                        "scenario4": "シナリオ4"
+                    },
+                    currentCurrency: "USDJPY",
+                    currentScenario: "scenario1",
+                    scenarioStatuses: {},
                     images: {
-                        scenario1: [
-                            { url: 'test1.jpg', size: 1024 },
-                            { url: 'test2.jpg', size: 2048 }
-                        ]
-                    },
-                    updated_at: new Date().toISOString()
+                        "USDJPY": {
+                            "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/USDJPY.jpeg"],
+                            "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/USDJPY2.jpeg"],
+                            "scenario3": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/USDJPY3.jpeg"]
+                        },
+                        "EURUSD": {
+                            "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/EURUSD.jpeg"],
+                            "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/EURUSD2.jpeg"]
+                        },
+                        "GBPUSD": {
+                            "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD.jpeg"],
+                            "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD2.jpeg"],
+                            "scenario3": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD3.jpeg"],
+                            "scenario4": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD4.jpeg"]
+                        },
+                        "AUDUSD": {
+                            "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/AUDUSD.jpeg"],
+                            "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/AUDUSD2.jpeg"]
+                        },
+                        "SILVER": {
+                            "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/SILVER.jpeg"],
+                            "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/SILVER2.jpeg"]
+                        },
+                        "GOLD": {
+                            "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GOLD.png"]
+                        }
+                    }
                 };
-                
-                const { data: complexResult, error: complexError } = await supabase
+
+                // メインデータを挿入
+                const { error } = await supabase
                     .from('fx_analysis_data')
-                    .insert([complexTestData])
-                    .select();
-                    
-                if (complexError) {
-                    addResult('複雑データ形式テスト - エラー', `エラー:\n${JSON.stringify(complexError, null, 2)}`, 'error');
-                } else {
-                    addResult('複雑データ形式テスト - 成功', `複雑形式データ挿入成功:\n${JSON.stringify(complexResult, null, 2)}`, 'success');
+                    .upsert([{
+                        id: 'main',
+                        data: mainData,
+                        images: {},
+                        updated_at: new Date().toISOString()
+                    }]);
+
+                if (error) {
+                    throw error;
                 }
-                
-                // 4. upsert操作のテスト
-                const upsertData = {
-                    id: 'upsert_test_fixed',
-                    data: { test: 'upsert_initial', timestamp: new Date().toISOString() },
-                    updated_at: new Date().toISOString()
-                };
-                
-                const { data: upsertResult, error: upsertError } = await supabase
+
+                resultDiv.innerHTML = '✅ 成功！メインデータが復元されました。';
+
+                // 確認のため、復元されたデータを表示
+                const { data: restoredData } = await supabase
                     .from('fx_analysis_data')
-                    .upsert([upsertData])
-                    .select();
-                    
-                if (upsertError) {
-                    addResult('Upsert操作テスト - エラー', `エラー:\n${JSON.stringify(upsertError, null, 2)}`, 'error');
-                } else {
-                    addResult('Upsert操作テスト - 成功', `Upsert操作成功:\n${JSON.stringify(upsertResult, null, 2)}`, 'success');
+                    .select('*')
+                    .eq('id', 'main')
+                    .single();
+
+                if (restoredData) {
+                    resultDiv.innerHTML += '<br><br><strong>復元されたデータ:</strong><br><pre>' + JSON.stringify(restoredData, null, 2) + '</pre>';
                 }
-                
-                addResult('詳細確認完了', 'すべての詳細確認が完了しました', 'success');
-                
-            } catch (err) {
-                addResult('詳細確認 - 例外', `JavaScript例外:\n${err.message}`, 'error');
+
+            } catch (error) {
+                resultDiv.innerHTML = `❌ エラー: ${error.message}`;
+                console.error('復元エラー:', error);
             }
         }
-
-        function clearResults() {
-            document.getElementById('results').innerHTML = '';
-        }
-
-        window.addEventListener('load', function() {
-            addResult('初期化完了', 'Supabaseクライアントが初期化されました。テストボタンをクリックして接続を確認してください。', 'info');
-        });
     </script>
 </body>
 </html>
