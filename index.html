@@ -59,6 +59,7 @@
             font-size: 16px;
             margin: 10px 5px;
             transition: background 0.3s;
+            display: inline-block;
         }
         
         .test-btn:hover {
@@ -86,6 +87,11 @@
             border: 1px solid #c3e6cb;
             margin-bottom: 20px;
         }
+        
+        .button-container {
+            margin: 20px 0;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -102,5 +108,256 @@
             🔄 Supabase接続確認中...
         </div>
         
-        <div style="margin: 20px 0;">
-            <button class="test-btn" onclick="testConnection()">🔗 接続テスト<span class="cursor">█</span>
+        <div class="button-container">
+            <button class="test-btn" onclick="testConnection()">🔗 接続テスト</button><br>
+            <button class="test-btn" onclick="testMainTable()">📊 メインテーブルテスト</button><br>
+            <button class="test-btn" onclick="testHistoryTable()">📝 履歴テーブルテスト</button><br>
+            <button class="test-btn" onclick="testStorage()">🖼️ ストレージテスト</button><br>
+            <button class="test-btn" onclick="insertInitialData()">🚀 初期データ作成</button>
+        </div>
+        
+        <div id="testResults"></div>
+        
+        <div style="margin-top: 30px;">
+            <h3>📋 テスト完了後の手順</h3>
+            <ol>
+                <li>全てのテストボタンをクリックして動作確認</li>
+                <li>全て成功したら「テスト完了、完全版HTMLお願いします」と報告</li>
+                <li>エラーが出た場合は、エラーメッセージを報告</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Supabase設定（あなたの実際の値に設定済み）
+        const SUPABASE_URL = 'https://jfwvyuanautsybdjlah.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmcnd5dW5hdWF0c3liZGxqbGFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MTMxODksImV4cCI6MjA2OTA4OTE4OX0.cyhPTiN4WAQ2p86JBZObjSljt2i1K_bK-cGGo3soxAo';
+        
+        let supabase = null;
+        
+        // Supabase初期化
+        function initializeSupabase() {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                document.getElementById('connectionStatus').innerHTML = '✅ Supabase初期化完了。テストボタンで動作確認してください。';
+                document.getElementById('connectionStatus').className = 'status success';
+                console.log('Supabase初期化成功');
+                return true;
+            } catch (error) {
+                document.getElementById('connectionStatus').innerHTML = `❌ Supabase初期化エラー: ${error.message}`;
+                document.getElementById('connectionStatus').className = 'status error';
+                console.error('Supabase初期化エラー:', error);
+                return false;
+            }
+        }
+        
+        // 結果表示用関数
+        function showResult(title, result, isSuccess = true) {
+            const resultDiv = document.getElementById('testResults');
+            const statusClass = isSuccess ? 'success' : 'error';
+            const icon = isSuccess ? '✅' : '❌';
+            
+            resultDiv.innerHTML += `
+                <div class="status ${statusClass}">
+                    <h4>${icon} ${title}</h4>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                </div>
+            `;
+        }
+        
+        // 接続テスト
+        async function testConnection() {
+            console.log('接続テスト開始');
+            if (!supabase) {
+                showResult('接続テスト', 'Supabaseが初期化されていません', false);
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabase.from('fx_analysis_data').select('count', { count: 'exact', head: true });
+                
+                if (error) {
+                    console.error('接続テストエラー:', error);
+                    showResult('接続テスト', error, false);
+                } else {
+                    console.log('接続テスト成功');
+                    showResult('接続テスト', '接続成功！データベースにアクセスできます。', true);
+                }
+            } catch (error) {
+                console.error('接続テスト例外:', error);
+                showResult('接続テスト', error.message, false);
+            }
+        }
+        
+        // メインテーブルテスト
+        async function testMainTable() {
+            console.log('メインテーブルテスト開始');
+            if (!supabase) {
+                showResult('メインテーブルテスト', 'Supabaseが初期化されていません', false);
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabase
+                    .from('fx_analysis_data')
+                    .select('*');
+                
+                if (error) {
+                    console.error('メインテーブルテストエラー:', error);
+                    showResult('メインテーブルテスト', error, false);
+                } else {
+                    console.log('メインテーブルテスト成功:', data);
+                    showResult('メインテーブルテスト', { 
+                        message: 'メインテーブル読み込み成功',
+                        recordCount: data.length,
+                        records: data 
+                    }, true);
+                }
+            } catch (error) {
+                console.error('メインテーブルテスト例外:', error);
+                showResult('メインテーブルテスト', error.message, false);
+            }
+        }
+        
+        // 履歴テーブルテスト
+        async function testHistoryTable() {
+            console.log('履歴テーブルテスト開始');
+            if (!supabase) {
+                showResult('履歴テーブルテスト', 'Supabaseが初期化されていません', false);
+                return;
+            }
+            
+            try {
+                // テストデータ挿入
+                const testHistoryData = {
+                    version_id: `test_${Date.now()}`,
+                    description: 'テスト履歴データ',
+                    data_snapshot: {
+                        test: 'これはテストデータです',
+                        timestamp: new Date().toISOString()
+                    },
+                    changes: {
+                        type: 'test',
+                        field: 'memo',
+                        old_value: '',
+                        new_value: 'テストメモ'
+                    }
+                };
+                
+                const { data, error } = await supabase
+                    .from('fx_analysis_history')
+                    .insert(testHistoryData)
+                    .select();
+                
+                if (error) {
+                    console.error('履歴テーブルテストエラー:', error);
+                    showResult('履歴テーブルテスト', error, false);
+                } else {
+                    console.log('履歴テーブルテスト成功:', data);
+                    showResult('履歴テーブルテスト', {
+                        message: '履歴テーブル書き込み成功',
+                        insertedData: data
+                    }, true);
+                }
+            } catch (error) {
+                console.error('履歴テーブルテスト例外:', error);
+                showResult('履歴テーブルテスト', error.message, false);
+            }
+        }
+        
+        // ストレージテスト
+        async function testStorage() {
+            console.log('ストレージテスト開始');
+            if (!supabase) {
+                showResult('ストレージテスト', 'Supabaseが初期化されていません', false);
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabase.storage
+                    .from('fx-images')
+                    .list('', { limit: 10 });
+                
+                if (error) {
+                    console.error('ストレージテストエラー:', error);
+                    showResult('ストレージテスト', error, false);
+                } else {
+                    console.log('ストレージテスト成功:', data);
+                    showResult('ストレージテスト', {
+                        message: 'ストレージアクセス成功',
+                        fileCount: data.length,
+                        files: data
+                    }, true);
+                }
+            } catch (error) {
+                console.error('ストレージテスト例外:', error);
+                showResult('ストレージテスト', error.message, false);
+            }
+        }
+        
+        // 初期データ作成
+        async function insertInitialData() {
+            console.log('初期データ作成開始');
+            if (!supabase) {
+                showResult('初期データ作成', 'Supabaseが初期化されていません', false);
+                return;
+            }
+            
+            try {
+                const initialData = {
+                    id: 'main',
+                    data: {
+                        currencies: ['USDJPY', 'EURUSD', 'GBPUSD', 'AUDUSD', 'SILVER', 'GOLD'],
+                        currentCurrency: 'USDJPY',
+                        currentScenario: 'scenario1',
+                        scenarios: {
+                            'USDJPY': ['scenario1', 'scenario2', 'scenario3'],
+                            'EURUSD': ['scenario1', 'scenario2'],
+                            'GBPUSD': ['scenario1', 'scenario2', 'scenario3', 'scenario4'],
+                            'AUDUSD': ['scenario1', 'scenario2'],
+                            'SILVER': ['scenario1', 'scenario2'],
+                            'GOLD': ['scenario1']
+                        },
+                        scenarioLabels: {
+                            'scenario1': 'シナリオ1',
+                            'scenario2': 'シナリオ2',
+                            'scenario3': 'シナリオ3',
+                            'scenario4': 'シナリオ4'
+                        },
+                        scenarioMemos: {},
+                        scenarioStatuses: {},
+                        waveSettings: {}
+                    },
+                    images: {},
+                    updated_at: new Date().toISOString()
+                };
+                
+                const { data, error } = await supabase
+                    .from('fx_analysis_data')
+                    .upsert(initialData)
+                    .select();
+                
+                if (error) {
+                    console.error('初期データ作成エラー:', error);
+                    showResult('初期データ作成', error, false);
+                } else {
+                    console.log('初期データ作成成功:', data);
+                    showResult('初期データ作成', {
+                        message: '初期データ作成成功',
+                        createdData: data
+                    }, true);
+                }
+            } catch (error) {
+                console.error('初期データ作成例外:', error);
+                showResult('初期データ作成', error.message, false);
+            }
+        }
+        
+        // ページ読み込み時に初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('ページ読み込み完了');
+            setTimeout(initializeSupabase, 1000);
+        });
+    </script>
+</body>
+</html>
