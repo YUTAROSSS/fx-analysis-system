@@ -4,320 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FX通貨ペア分析システム</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background: #f5f5f5; 
             line-height: 1.6;
-            color: #333;
-            background-color: #fff;
         }
         
-        /* ヘッダー */
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            min-height: 100vh; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
+        .section { 
+            padding: 20px; 
+            border-bottom: 1px solid #ddd; 
         }
         
-        .header-title {
-            font-size: 18px;
-            font-weight: bold;
-        }
-        
-        .header-buttons {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        .header-buttons button {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
+        .btn { 
+            padding: 8px 15px; 
+            margin: 3px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 14px;
             transition: all 0.2s;
         }
         
-        .header-buttons button:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        
-        /* メインコンテナ */
-        .main-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        /* セクション共通 */
-        .section {
-            margin: 30px 0;
-        }
-        
-        .section h3 {
-            margin-bottom: 15px;
-            color: #333;
-            font-size: 18px;
-        }
-        
-        /* 通貨ペアボタン */
-        .currency-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .currency-btn {
-            background-color: #6c757d;
-            color: white;
-            min-width: 80px;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .currency-btn.active {
-            background-color: #007bff;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,123,255,0.3);
-        }
-        
-        .currency-btn:hover {
+        .btn:hover {
             opacity: 0.8;
-        }
-        
-        /* シナリオボタン */
-        .scenario-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .scenario-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .scenario-btn {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s;
-            user-select: none;
-        }
-        
-        .scenario-btn.active {
-            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
             transform: translateY(-1px);
         }
         
-        .scenario-btn:hover {
-            opacity: 0.9;
+        .btn-primary { 
+            background: #007bff; 
+            color: white; 
         }
         
-        .status-indicator {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 3px;
-            padding: 2px 6px;
-            font-size: 11px;
-            white-space: nowrap;
+        .btn-secondary { 
+            background: #6c757d; 
+            color: white; 
         }
         
-        /* 追加・削除ボタン */
-        .add-btn {
-            background-color: #28a745 !important;
-            color: white;
+        .btn-success { 
+            background: #28a745; 
+            color: white; 
         }
         
-        .remove-btn {
-            background-color: #dc3545 !important;
-            color: white;
+        .btn-danger { 
+            background: #dc3545; 
+            color: white; 
         }
         
-        /* 画像表示エリア */
-        .image-container {
-            width: 100%;
-            text-align: center;
-            margin: 20px 0;
+        .btn.active { 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            transform: translateY(1px);
         }
         
-        #image-display {
-            min-height: 300px;
-            border: 2px dashed #ddd;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            background-color: #fafafa;
+        .image-area { 
+            border: 2px dashed #ddd; 
+            padding: 20px; 
+            margin: 10px 0; 
+            min-height: 200px; 
+            text-align: center; 
+            background: #fafafa; 
+            border-radius: 5px; 
         }
         
-        #image-display img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            margin: 10px 0;
+        .image-area img { 
+            max-width: 100%; 
+            max-height: 300px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
-        #image-display .placeholder {
-            color: #666;
+        .image-area h4 {
+            margin: 0 0 15px 0;
+            color: #333;
             font-size: 16px;
         }
         
-        #high-quality-btn {
-            margin-top: 10px;
-            background-color: #17a2b8;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        /* ナビゲーション */
-        .navigation {
-            text-align: center;
-            margin: 20px 0;
-        }
-        
-        .navigation button {
-            margin: 0 10px;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .navigation button:hover {
-            background-color: #0056b3;
-        }
-        
-        /* 分析ステータス・狙う波 */
-        .status-buttons, .wave-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-width: 300px;
-        }
-        
-        .status-btn, .wave-btn {
-            background-color: #f8f9fa;
-            color: #495057;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: left;
-            padding: 12px 15px;
-        }
-        
-        .status-btn:hover, .wave-btn:hover {
-            background-color: #e9ecef;
-        }
-        
-        .status-btn.active, .wave-btn.active {
-            border: 2px solid;
-            font-weight: bold;
-        }
-        
-        /* 分析ステータスの色分け */
-        .status-btn[data-status="検討中"].active {
-            border-color: #007bff;
-            background-color: #e3f2fd;
-            color: #0056b3;
-        }
-        
-        .status-btn[data-status="見送り"].active,
-        .status-btn[data-status="見逃し"].active,
-        .status-btn[data-status="完了"].active {
-            border-color: #6c757d;
-            background-color: #f8f9fa;
-            color: #495057;
-        }
-        
-        .status-btn[data-status="指値逆指値中"].active,
-        .status-btn[data-status="保持中"].active {
-            border-color: #dc3545;
-            background-color: #ffebee;
-            color: #c62828;
-        }
-        
-        /* 狙う波の色分け */
-        .wave-btn[data-wave="未選択"].active {
-            border-color: #6c757d;
-            background-color: #f8f9fa;
-            color: #495057;
-        }
-        
-        .wave-btn[data-wave="1時間足"].active {
-            border-color: #28a745;
-            background-color: #e8f5e8;
-            color: #1e7e34;
-        }
-        
-        .wave-btn[data-wave="4時間足"].active {
-            border-color: #007bff;
-            background-color: #e3f2fd;
-            color: #0056b3;
-        }
-        
-        .wave-btn[data-wave="日足"].active {
-            border-color: #dc3545;
-            background-color: #ffebee;
-            color: #c62828;
-        }
-        
-        /* メモ・ChatGPTエリア */
-        .memo-chatgpt-section {
-            margin: 30px 0;
-        }
-        
-        .memo-section, .chatgpt-section {
-            margin-bottom: 25px;
-        }
-        
-        textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+        textarea { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            resize: vertical; 
             font-family: inherit;
-            resize: vertical;
             font-size: 14px;
+            box-sizing: border-box;
         }
         
         textarea:focus {
@@ -326,463 +108,372 @@
             box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
         }
         
-        .button-group {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .button-group button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .copy-btn {
-            background-color: #6c757d;
-            color: white;
-        }
-        
-        .change-btn {
-            background-color: #ffc107;
-            color: #212529;
-        }
-        
-        .chatgpt-btn {
-            background-color: #28a745;
-            color: white;
-        }
-        
-        /* 最下部エリア */
-        .bottom-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
+        .scenario-item { 
+            display: flex; 
+            align-items: center; 
+            margin: 5px 0; 
+            padding: 5px;
             background: #f8f9fa;
-            border-top: 1px solid #ddd;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 50px;
+            border-radius: 5px;
         }
         
-        .usage-monitor {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        .scenario-status { 
+            margin-left: 10px; 
+            font-size: 12px; 
+            color: #666; 
+            padding: 2px 6px;
+            background: #e9ecef;
+            border-radius: 3px;
         }
         
-        .usage-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 12px;
-        }
-        
-        progress {
-            width: 80px;
-            height: 16px;
-        }
-        
-        .error-bar {
-            background: #dc3545;
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
             color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 14px;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #f5c6cb;
             display: none;
         }
         
-        #recovery-btn {
-            margin-left: 10px;
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        
-        #history-btn {
-            opacity: 0.6;
-            background: none;
-            border: none;
-            font-size: 14px;
-            cursor: pointer;
-            padding: 8px 12px;
-        }
-        
-        /* 履歴サイドパネル */
-        .history-sidebar {
-            position: fixed;
-            right: -400px;
-            top: 0;
-            width: 400px;
-            height: 100vh;
-            background: white;
-            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-            transition: right 0.3s ease;
-            z-index: 1000;
-            overflow-y: auto;
-        }
-        
-        .history-sidebar.open {
-            right: 0;
-        }
-        
-        .history-header {
-            padding: 20px;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #f8f9fa;
-        }
-        
-        .history-header h3 {
-            margin: 0;
-        }
-        
-        #close-history {
-            background: none;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-            padding: 5px;
-        }
-        
-        .history-content {
-            padding: 20px;
-        }
-        
-        #history-search {
-            width: 100%;
+        .success-message {
+            background: #d4edda;
+            color: #155724;
             padding: 10px;
-            border: 1px solid #ddd;
             border-radius: 5px;
-            margin-bottom: 15px;
+            margin: 10px 0;
+            border: 1px solid #c3e6cb;
+            display: none;
         }
         
-        #search-results-count {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 15px;
+        #storage-history {
+            max-height: 200px; 
+            overflow-y: auto; 
+            border: 1px solid #ddd; 
+            padding: 10px; 
+            background: #f9f9f9;
+            border-radius: 5px;
         }
         
         .history-item {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .history-item:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .history-item-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .history-item-date {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 3px;
+            border-left: 3px solid #007bff;
             font-size: 12px;
-            color: #666;
         }
         
-        /* ローディング */
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #007bff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .status-buttons, .wave-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 5px;
         }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* レスポンシブ */
         @media (max-width: 768px) {
-            .main-container {
-                padding: 10px;
+            .container {
+                margin: 0;
             }
             
-            .currency-buttons,
-            .scenario-buttons {
+            .section {
+                padding: 15px;
+            }
+            
+            .btn {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+            
+            .status-buttons, .wave-buttons {
                 flex-direction: column;
-                align-items: stretch;
+                align-items: center;
             }
             
-            .status-buttons,
-            .wave-buttons {
-                max-width: 100%;
-            }
-            
-            .scenario-container {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 4px;
-            }
-            
-            .navigation button {
-                margin: 5px;
-                padding: 8px 16px;
-            }
-            
-            .button-group {
-                flex-direction: column;
-            }
-            
-            .bottom-section {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .history-sidebar {
-                width: 100%;
-                right: -100%;
-            }
-            
-            .header-content {
-                flex-direction: column;
-                gap: 10px;
+            .status-buttons .btn, .wave-buttons .btn {
+                width: 200px;
+                margin: 2px 0;
             }
         }
         
-        /* ダークモード */
-        body.dark-mode {
-            background-color: #1a1a1a;
+        .dark-mode {
+            background: #1a1a1a;
             color: #e0e0e0;
         }
         
-        body.dark-mode .section h3 {
+        .dark-mode .container {
+            background: #2d2d2d;
+        }
+        
+        .dark-mode .section {
+            border-color: #555;
+        }
+        
+        .dark-mode .image-area {
+            background: #3a3a3a;
+            border-color: #555;
+        }
+        
+        .dark-mode textarea {
+            background: #3a3a3a;
             color: #e0e0e0;
-        }
-        
-        body.dark-mode #image-display {
-            background-color: #2d2d2d;
             border-color: #555;
-        }
-        
-        body.dark-mode textarea {
-            background-color: #2d2d2d;
-            color: #e0e0e0;
-            border-color: #555;
-        }
-        
-        body.dark-mode .bottom-section {
-            background-color: #2d2d2d;
-            border-color: #555;
-        }
-        
-        body.dark-mode .history-sidebar {
-            background-color: #1a1a1a;
-        }
-        
-        body.dark-mode .history-header {
-            background-color: #2d2d2d;
         }
     </style>
 </head>
 <body>
-    <!-- ヘッダー -->
-    <header>
-        <div class="header-content">
-            <span class="header-title">🔄 FX通貨ペア分析システム</span>
-            <div class="header-buttons">
-                <button id="backup-btn">💾 バックアップ</button>
-                <button id="theme-toggle">🌙</button>
-                <span>📊</span>
-            </div>
-        </div>
-    </header>
-
-    <div class="main-container">
-        <!-- 通貨ペア選択 -->
-        <div class="section">
-            <h3>通貨ペア部分</h3>
-            <div class="currency-buttons">
-                <button class="currency-btn active" data-currency="USDJPY">USDJPY</button>
-                <button class="currency-btn" data-currency="EURUSD">EURUSD</button>
-                <button class="currency-btn" data-currency="GBPUSD">GBPUSD</button>
-                <button class="currency-btn" data-currency="AUDUSD">AUDUSD</button>
-                <button class="currency-btn" data-currency="SILVER">SILVER</button>
-                <button class="currency-btn" data-currency="GOLD">GOLD</button>
-                <button id="add-currency" class="add-btn">通貨ペア追加</button>
-                <button id="remove-currency" class="remove-btn">通貨ペア削除</button>
-            </div>
-        </div>
-
-        <!-- シナリオ選択 -->
-        <div class="section">
-            <h3>チャート部分</h3>
-            <div class="scenario-buttons" id="scenario-container">
-                <div class="scenario-container">
-                    <button class="scenario-btn active" data-scenario="scenario1" draggable="true">シナリオ1</button>
-                    <small class="status-indicator">🔍 検討中</small>
-                </div>
-                <button id="add-scenario" class="add-btn">シナリオ追加</button>
-                <button id="remove-scenario" class="remove-btn">シナリオ削除</button>
-            </div>
-        </div>
-
-        <!-- メイン表示エリア -->
-        <div class="section">
-            <h2 id="current-pair" style="text-align: center; margin-bottom: 20px;">USDJPY</h2>
-            
-            <!-- 画像表示エリア -->
-            <div class="image-container">
-                <div id="image-display">
-                    <p class="placeholder">画像が表示されます</p>
-                </div>
-                <button id="high-quality-btn" style="display: none;">高画質表示</button>
-            </div>
-            
-            <!-- 画像の下のセクション -->
-            <div class="below-image-section">
-                <!-- ナビゲーション -->
-                <div class="navigation">
-                    <button id="prev-chart">← 前のチャート</button>
-                    <button id="next-chart">次のチャート →</button>
-                    <button id="top-return">🔝 トップに戻る</button>
-                </div>
-                
-                <!-- 分析ステータス -->
-                <div class="section">
-                    <h3>分析ステータス</h3>
-                    <div class="status-buttons">
-                        <button class="status-btn active" data-status="検討中">🔍 検討中</button>
-                        <button class="status-btn" data-status="見送り">🙅‍♂️ 見送り</button>
-                        <button class="status-btn" data-status="見逃し">😅 見逃し</button>
-                        <button class="status-btn" data-status="指値逆指値中">🎯 指値逆指値中</button>
-                        <button class="status-btn" data-status="保持中">💼 保持中</button>
-                        <button class="status-btn" data-status="完了">✅ 完了</button>
-                    </div>
-                </div>
-                
-                <!-- 狙う波 -->
-                <div class="section">
-                    <h3>狙う波</h3>
-                    <div class="wave-buttons">
-                        <button class="wave-btn active" data-wave="未選択">未選択</button>
-                        <button class="wave-btn" data-wave="1時間足">1時間足</button>
-                        <button class="wave-btn" data-wave="4時間足">4時間足</button>
-                        <button class="wave-btn" data-wave="日足">日足</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 分析メモ・ChatGPT連携エリア -->
-        <div class="memo-chatgpt-section">
-            <div class="memo-section">
-                <h3>分析メモ</h3>
-                <textarea id="analysis-memo" placeholder="分析メモを入力..." style="height: 120px;"></textarea>
-                <div class="button-group">
-                    <button id="copy-memo" class="copy-btn">分析メモコピー</button>
-                </div>
-            </div>
-            <div class="chatgpt-section">
-                <h3>ChatGPT固定プロンプト</h3>
-                <textarea id="fixed-prompt" placeholder="固定プロンプトを入力..." style="height: 120px;"></textarea>
-                <div class="button-group">
-                    <button id="copy-prompt" class="copy-btn">固定プロンプトコピー</button>
-                    <button id="change-prompt" class="change-btn">固定プロンプト変更</button>
-                    <button id="chatgpt-analysis" class="chatgpt-btn">CHATGPT分析</button>
-                </div>
-            </div>
-        </div>
+    <div class="loading" id="loading">
+        <div>処理中...</div>
     </div>
+    
+    <div class="container">
+        <!-- 1. ヘッダー -->
+        <header style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; position: relative;">
+            <h1 style="margin: 0; display: inline-block; font-size: 24px;">🔄 FX通貨ペア分析システム</h1>
+            <div style="position: absolute; top: 20px; right: 20px;">
+                <button onclick="createBackup()" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">💾 バックアップ</button>
+                <button onclick="toggleTheme()" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);" id="theme-btn">🌙</button>
+            </div>
+        </header>
 
-    <!-- 最下部エリア -->
-    <div class="bottom-section">
-        <div class="usage-monitor">
-            <div class="usage-item">
-                <span>DB: </span>
-                <progress id="db-usage" max="100" value="0"></progress>
-                <span id="db-percent">0%</span>
-            </div>
-            <div class="usage-item">
-                <span>Storage: </span>
-                <progress id="storage-usage" max="100" value="0"></progress>
-                <span id="storage-percent">0%</span>
-            </div>
-        </div>
-        <div class="error-bar" id="error-bar">
-            <span id="error-message">エラーメッセージ</span>
-            <button id="recovery-btn">🔙 復旧</button>
-        </div>
-        <button id="history-btn">履歴</button>
-    </div>
+        <!-- エラー・成功メッセージ -->
+        <div class="error-message" id="error-message"></div>
+        <div class="success-message" id="success-message"></div>
 
-    <!-- 履歴サイドパネル -->
-    <div class="history-sidebar" id="history-sidebar">
-        <div class="history-header">
-            <h3>履歴</h3>
-            <button id="close-history">×</button>
-        </div>
-        <div class="history-content">
-            <input type="text" id="history-search" placeholder="履歴を検索...">
-            <div id="search-results-count">検索結果: 0件</div>
-            <div class="history-list" id="history-list">
-                <!-- 履歴項目がここに動的に表示される -->
+        <!-- 2. 通貨ペア部分 -->
+        <div class="section">
+            <h3>📈 通貨ペア選択</h3>
+            <div id="currency-buttons">
+                <button class="btn btn-primary active" onclick="selectCurrency('USDJPY')" data-currency="USDJPY">USDJPY</button>
+                <button class="btn btn-primary" onclick="selectCurrency('EURUSD')" data-currency="EURUSD">EURUSD</button>
+                <button class="btn btn-primary" onclick="selectCurrency('GBPUSD')" data-currency="GBPUSD">GBPUSD</button>
+                <button class="btn btn-primary" onclick="selectCurrency('AUDUSD')" data-currency="AUDUSD">AUDUSD</button>
+                <button class="btn btn-primary" onclick="selectCurrency('SILVER')" data-currency="SILVER">SILVER</button>
+                <button class="btn btn-primary" onclick="selectCurrency('GOLD')" data-currency="GOLD">GOLD</button>
             </div>
+            <div style="margin-top: 15px;">
+                <button onclick="addCurrency()" class="btn btn-success">➕ 通貨ペア追加</button>
+                <button onclick="removeCurrency()" class="btn btn-danger">❌ 通貨ペア削除</button>
+            </div>
+        </div>
+
+        <!-- 3. シナリオ部分 -->
+        <div class="section">
+            <h3>📊 シナリオ選択</h3>
+            <div id="scenario-list">
+                <div class="scenario-item">
+                    <button class="btn btn-success active" onclick="selectScenario('scenario1')" data-scenario="scenario1">シナリオ1</button>
+                    <span class="scenario-status" id="status-scenario1">🔍 検討中</span>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <button onclick="addScenario()" class="btn btn-success">➕ シナリオ追加</button>
+                <button onclick="deleteScenario()" class="btn btn-danger">❌ シナリオ削除</button>
+            </div>
+        </div>
+
+        <!-- 4. 画像表示部分 -->
+        <div class="section">
+            <h2 id="currency-name" style="text-align: center; margin-bottom: 30px; color: #333; font-size: 28px;">USDJPY</h2>
+            
+            <div id="image1-area" class="image-area">
+                <h4>📸 チャート画像1枚目</h4>
+                <div id="image1-display">
+                    <p style="color: #666; margin: 50px 0;">画像1が表示されます</p>
+                </div>
+            </div>
+            
+            <div id="image2-area" class="image-area">
+                <h4>📸 チャート画像2枚目</h4>
+                <div id="image2-display">
+                    <p style="color: #666; margin: 50px 0;">画像2が表示されます（もしあれば）</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. ナビゲーション -->
+        <div class="section" style="text-align: center; background: #f8f9fa;">
+            <h3>🧭 ナビゲーション</h3>
+            <button onclick="prevScenario()" class="btn btn-primary" style="margin: 0 10px;">← 前のシナリオ</button>
+            <button onclick="nextScenario()" class="btn btn-primary" style="margin: 0 10px;">次のシナリオ →</button>
+            <button onclick="topScenario()" class="btn btn-secondary" style="margin: 0 10px;">🔝 最初に戻る</button>
+        </div>
+
+        <!-- 6. 分析ステータス -->
+        <div class="section">
+            <h3>📋 分析ステータス</h3>
+            <div class="status-buttons">
+                <button class="btn active" onclick="setStatus('検討中')" style="background: #007bff; color: white;" id="status-検討中">🔍 検討中</button>
+                <button class="btn" onclick="setStatus('見送り')" style="background: #6c757d; color: white;" id="status-見送り">🙅‍♂️ 見送り</button>
+                <button class="btn" onclick="setStatus('見逃し')" style="background: #6c757d; color: white;" id="status-見逃し">😅 見逃し</button>
+                <button class="btn" onclick="setStatus('指値逆指値中')" style="background: #dc3545; color: white;" id="status-指値逆指値中">🎯 指値逆指値中</button>
+                <button class="btn" onclick="setStatus('保持中')" style="background: #dc3545; color: white;" id="status-保持中">💼 保持中</button>
+                <button class="btn" onclick="setStatus('完了')" style="background: #28a745; color: white;" id="status-完了">✅ 完了</button>
+            </div>
+        </div>
+
+        <!-- 7. 狙う波 -->
+        <div class="section">
+            <h3>🌊 狙う波</h3>
+            <div class="wave-buttons">
+                <button class="btn active" onclick="setWave('未選択')" style="background: #6c757d; color: white;" id="wave-未選択">未選択</button>
+                <button class="btn" onclick="setWave('1時間足')" style="background: #28a745; color: white;" id="wave-1時間足">1時間足</button>
+                <button class="btn" onclick="setWave('4時間足')" style="background: #007bff; color: white;" id="wave-4時間足">4時間足</button>
+                <button class="btn" onclick="setWave('日足')" style="background: #dc3545; color: white;" id="wave-日足">日足</button>
+            </div>
+        </div>
+
+        <!-- 8. メモ・ChatGPT部分 -->
+        <div class="section">
+            <div style="margin-bottom: 30px;">
+                <h3>📝 分析メモ</h3>
+                <textarea id="memo" rows="5" placeholder="分析メモを入力してください..." onchange="saveMemo()"></textarea>
+                <button onclick="copyMemo()" class="btn btn-secondary" style="margin-top: 10px;">📋 メモをコピー</button>
+            </div>
+            
+            <div>
+                <h3>🤖 ChatGPT固定プロンプト</h3>
+                <textarea id="prompt" rows="5" placeholder="ChatGPT用のプロンプトを入力してください..." onchange="savePrompt()"></textarea>
+                <div style="margin-top: 10px;">
+                    <button onclick="copyPrompt()" class="btn btn-secondary">📋 プロンプトコピー</button>
+                    <button onclick="openChatGPT()" class="btn" style="background: #10a37f; color: white; margin-left: 10px;">🤖 CHATGPT分析</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. STORAGE履歴 -->
+        <div class="section">
+            <h3>📚 STORAGE履歴</h3>
+            <div id="storage-history">
+                <p style="color: #666; text-align: center; margin: 20px 0;">履歴を読み込み中...</p>
+            </div>
+            <button onclick="refreshHistory()" class="btn btn-secondary" style="margin-top: 10px;">🔄 履歴更新</button>
         </div>
     </div>
 
     <script>
-        // Supabase設定
-        const SUPABASE_URL = 'https://jfrwyunauatsybdljlah.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmcnd5dW5hdWF0c3liZGxqbGFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MTMxODksImV4cCI6MjA2OTA4OTE4OX0.cyhPTiN4WAQ2p86JBZObjSljt2i1K_bK-cGGo3soxAo';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // グローバル変数
+        let supabase;
+        let currentCurrency = 'USDJPY';
+        let currentScenario = 'scenario1';
+        let isDarkMode = false;
+        let mainData = {};
 
-        // データ管理クラス
-        class DataManager {
-            constructor() {
-                this.mainData = null;
-                this.currentCurrency = 'USDJPY';
-                this.currentScenario = 'scenario1';
-                this.currentImageIndex = 0;
-                this.isDarkMode = false;
+        // Supabase初期化
+        function initSupabase() {
+            try {
+                const supabaseUrl = 'https://jfrwyunauatsybdljlah.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmcnd5dW5hdWF0c3liZGxqbGFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MTMxODksImV4cCI6MjA2OTA4OTE4OX0.cyhPTiN4WAQ2p86JBZObjSljt2i1K_bK-cGGo3soxAo';
+                supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                console.log('Supabase initialized successfully');
+                return true;
+            } catch (error) {
+                console.error('Supabase initialization error:', error);
+                showError('データベース接続に失敗しました');
+                return false;
             }
+        }
 
-            // メインデータの読み込み
-            async loadMainData() {
-                try {
-                    const { data, error } = await supabase
-                        .from('fx_analysis_data')
-                        .select('*')
-                        .eq('id', 'main')
-                        .single();
-                    
-                    if (error) {
-                        console.error('メインデータ読み込みエラー:', error);
-                        // 初期データ作成
-                        await this.createInitialData();
-                        return await this.loadMainData();
-                    }
-                    
-                    this.mainData = data.data;
-                    return this.mainData;
-                } catch (err) {
-                    console.error('メインデータ読み込み例外:', err);
-                    throw err;
+        // 安全なDOM要素取得
+        function safeGetElement(id) {
+            const element = document.getElementById(id);
+            if (!element) {
+                console.warn(`Element not found: ${id}`);
+                return null;
+            }
+            return element;
+        }
+
+        // 安全な処理実行
+        async function safeExecute(fn, errorMessage = 'エラーが発生しました') {
+            try {
+                showLoading();
+                const result = await fn();
+                hideLoading();
+                return result;
+            } catch (error) {
+                hideLoading();
+                console.error('Safe execute error:', error);
+                showError(errorMessage + ': ' + error.message);
+                return null;
+            }
+        }
+
+        // エラー対策済みデータ読み込み
+        async function loadData(key) {
+            try {
+                console.log('Loading data for key:', key);
+                const { data, error } = await supabase
+                    .from('fx_analysis_data')
+                    .select('data')
+                    .eq('id', key)
+                    .maybeSingle();
+                
+                if (error && error.code !== 'PGRST116') {
+                    console.error('Load error:', error);
+                    return null;
                 }
+                
+                const result = data?.data || null;
+                console.log('Loaded data:', result);
+                return result;
+            } catch (err) {
+                console.error('Load exception:', err);
+                return null;
+            }
+        }
+
+        // エラー対策済みデータ保存
+        async function saveData(key, value) {
+            try {
+                console.log('Saving data for key:', key, 'value:', value);
+                const { error } = await supabase
+                    .from('fx_analysis_data')
+                    .upsert([{
+                        id: key,
+                        data: value,
+                        updated_at: new Date().toISOString()
+                    }], {
+                        onConflict: 'id',
+                        ignoreDuplicates: false
+                    });
+                
+                if (error) {
+                    console.error('Save error:', error);
+                    return false;
+                }
+                console.log('Data saved successfully');
+                return true;
+            } catch (err) {
+                console.error('Save exception:', err);
+                return false;
+            }
+        }
+
+        // 初期化
+        async function initialize() {
+            console.log('Starting initialization...');
+            
+            if (!initSupabase()) {
+                return;
             }
 
-            // 初期データ作成
-            async createInitialData() {
-                const initialData = {
+            await safeExecute(async () => {
+                // メインデータ読み込み
+                mainData = await loadData('main') || {
                     currencies: ['USDJPY', 'EURUSD', 'GBPUSD', 'AUDUSD', 'SILVER', 'GOLD'],
                     scenarios: {
                         USDJPY: ['scenario1'],
@@ -792,1024 +483,656 @@
                         SILVER: ['scenario1'],
                         GOLD: ['scenario1']
                     },
-                    images: {
-                        USDJPY: { scenario1: [] },
-                        EURUSD: { scenario1: [] },
-                        GBPUSD: { scenario1: [] },
-                        AUDUSD: { scenario1: [] },
-                        SILVER: { scenario1: [] },
-                        GOLD: { scenario1: [] }
-                    },
+                    images: {},
+                    scenarioNames: {},
                     fixedPrompt: 'FXチャート分析をお願いします。'
                 };
 
-                const { error } = await supabase
-                    .from('fx_analysis_data')
-                    .insert([{ id: 'main', data: initialData }]);
+                // 初期データ保存
+                await saveData('main', mainData);
 
-                if (error) {
-                    console.error('初期データ作成エラー:', error);
-                    throw error;
-                }
-            }
-
-            // 個別データの読み込み
-            async loadIndividualData(currency, scenario, type) {
-                try {
-                    const key = `${currency}_${scenario}_${type}`;
-                    const { data, error } = await supabase
-                        .from('fx_analysis_data')
-                        .select('*')
-                        .eq('id', key)
-                        .single();
-                    
-                    if (error && error.code !== 'PGRST116') {
-                        console.error('個別データ読み込みエラー:', error);
-                        return null;
-                    }
-                    
-                    return data?.data?.value || null;
-                } catch (err) {
-                    console.error('個別データ読み込み例外:', err);
-                    return null;
-                }
-            }
-
-            // 個別データの保存
-            async saveIndividualData(currency, scenario, type, value) {
-                try {
-                    const key = `${currency}_${scenario}_${type}`;
-                    const { error } = await supabase
-                        .from('fx_analysis_data')
-                        .upsert([{ id: key, data: { value } }]);
-                    
-                    if (error) {
-                        console.error('個別データ保存エラー:', error);
-                        throw error;
-                    }
-                    
-                    return true;
-                } catch (err) {
-                    console.error('個別データ保存例外:', err);
-                    throw err;
-                }
-            }
-
-            // メインデータの保存
-            async saveMainData() {
-                try {
-                    const { error } = await supabase
-                        .from('fx_analysis_data')
-                        .update({ data: this.mainData })
-                        .eq('id', 'main');
-                    
-                    if (error) {
-                        console.error('メインデータ保存エラー:', error);
-                        throw error;
-                    }
-                    
-                    return true;
-                } catch (err) {
-                    console.error('メインデータ保存例外:', err);
-                    throw err;
-                }
-            }
-
-            // 画像URL取得
-            getImageUrls(currency, scenario) {
-                if (!this.mainData?.images?.[currency]?.[scenario]) {
-                    return [];
-                }
-                return this.mainData.images[currency][scenario];
-            }
-
-            // シナリオ一覧取得
-            getScenarios(currency) {
-                if (!this.mainData?.scenarios?.[currency]) {
-                    return ['scenario1'];
-                }
-                return this.mainData.scenarios[currency];
-            }
-
-            // 通貨ペア一覧取得
-            getCurrencies() {
-                if (!this.mainData?.currencies) {
-                    return ['USDJPY', 'EURUSD', 'GBPUSD', 'AUDUSD', 'SILVER', 'GOLD'];
-                }
-                return this.mainData.currencies;
-            }
-        }
-
-        // グローバル変数
-        const dataManager = new DataManager();
-        let isLoading = false;
-
-        // 初期化
-        async function initialize() {
-            try {
-                showLoading('システムを初期化中...');
-                
-                // メインデータ読み込み
-                await dataManager.loadMainData();
-                
                 // UI初期化
-                await updateCurrencyUI();
-                await updateScenarioUI();
+                updateCurrencyButtons();
+                updateScenarioButtons();
                 await loadCurrentData();
                 
                 // 固定プロンプト読み込み
-                if (dataManager.mainData?.fixedPrompt) {
-                    document.getElementById('fixed-prompt').value = dataManager.mainData.fixedPrompt;
+                const promptElement = safeGetElement('prompt');
+                if (promptElement && mainData.fixedPrompt) {
+                    promptElement.value = mainData.fixedPrompt;
                 }
-                
-                // イベントリスナー設定
-                setupEventListeners();
-                
-                hideLoading();
-                showSuccessInUI('システムが正常に初期化されました');
-                
-            } catch (err) {
-                hideLoading();
-                showErrorInUI('システムの初期化に失敗しました', err);
-            }
+
+                // 履歴更新
+                await refreshHistory();
+
+                showSuccess('システムが正常に初期化されました');
+                console.log('Initialization completed');
+            }, 'システムの初期化に失敗しました');
         }
 
-        // イベントリスナー設定
-        function setupEventListeners() {
-            // 通貨ペアボタン
-            document.querySelectorAll('.currency-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    if (isLoading) return;
-                    
-                    const currency = e.target.dataset.currency;
-                    if (currency && currency !== dataManager.currentCurrency) {
-                        await switchCurrency(currency);
-                    }
-                });
-            });
-
-            // シナリオボタン（動的に追加されるため、イベント委譲を使用）
-            document.getElementById('scenario-container').addEventListener('click', async (e) => {
-                if (isLoading) return;
-                
-                if (e.target.classList.contains('scenario-btn')) {
-                    const scenario = e.target.dataset.scenario;
-                    if (scenario && scenario !== dataManager.currentScenario) {
-                        await switchScenario(scenario);
-                    }
-                }
-            });
-
-            // 分析ステータスボタン
-            document.querySelectorAll('.status-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    if (isLoading) return;
-                    
-                    const status = e.target.dataset.status;
-                    await updateAnalysisStatus(status);
-                });
-            });
-
-            // 狙う波ボタン
-            document.querySelectorAll('.wave-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    if (isLoading) return;
-                    
-                    const wave = e.target.dataset.wave;
-                    await updateTargetWave(wave);
-                });
-            });
-
-            // ナビゲーションボタン
-            document.getElementById('prev-chart').addEventListener('click', () => {
-                if (isLoading) return;
-                navigateToPreviousChart();
-            });
-
-            document.getElementById('next-chart').addEventListener('click', () => {
-                if (isLoading) return;
-                navigateToNextChart();
-            });
-
-            document.getElementById('top-return').addEventListener('click', () => {
-                if (isLoading) return;
-                navigateToTopChart();
-            });
-
-            // 追加・削除ボタン
-            document.getElementById('add-currency').addEventListener('click', addCurrency);
-            document.getElementById('remove-currency').addEventListener('click', removeCurrency);
-            document.getElementById('add-scenario').addEventListener('click', addScenario);
-            document.getElementById('remove-scenario').addEventListener('click', deleteScenario);
-
-            // メモ・ChatGPT関連
-            document.getElementById('analysis-memo').addEventListener('input', saveAnalysisMemo);
-            document.getElementById('copy-memo').addEventListener('click', copyAnalysisMemo);
-            document.getElementById('copy-prompt').addEventListener('click', copyFixedPrompt);
-            document.getElementById('change-prompt').addEventListener('click', changeFixedPrompt);
-            document.getElementById('chatgpt-analysis').addEventListener('click', openChatGPTAnalysis);
-
-            // その他
-            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
-            document.getElementById('backup-btn').addEventListener('click', createBackup);
-            document.getElementById('history-btn').addEventListener('click', toggleHistory);
-            document.getElementById('close-history').addEventListener('click', closeHistory);
-            document.getElementById('recovery-btn').addEventListener('click', recoverFromError);
-
-            // 高画質表示ボタン
-            document.getElementById('high-quality-btn').addEventListener('click', showHighQualityImage);
-
-            // 履歴検索
-            document.getElementById('history-search').addEventListener('input', searchHistory);
-        }
-
-        // 通貨ペア切り替え
-        async function switchCurrency(currency) {
-            try {
-                showLoading('通貨ペアを切り替え中...');
-                
+        // 通貨ペア選択
+        async function selectCurrency(currency) {
+            if (currency === currentCurrency) return;
+            
+            await safeExecute(async () => {
                 // 現在のデータを保存
                 await saveCurrentData();
                 
                 // 通貨ペア切り替え
-                dataManager.currentCurrency = currency;
-                dataManager.currentImageIndex = 0;
+                currentCurrency = currency;
                 
                 // 最初のシナリオに切り替え
-                const scenarios = dataManager.getScenarios(currency);
-                dataManager.currentScenario = scenarios[0];
+                const scenarios = mainData.scenarios[currency] || ['scenario1'];
+                currentScenario = scenarios[0];
                 
                 // UI更新
-                await updateCurrencyUI();
-                await updateScenarioUI();
+                updateCurrencyButtons();
+                updateScenarioButtons();
                 await loadCurrentData();
                 
-                hideLoading();
-                
-            } catch (err) {
-                hideLoading();
-                showErrorInUI('通貨ペアの切り替えに失敗しました', err);
-            }
+                console.log('Currency switched to:', currency);
+            }, '通貨ペアの切り替えに失敗しました');
         }
 
-        // シナリオ切り替え
-        async function switchScenario(scenario) {
-            try {
-                showLoading('シナリオを切り替え中...');
-                
+        // シナリオ選択
+        async function selectScenario(scenario) {
+            if (scenario === currentScenario) return;
+            
+            await safeExecute(async () => {
                 // 現在のデータを保存
                 await saveCurrentData();
                 
                 // シナリオ切り替え
-                dataManager.currentScenario = scenario;
-                dataManager.currentImageIndex = 0;
+                currentScenario = scenario;
                 
                 // UI更新
-                await updateScenarioUI();
+                updateScenarioButtons();
                 await loadCurrentData();
                 
-                hideLoading();
-                
-            } catch (err) {
-                hideLoading();
-                showErrorInUI('シナリオの切り替えに失敗しました', err);
-            }
+                console.log('Scenario switched to:', scenario);
+            }, 'シナリオの切り替えに失敗しました');
         }
 
-        // 通貨ペアUI更新
-        async function updateCurrencyUI() {
-            const currencies = dataManager.getCurrencies();
-            const container = document.querySelector('.currency-buttons');
-            
-            // 既存の通貨ペアボタンを更新
-            document.querySelectorAll('.currency-btn').forEach(btn => {
+        // 通貨ペアボタン更新
+        function updateCurrencyButtons() {
+            const buttons = document.querySelectorAll('#currency-buttons .btn');
+            buttons.forEach(btn => {
                 btn.classList.remove('active');
-                if (btn.dataset.currency === dataManager.currentCurrency) {
+                if (btn.dataset.currency === currentCurrency) {
                     btn.classList.add('active');
                 }
             });
             
-            // 現在のペア名を更新
-            document.getElementById('current-pair').textContent = dataManager.currentCurrency;
+            const nameElement = safeGetElement('currency-name');
+            if (nameElement) {
+                nameElement.textContent = currentCurrency;
+            }
         }
 
-        // シナリオUI更新
-        async function updateScenarioUI() {
-            const scenarios = dataManager.getScenarios(dataManager.currentCurrency);
-            const container = document.getElementById('scenario-container');
+        // シナリオボタン更新
+        function updateScenarioButtons() {
+            const scenarios = mainData.scenarios[currentCurrency] || ['scenario1'];
+            const container = safeGetElement('scenario-list');
+            if (!container) return;
             
-            // 既存のシナリオボタンをクリア（追加・削除ボタンは保持）
-            const existingScenarios = container.querySelectorAll('.scenario-container');
-            existingScenarios.forEach(el => el.remove());
+            container.innerHTML = '';
             
-            // 新しいシナリオボタンを追加
-            const addButton = container.querySelector('#add-scenario');
-            
-            for (const scenario of scenarios) {
-                const scenarioContainer = document.createElement('div');
-                scenarioContainer.className = 'scenario-container';
+            scenarios.forEach(scenario => {
+                const item = document.createElement('div');
+                item.className = 'scenario-item';
                 
                 const button = document.createElement('button');
-                button.className = 'scenario-btn';
+                button.className = 'btn btn-success';
+                button.onclick = () => selectScenario(scenario);
                 button.dataset.scenario = scenario;
-                button.draggable = true;
-                button.textContent = getScenarioDisplayName(scenario);
+                button.textContent = getScenarioName(scenario);
                 
-                if (scenario === dataManager.currentScenario) {
+                if (scenario === currentScenario) {
                     button.classList.add('active');
                 }
                 
-                const statusIndicator = document.createElement('small');
-                statusIndicator.className = 'status-indicator';
+                const status = document.createElement('span');
+                status.className = 'scenario-status';
+                status.id = `status-${scenario}`;
+                status.textContent = '🔍 検討中';
                 
-                // 分析ステータスを取得して表示
-                const status = await dataManager.loadIndividualData(
-                    dataManager.currentCurrency, 
-                    scenario, 
-                    'analysisStatus'
-                ) || '検討中';
-                
-                statusIndicator.textContent = getStatusIcon(status) + ' ' + status;
-                
-                scenarioContainer.appendChild(button);
-                scenarioContainer.appendChild(statusIndicator);
-                
-                container.insertBefore(scenarioContainer, addButton);
-            }
+                item.appendChild(button);
+                item.appendChild(status);
+                container.appendChild(item);
+            });
         }
 
         // 現在のデータ読み込み
         async function loadCurrentData() {
             try {
+                console.log('Loading current data for:', currentCurrency, currentScenario);
+                
                 // 画像表示
-                await displayCurrentImages();
+                await displayImages();
                 
-                // 分析ステータス読み込み
-                const status = await dataManager.loadIndividualData(
-                    dataManager.currentCurrency,
-                    dataManager.currentScenario,
-                    'analysisStatus'
-                ) || '検討中';
-                
+                // ステータス読み込み
+                const status = await loadData(`${currentCurrency}_${currentScenario}_status`) || '検討中';
                 updateStatusButtons(status);
+                updateScenarioStatus(currentScenario, status);
                 
-                // 狙う波読み込み
-                const wave = await dataManager.loadIndividualData(
-                    dataManager.currentCurrency,
-                    dataManager.currentScenario,
-                    'targetWave'
-                ) || '未選択';
-                
+                // 波読み込み
+                const wave = await loadData(`${currentCurrency}_${currentScenario}_wave`) || '未選択';
                 updateWaveButtons(wave);
                 
-                // 分析メモ読み込み
-                const memo = await dataManager.loadIndividualData(
-                    dataManager.currentCurrency,
-                    dataManager.currentScenario,
-                    'analysisMemo'
-                ) || '';
+                // メモ読み込み
+                const memo = await loadData(`${currentCurrency}_${currentScenario}_memo`) || '';
+                const memoElement = safeGetElement('memo');
+                if (memoElement) {
+                    memoElement.value = memo;
+                }
                 
-                document.getElementById('analysis-memo').value = memo;
-                
-            } catch (err) {
-                showErrorInUI('データの読み込みに失敗しました', err);
+                console.log('Current data loaded successfully');
+            } catch (error) {
+                console.error('Load current data error:', error);
+                showError('データの読み込みに失敗しました');
             }
         }
 
         // 現在のデータ保存
         async function saveCurrentData() {
             try {
-                // 分析メモ保存
-                const memo = document.getElementById('analysis-memo').value;
-                if (memo) {
-                    await dataManager.saveIndividualData(
-                        dataManager.currentCurrency,
-                        dataManager.currentScenario,
-                        'analysisMemo',
-                        memo
-                    );
+                const memoElement = safeGetElement('memo');
+                if (memoElement && memoElement.value.trim()) {
+                    await saveData(`${currentCurrency}_${currentScenario}_memo`, memoElement.value);
                 }
-                
-            } catch (err) {
-                console.error('データ保存エラー:', err);
+                console.log('Current data saved');
+            } catch (error) {
+                console.error('Save current data error:', error);
             }
         }
 
         // 画像表示
-        async function displayCurrentImages() {
-            const imageUrls = dataManager.getImageUrls(dataManager.currentCurrency, dataManager.currentScenario);
-            const imageDisplay = document.getElementById('image-display');
-            const highQualityBtn = document.getElementById('high-quality-btn');
+        async function displayImages() {
+            const images = mainData.images?.[currentCurrency]?.[currentScenario] || [];
             
-            if (imageUrls.length === 0) {
-                imageDisplay.innerHTML = '<p class="placeholder">画像が表示されます</p>';
-                highQualityBtn.style.display = 'none';
-                return;
+            const image1Display = safeGetElement('image1-display');
+            const image2Display = safeGetElement('image2-display');
+            
+            if (image1Display) {
+                if (images[0]) {
+                    image1Display.innerHTML = `<img src="${images[0]}" alt="チャート画像1" onclick="openImageInNewTab('${images[0]}')">`;
+                } else {
+                    image1Display.innerHTML = '<p style="color: #666; margin: 50px 0;">画像1が表示されます</p>';
+                }
             }
             
-            // 現在のインデックスが範囲外の場合は0にリセット
-            if (dataManager.currentImageIndex >= imageUrls.length) {
-                dataManager.currentImageIndex = 0;
+            if (image2Display) {
+                if (images[1]) {
+                    image2Display.innerHTML = `<img src="${images[1]}" alt="チャート画像2" onclick="openImageInNewTab('${images[1]}')">`;
+                } else {
+                    image2Display.innerHTML = '<p style="color: #666; margin: 50px 0;">画像2が表示されます（もしあれば）</p>';
+                }
             }
-            
-            const currentImageUrl = imageUrls[dataManager.currentImageIndex];
-            
-            imageDisplay.innerHTML = `
-                <img src="${currentImageUrl}" alt="チャート画像" style="max-width: 100%; height: auto;">
-                ${imageUrls.length > 1 ? `<p style="margin-top: 10px; color: #666;">${dataManager.currentImageIndex + 1} / ${imageUrls.length}</p>` : ''}
-            `;
-            
-            highQualityBtn.style.display = 'block';
         }
 
-        // 分析ステータス更新
-        async function updateAnalysisStatus(status) {
-            try {
-                // データ保存
-                await dataManager.saveIndividualData(
-                    dataManager.currentCurrency,
-                    dataManager.currentScenario,
-                    'analysisStatus',
-                    status
-                );
-                
-                // UI更新
+        // 画像を新しいタブで開く
+        function openImageInNewTab(url) {
+            window.open(url, '_blank');
+        }
+
+        // ステータス設定
+        async function setStatus(status) {
+            await safeExecute(async () => {
+                await saveData(`${currentCurrency}_${currentScenario}_status`, status);
                 updateStatusButtons(status);
-                await updateScenarioUI(); // ステータスインジケーター更新
-                
-                showSuccessInUI(`分析ステータスを「${status}」に更新しました`);
-                
-            } catch (err) {
-                showErrorInUI('分析ステータスの更新に失敗しました', err);
-            }
+                updateScenarioStatus(currentScenario, status);
+                showSuccess(`ステータスを「${status}」に設定しました`);
+            }, 'ステータスの設定に失敗しました');
         }
 
-        // 狙う波更新
-        async function updateTargetWave(wave) {
-            try {
-                // データ保存
-                await dataManager.saveIndividualData(
-                    dataManager.currentCurrency,
-                    dataManager.currentScenario,
-                    'targetWave',
-                    wave
-                );
-                
-                // UI更新
+        // 波設定
+        async function setWave(wave) {
+            await safeExecute(async () => {
+                await saveData(`${currentCurrency}_${currentScenario}_wave`, wave);
                 updateWaveButtons(wave);
-                
-                showSuccessInUI(`狙う波を「${wave}」に更新しました`);
-                
-            } catch (err) {
-                showErrorInUI('狙う波の更新に失敗しました', err);
+                showSuccess(`狙う波を「${wave}」に設定しました`);
+            }, '狙う波の設定に失敗しました');
+        }
+
+        // ステータスボタン更新
+        function updateStatusButtons(activeStatus) {
+            const buttons = document.querySelectorAll('.status-buttons .btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const activeButton = safeGetElement(`status-${activeStatus}`);
+            if (activeButton) {
+                activeButton.classList.add('active');
             }
         }
 
-        // ステータスボタンUI更新
-        function updateStatusButtons(activeStatus) {
-            document.querySelectorAll('.status-btn').forEach(btn => {
+        // 波ボタン更新
+        function updateWaveButtons(activeWave) {
+            const buttons = document.querySelectorAll('.wave-buttons .btn');
+            buttons.forEach(btn => {
                 btn.classList.remove('active');
-                if (btn.dataset.status === activeStatus) {
-                    btn.classList.add('active');
-                }
             });
+            
+            const activeButton = safeGetElement(`wave-${activeWave}`);
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
         }
 
-        // 波ボタンUI更新
-        function updateWaveButtons(activeWave) {
-            document.querySelectorAll('.wave-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.wave === activeWave) {
-                    btn.classList.add('active');
-                }
-            });
+        // シナリオステータス更新
+        function updateScenarioStatus(scenario, status) {
+            const statusElement = safeGetElement(`status-${scenario}`);
+            if (statusElement) {
+                const icon = getStatusIcon(status);
+                statusElement.textContent = `${icon} ${status}`;
+            }
+        }
+
+        // ステータスアイコン取得
+        function getStatusIcon(status) {
+            const icons = {
+                '検討中': '🔍',
+                '見送り': '🙅‍♂️',
+                '見逃し': '😅',
+                '指値逆指値中': '🎯',
+                '保持中': '💼',
+                '完了': '✅'
+            };
+            return icons[status] || '🔍';
+        }
+
+        // シナリオ名取得
+        function getScenarioName(scenario) {
+            if (mainData.scenarioNames?.[currentCurrency]?.[scenario]) {
+                return mainData.scenarioNames[currentCurrency][scenario];
+            }
+            return scenario.replace('scenario', 'シナリオ').replace('_', ' ');
         }
 
         // ナビゲーション機能
-        function navigateToPreviousChart() {
-            const scenarios = dataManager.getScenarios(dataManager.currentCurrency);
-            const currentIndex = scenarios.indexOf(dataManager.currentScenario);
-            
-            if (currentIndex > 0) {
-                switchScenario(scenarios[currentIndex - 1]);
-            } else {
-                // 最後のシナリオに移動
-                switchScenario(scenarios[scenarios.length - 1]);
-            }
+        function prevScenario() {
+            const scenarios = mainData.scenarios[currentCurrency] || ['scenario1'];
+            const currentIndex = scenarios.indexOf(currentScenario);
+            const prevIndex = currentIndex > 0 ? currentIndex - 1 : scenarios.length - 1;
+            selectScenario(scenarios[prevIndex]);
         }
 
-        function navigateToNextChart() {
-            const scenarios = dataManager.getScenarios(dataManager.currentCurrency);
-            const currentIndex = scenarios.indexOf(dataManager.currentScenario);
-            
-            if (currentIndex < scenarios.length - 1) {
-                switchScenario(scenarios[currentIndex + 1]);
-            } else {
-                // 最初のシナリオに移動
-                switchScenario(scenarios[0]);
-            }
+        function nextScenario() {
+            const scenarios = mainData.scenarios[currentCurrency] || ['scenario1'];
+            const currentIndex = scenarios.indexOf(currentScenario);
+            const nextIndex = currentIndex < scenarios.length - 1 ? currentIndex + 1 : 0;
+            selectScenario(scenarios[nextIndex]);
         }
 
-        function navigateToTopChart() {
-            const scenarios = dataManager.getScenarios(dataManager.currentCurrency);
-            if (scenarios.length > 0) {
-                switchScenario(scenarios[0]);
-            }
+        function topScenario() {
+            const scenarios = mainData.scenarios[currentCurrency] || ['scenario1'];
+            selectScenario(scenarios[0]);
         }
 
-        // シナリオ追加
-        async function addScenario() {
-            try {
-                if (isLoading) return;
-                
-                // シナリオ名入力
-                const scenarioName = prompt('シナリオ名を入力してください:', `シナリオ${Date.now()}`);
-                if (!scenarioName) return;
-                
-                // 画像選択（必須・最大2枚）
-                const fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.accept = 'image/*';
-                fileInput.multiple = true;
-                
-                fileInput.onchange = async (e) => {
-                    const files = Array.from(e.target.files);
-                    
-                    // 画像枚数チェック（1-2枚必須）
-                    if (files.length === 0) {
-                        showErrorInUI('画像の選択は必須です。1枚または2枚の画像を選択してください。');
-                        return;
-                    }
-                    
-                    if (files.length > 2) {
-                        showErrorInUI('画像は最大2枚まで選択できます。');
-                        return;
-                    }
-                    
-                    // 画像バリデーション
-                    for (const file of files) {
-                        if (!validateImage(file)) {
-                            return;
-                        }
-                    }
-                    
-                    showLoading('シナリオを追加中...');
-                    
-                    // シナリオID生成
-                    const scenarioId = `scenario_${Date.now()}`;
-                    
-                    // 画像処理・アップロード
-                    const success = await processAndUploadScenario(
-                        dataManager.currentCurrency, 
-                        scenarioId, 
-                        scenarioName, 
-                        files
-                    );
-                    
-                    if (success) {
-                        await updateScenarioUI();
-                        await switchScenario(scenarioId);
-                        showSuccessInUI(`シナリオ「${scenarioName}」が追加されました`);
-                    }
-                    
-                    hideLoading();
-                };
-                
-                fileInput.click();
-                
-            } catch (err) {
-                hideLoading();
-                showErrorInUI('シナリオ追加に失敗しました', err);
+        // シナリオ追加（安全なファイル選択）
+        function addScenario() {
+            const name = prompt('シナリオ名を入力してください:');
+            if (!name || name.trim() === '') {
+                showError('シナリオ名を入力してください');
+                return;
             }
+            
+            // ユーザーアクティベーション確保
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.multiple = true;
+            input.style.display = 'none';
+            
+            const handleFileSelect = async (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length === 0) {
+                    showError('画像を選択してください');
+                    return;
+                }
+                if (files.length > 2) {
+                    showError('画像は最大2枚まで選択できます');
+                    return;
+                }
+                
+                document.body.removeChild(input);
+                await uploadScenarioImages(name.trim(), files);
+            };
+            
+            input.addEventListener('change', handleFileSelect, { once: true });
+            document.body.appendChild(input);
+            
+            // 安全なクリック実行
+            setTimeout(() => {
+                input.click();
+            }, 100);
         }
 
-        // 画像バリデーション
-        function validateImage(file) {
-            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            const maxSize = 10 * 1024 * 1024; // 10MB
-            
-            if (!allowedTypes.includes(file.type)) {
-                showErrorInUI('サポートされていない画像形式です（JPEG, PNG, GIF, WebP のみ）');
-                return false;
-            }
-            
-            if (file.size > maxSize) {
-                showErrorInUI('画像サイズが大きすぎます（10MB以下にしてください）');
-                return false;
-            }
-            
-            return true;
-        }
-
-        // 画像処理・アップロード
-        async function processAndUploadScenario(currency, scenarioId, scenarioName, files) {
-            try {
-                const processedImages = [];
+        // 安全な画像アップロード
+        async function uploadScenarioImages(scenarioName, files) {
+            return await safeExecute(async () => {
+                const imageUrls = [];
                 
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
+                    const fileName = `${Date.now()}_${i + 1}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
                     
-                    // 画像圧縮
-                    const compressedImage = await compressImage(file);
+                    console.log('Uploading file:', fileName);
                     
-                    // Supabase Storageにアップロード
-                    const fileName = `${currency}_${scenarioId}_${i + 1}.${file.name.split('.').pop()}`;
                     const { data, error } = await supabase.storage
                         .from('fx-images')
-                        .upload(fileName, compressedImage);
+                        .upload(fileName, file, {
+                            cacheControl: '3600',
+                            upsert: false
+                        });
                     
-                    if (error) throw error;
+                    if (error) {
+                        console.error('Upload error:', error);
+                        continue;
+                    }
                     
-                    // パブリックURL生成
                     const { data: { publicUrl } } = supabase.storage
                         .from('fx-images')
                         .getPublicUrl(fileName);
                     
-                    processedImages.push(publicUrl);
+                    imageUrls.push(publicUrl);
+                    console.log('Image uploaded:', publicUrl);
+                }
+                
+                if (imageUrls.length === 0) {
+                    throw new Error('画像のアップロードに失敗しました');
                 }
                 
                 // メインデータ更新
-                await updateMainDataWithNewScenario(currency, scenarioId, scenarioName, processedImages);
+                const scenarioId = `scenario_${Date.now()}`;
                 
-                return true;
-            } catch (err) {
-                console.error('画像アップロードエラー:', err);
-                showErrorInUI('画像アップロードに失敗しました', err);
-                return false;
-            }
-        }
-
-        // 画像圧縮
-        async function compressImage(file) {
-            return new Promise((resolve) => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
+                if (!mainData.scenarios[currentCurrency]) {
+                    mainData.scenarios[currentCurrency] = [];
+                }
+                mainData.scenarios[currentCurrency].push(scenarioId);
                 
-                img.onload = () => {
-                    // 最大サイズ設定
-                    const maxWidth = 1200;
-                    const maxHeight = 800;
-                    
-                    let { width, height } = img;
-                    
-                    // アスペクト比を保持してリサイズ
-                    if (width > maxWidth || height > maxHeight) {
-                        const ratio = Math.min(maxWidth / width, maxHeight / height);
-                        width *= ratio;
-                        height *= ratio;
-                    }
-                    
-                    canvas.width = width;
-                    canvas.height = height;
-                    
-                    // 画像を描画
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // 圧縮（品質0.8）
-                    canvas.toBlob(resolve, 'image/jpeg', 0.8);
-                };
+                if (!mainData.images[currentCurrency]) {
+                    mainData.images[currentCurrency] = {};
+                }
+                mainData.images[currentCurrency][scenarioId] = imageUrls;
                 
-                img.src = URL.createObjectURL(file);
-            });
-        }
-
-        // メインデータにシナリオ追加
-        async function updateMainDataWithNewScenario(currency, scenarioId, scenarioName, imageUrls) {
-            // シナリオ追加
-            if (!dataManager.mainData.scenarios[currency]) {
-                dataManager.mainData.scenarios[currency] = [];
-            }
-            dataManager.mainData.scenarios[currency].push(scenarioId);
-            
-            // 画像URL追加
-            if (!dataManager.mainData.images[currency]) {
-                dataManager.mainData.images[currency] = {};
-            }
-            dataManager.mainData.images[currency][scenarioId] = imageUrls;
-            
-            // メインデータ保存
-            await dataManager.saveMainData();
+                if (!mainData.scenarioNames[currentCurrency]) {
+                    mainData.scenarioNames[currentCurrency] = {};
+                }
+                mainData.scenarioNames[currentCurrency][scenarioId] = scenarioName;
+                
+                const success = await saveData('main', mainData);
+                if (!success) {
+                    throw new Error('データの保存に失敗しました');
+                }
+                
+                // UI更新
+                updateScenarioButtons();
+                await selectScenario(scenarioId);
+                
+                showSuccess(`シナリオ「${scenarioName}」が追加されました`);
+                console.log('Scenario added successfully');
+                
+            }, 'シナリオの追加に失敗しました');
         }
 
         // シナリオ削除
         async function deleteScenario() {
-            try {
-                if (isLoading) return;
+            const scenarios = mainData.scenarios[currentCurrency] || ['scenario1'];
+            if (scenarios.length <= 1) {
+                showError('最後のシナリオは削除できません');
+                return;
+            }
+            
+            const scenarioName = getScenarioName(currentScenario);
+            if (!confirm(`シナリオ「${scenarioName}」を削除しますか？`)) {
+                return;
+            }
+            
+            await safeExecute(async () => {
+                // シナリオをメインデータから削除
+                mainData.scenarios[currentCurrency] = mainData.scenarios[currentCurrency].filter(s => s !== currentScenario);
                 
-                const scenarios = dataManager.getScenarios(dataManager.currentCurrency);
-                if (scenarios.length <= 1) {
-                    showErrorInUI('最後のシナリオは削除できません。');
-                    return;
+                // 画像データ削除
+                if (mainData.images[currentCurrency]) {
+                    delete mainData.images[currentCurrency][currentScenario];
                 }
                 
-                const currentScenario = dataManager.currentScenario;
-                
-                // 確認ダイアログ
-                if (!confirm(`シナリオ「${getScenarioDisplayName(currentScenario)}」を削除しますか？\nこの操作は取り消せません。`)) {
-                    return;
+                // シナリオ名削除
+                if (mainData.scenarioNames[currentCurrency]) {
+                    delete mainData.scenarioNames[currentCurrency][currentScenario];
                 }
                 
-                showLoading('シナリオを削除中...');
+                // 関連データ削除
+                await deleteScenarioData(currentScenario);
                 
-                // 関連データの削除
-                await deleteScenarioData(dataManager.currentCurrency, currentScenario);
-                
-                // メインデータからシナリオ削除
-                await updateMainDataRemoveScenario(dataManager.currentCurrency, currentScenario);
+                // メインデータ保存
+                await saveData('main', mainData);
                 
                 // 別のシナリオに切り替え
-                const remainingScenarios = dataManager.getScenarios(dataManager.currentCurrency);
-                const newScenario = remainingScenarios[0];
-                dataManager.currentScenario = newScenario;
+                const remainingScenarios = mainData.scenarios[currentCurrency];
+                currentScenario = remainingScenarios[0];
                 
                 // UI更新
-                await updateScenarioUI();
+                updateScenarioButtons();
                 await loadCurrentData();
                 
-                hideLoading();
-                showSuccessInUI('シナリオが削除されました');
+                showSuccess(`シナリオ「${scenarioName}」が削除されました`);
+                console.log('Scenario deleted successfully');
                 
-            } catch (err) {
-                hideLoading();
-                showErrorInUI('シナリオ削除に失敗しました', err);
-            }
+            }, 'シナリオの削除に失敗しました');
         }
 
         // シナリオデータ削除
-        async function deleteScenarioData(currency, scenario) {
-            const dataTypes = ['analysisStatus', 'targetWave', 'analysisMemo'];
+        async function deleteScenarioData(scenario) {
+            const keys = [
+                `${currentCurrency}_${scenario}_status`,
+                `${currentCurrency}_${scenario}_wave`,
+                `${currentCurrency}_${scenario}_memo`
+            ];
             
-            for (const type of dataTypes) {
-                const key = `${currency}_${scenario}_${type}`;
+            for (const key of keys) {
                 try {
                     await supabase.from('fx_analysis_data').delete().eq('id', key);
-                } catch (err) {
-                    console.error(`データ削除エラー (${key}):`, err);
+                } catch (error) {
+                    console.error(`Delete error for ${key}:`, error);
                 }
             }
-        }
-
-        // メインデータからシナリオ削除
-        async function updateMainDataRemoveScenario(currency, scenario) {
-            // シナリオ削除
-            if (dataManager.mainData.scenarios[currency]) {
-                dataManager.mainData.scenarios[currency] = dataManager.mainData.scenarios[currency]
-                    .filter(s => s !== scenario);
-            }
-            
-            // 画像削除
-            if (dataManager.mainData.images[currency] && dataManager.mainData.images[currency][scenario]) {
-                delete dataManager.mainData.images[currency][scenario];
-            }
-            
-            // メインデータ保存
-            await dataManager.saveMainData();
         }
 
         // 通貨ペア追加
         async function addCurrency() {
-            try {
-                if (isLoading) return;
-                
-                const currencyName = prompt('通貨ペア名を入力してください（例：EURJPY）:');
-                if (!currencyName) return;
-                
-                // 通貨ペア名バリデーション
-                const normalizedName = currencyName.toUpperCase();
-                if (!/^[A-Z]{6}$/.test(normalizedName)) {
-                    showErrorInUI('通貨ペア名は6文字の大文字英字で入力してください（例：EURJPY）');
-                    return;
-                }
-                
-                // 重複チェック
-                if (dataManager.getCurrencies().includes(normalizedName)) {
-                    showErrorInUI('この通貨ペアは既に存在します。');
-                    return;
-                }
-                
-                showLoading('通貨ペアを追加中...');
-                
-                // メインデータ更新
-                await updateMainDataWithNewCurrency(normalizedName);
-                
-                // UI更新
-                await updateCurrencyUI();
-                
-                hideLoading();
-                showSuccessInUI(`通貨ペア「${normalizedName}」が追加されました`);
-                
-            } catch (err) {
-                hideLoading();
-                showErrorInUI('通貨ペア追加に失敗しました', err);
+            const currency = prompt('通貨ペア名を入力してください（例：EURJPY）:');
+            if (!currency || currency.trim() === '') {
+                showError('通貨ペア名を入力してください');
+                return;
             }
-        }
-
-        // メインデータに通貨ペア追加
-        async function updateMainDataWithNewCurrency(currency) {
-            // 通貨ペア追加
-            dataManager.mainData.currencies.push(currency);
             
-            // 初期シナリオ追加
-            dataManager.mainData.scenarios[currency] = ['scenario1'];
-            dataManager.mainData.images[currency] = { scenario1: [] };
+            const normalizedCurrency = currency.trim().toUpperCase();
+            if (!/^[A-Z]{6}$/.test(normalizedCurrency)) {
+                showError('通貨ペア名は6文字の大文字英字で入力してください');
+                return;
+            }
             
-            // メインデータ保存
-            await dataManager.saveMainData();
+            if (mainData.currencies.includes(normalizedCurrency)) {
+                showError('この通貨ペアは既に存在します');
+                return;
+            }
+            
+            await safeExecute(async () => {
+                mainData.currencies.push(normalizedCurrency);
+                mainData.scenarios[normalizedCurrency] = ['scenario1'];
+                mainData.images[normalizedCurrency] = {};
+                mainData.scenarioNames[normalizedCurrency] = {};
+                
+                await saveData('main', mainData);
+                
+                // 通貨ペアボタンを動的に追加
+                const container = safeGetElement('currency-buttons');
+                if (container) {
+                    const button = document.createElement('button');
+                    button.className = 'btn btn-primary';
+                    button.onclick = () => selectCurrency(normalizedCurrency);
+                    button.dataset.currency = normalizedCurrency;
+                    button.textContent = normalizedCurrency;
+                    
+                    // 追加・削除ボタンの前に挿入
+                    const addButton = container.parentNode.querySelector('.btn-success');
+                    container.appendChild(button);
+                }
+                
+                showSuccess(`通貨ペア「${normalizedCurrency}」が追加されました`);
+                console.log('Currency added successfully');
+                
+            }, '通貨ペアの追加に失敗しました');
         }
 
         // 通貨ペア削除
         async function removeCurrency() {
-            try {
-                if (isLoading) return;
+            if (mainData.currencies.length <= 1) {
+                showError('最後の通貨ペアは削除できません');
+                return;
+            }
+            
+            if (!confirm(`通貨ペア「${currentCurrency}」を削除しますか？`)) {
+                return;
+            }
+            
+            await safeExecute(async () => {
+                // 通貨ペアをメインデータから削除
+                mainData.currencies = mainData.currencies.filter(c => c !== currentCurrency);
+                delete mainData.scenarios[currentCurrency];
+                delete mainData.images[currentCurrency];
+                delete mainData.scenarioNames[currentCurrency];
                 
-                const currencies = dataManager.getCurrencies();
-                if (currencies.length <= 1) {
-                    showErrorInUI('最後の通貨ペアは削除できません。');
-                    return;
-                }
-                
-                const currentCurrency = dataManager.currentCurrency;
-                
-                // 確認ダイアログ
-                if (!confirm(`通貨ペア「${currentCurrency}」を削除しますか？\n関連するすべてのシナリオとデータも削除されます。`)) {
-                    return;
-                }
-                
-                showLoading('通貨ペアを削除中...');
-                
-                // 関連データの削除
+                // 関連データ削除
                 await deleteCurrencyData(currentCurrency);
                 
-                // メインデータから通貨ペア削除
-                await updateMainDataRemoveCurrency(currentCurrency);
+                // メインデータ保存
+                await saveData('main', mainData);
                 
                 // 別の通貨ペアに切り替え
-                const remainingCurrencies = dataManager.getCurrencies();
-                const newCurrency = remainingCurrencies[0];
-                dataManager.currentCurrency = newCurrency;
-                
-                // 最初のシナリオに切り替え
-                const scenarios = dataManager.getScenarios(newCurrency);
-                dataManager.currentScenario = scenarios[0];
+                currentCurrency = mainData.currencies[0];
+                currentScenario = mainData.scenarios[currentCurrency][0];
                 
                 // UI更新
-                await updateCurrencyUI();
-                await updateScenarioUI();
+                updateCurrencyButtons();
+                updateScenarioButtons();
                 await loadCurrentData();
                 
-                hideLoading();
-                showSuccessInUI('通貨ペアが削除されました');
+                showSuccess('通貨ペアが削除されました');
+                console.log('Currency removed successfully');
                 
-            } catch (err) {
-                hideLoading();
-                showErrorInUI('通貨ペア削除に失敗しました', err);
-            }
+            }, '通貨ペアの削除に失敗しました');
         }
 
         // 通貨ペアデータ削除
         async function deleteCurrencyData(currency) {
-            const scenarios = dataManager.getScenarios(currency);
-            const dataTypes = ['analysisStatus', 'targetWave', 'analysisMemo'];
+            const scenarios = mainData.scenarios[currency] || [];
+            const dataTypes = ['status', 'wave', 'memo'];
             
             for (const scenario of scenarios) {
                 for (const type of dataTypes) {
                     const key = `${currency}_${scenario}_${type}`;
                     try {
                         await supabase.from('fx_analysis_data').delete().eq('id', key);
-                    } catch (err) {
-                        console.error(`データ削除エラー (${key}):`, err);
+                    } catch (error) {
+                        console.error(`Delete error for ${key}:`, error);
                     }
                 }
             }
         }
 
-        // メインデータから通貨ペア削除
-        async function updateMainDataRemoveCurrency(currency) {
-            // 通貨ペア削除
-            dataManager.mainData.currencies = dataManager.mainData.currencies
-                .filter(c => c !== currency);
-            
-            // シナリオ削除
-            if (dataManager.mainData.scenarios[currency]) {
-                delete dataManager.mainData.scenarios[currency];
-            }
-            
-            // 画像削除
-            if (dataManager.mainData.images[currency]) {
-                delete dataManager.mainData.images[currency];
-            }
-            
-            // メインデータ保存
-            await dataManager.saveMainData();
-        }
-
-        // 分析メモ保存
-        async function saveAnalysisMemo() {
-            try {
-                const memo = document.getElementById('analysis-memo').value;
-                await dataManager.saveIndividualData(
-                    dataManager.currentCurrency,
-                    dataManager.currentScenario,
-                    'analysisMemo',
-                    memo
-                );
-            } catch (err) {
-                console.error('分析メモ保存エラー:', err);
+        // メモ保存
+        async function saveMemo() {
+            const memoElement = safeGetElement('memo');
+            if (memoElement) {
+                await saveData(`${currentCurrency}_${currentScenario}_memo`, memoElement.value);
             }
         }
 
-        // 分析メモコピー
-        function copyAnalysisMemo() {
-            const memo = document.getElementById('analysis-memo').value;
-            copyToClipboard(memo, '分析メモをコピーしました');
+        // プロンプト保存
+        async function savePrompt() {
+            const promptElement = safeGetElement('prompt');
+            if (promptElement) {
+                mainData.fixedPrompt = promptElement.value;
+                await saveData('main', mainData);
+            }
         }
 
-        // 固定プロンプトコピー
-        function copyFixedPrompt() {
-            const prompt = document.getElementById('fixed-prompt').value;
-            copyToClipboard(prompt, '固定プロンプトをコピーしました');
+        // メモコピー
+        async function copyMemo() {
+            const memoElement = safeGetElement('memo');
+            if (memoElement) {
+                await copyToClipboard(memoElement.value);
+                showSuccess('分析メモをコピーしました');
+            }
         }
 
-        // 固定プロンプト変更
-        async function changeFixedPrompt() {
-            try {
-                const newPrompt = document.getElementById('fixed-prompt').value;
-                dataManager.mainData.fixedPrompt = newPrompt;
-                await dataManager.saveMainData();
-                showSuccessInUI('固定プロンプトが保存されました');
-            } catch (err) {
-                showErrorInUI('固定プロンプトの保存に失敗しました', err);
+        // プロンプトコピー
+        async function copyPrompt() {
+            const promptElement = safeGetElement('prompt');
+            if (promptElement) {
+                await copyToClipboard(promptElement.value);
+                showSuccess('固定プロンプトをコピーしました');
             }
         }
 
         // ChatGPT分析
-        function openChatGPTAnalysis() {
-            const memo = document.getElementById('analysis-memo').value;
-            const prompt = document.getElementById('fixed-prompt').value;
+        async function openChatGPT() {
+            const memoElement = safeGetElement('memo');
+            const promptElement = safeGetElement('prompt');
+            
+            const memo = memoElement ? memoElement.value : '';
+            const prompt = promptElement ? promptElement.value : '';
             const combinedText = `${memo}\n\n${prompt}`;
             
-            // クリップボードにコピー
-            copyToClipboard(combinedText, '分析データをクリップボードにコピーしました');
-            
-            // ChatGPTを新しいタブで開く
+            await copyToClipboard(combinedText);
             window.open('https://chat.openai.com', '_blank');
+            showSuccess('分析データをクリップボードにコピーしてChatGPTを開きました');
         }
 
         // クリップボードにコピー
-        async function copyToClipboard(text, successMessage) {
+        async function copyToClipboard(text) {
             try {
                 await navigator.clipboard.writeText(text);
-                showSuccessInUI(successMessage);
             } catch (err) {
-                // フォールバック方法
+                // フォールバック
                 const textArea = document.createElement('textarea');
                 textArea.value = text;
                 document.body.appendChild(textArea);
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                showSuccessInUI(successMessage);
-            }
-        }
-
-        // 高画質表示
-        function showHighQualityImage() {
-            const imageUrls = dataManager.getImageUrls(dataManager.currentCurrency, dataManager.currentScenario);
-            if (imageUrls.length > 0) {
-                const currentImageUrl = imageUrls[dataManager.currentImageIndex];
-                window.open(currentImageUrl, '_blank');
             }
         }
 
         // テーマ切り替え
         function toggleTheme() {
-            dataManager.isDarkMode = !dataManager.isDarkMode;
-            document.body.classList.toggle('dark-mode', dataManager.isDarkMode);
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode', isDarkMode);
             
-            const themeBtn = document.getElementById('theme-toggle');
-            themeBtn.textContent = dataManager.isDarkMode ? '☀️' : '🌙';
+            const themeBtn = safeGetElement('theme-btn');
+            if (themeBtn) {
+                themeBtn.textContent = isDarkMode ? '☀️' : '🌙';
+            }
         }
 
         // バックアップ作成
         async function createBackup() {
-            try {
-                showLoading('バックアップを作成中...');
-                
-                // 全データを取得
+            await safeExecute(async () => {
                 const { data, error } = await supabase
                     .from('fx_analysis_data')
                     .select('*');
                 
                 if (error) throw error;
                 
-                // バックアップデータを作成
                 const backupData = {
                     timestamp: new Date().toISOString(),
                     data: data
                 };
                 
-                // ダウンロード
                 const blob = new Blob([JSON.stringify(backupData, null, 2)], {
                     type: 'application/json'
                 });
@@ -1823,116 +1146,86 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 
-                hideLoading();
-                showSuccessInUI('バックアップが作成されました');
+                showSuccess('バックアップが作成されました');
                 
-            } catch (err) {
-                hideLoading();
-                showErrorInUI('バックアップ作成に失敗しました', err);
-            }
+            }, 'バックアップの作成に失敗しました');
         }
 
-        // 履歴表示切り替え
-        function toggleHistory() {
-            const sidebar = document.getElementById('history-sidebar');
-            sidebar.classList.toggle('open');
-            
-            if (sidebar.classList.contains('open')) {
-                loadHistory();
-            }
-        }
-
-        // 履歴を閉じる
-        function closeHistory() {
-            document.getElementById('history-sidebar').classList.remove('open');
-        }
-
-        // 履歴読み込み
-        async function loadHistory() {
-            try {
-                // 履歴データの読み込み（実装例）
-                const historyList = document.getElementById('history-list');
-                historyList.innerHTML = '<p style="color: #666; text-align: center;">履歴機能は開発中です</p>';
+        // 履歴更新
+        async function refreshHistory() {
+            await safeExecute(async () => {
+                const { data, error } = await supabase
+                    .from('fx_analysis_data')
+                    .select('id, created_at, updated_at')
+                    .order('updated_at', { ascending: false })
+                    .limit(20);
                 
-                document.getElementById('search-results-count').textContent = '検索結果: 0件';
+                if (error) throw error;
                 
-            } catch (err) {
-                console.error('履歴読み込みエラー:', err);
-            }
-        }
-
-        // 履歴検索
-        function searchHistory() {
-            const query = document.getElementById('history-search').value.toLowerCase();
-            // 検索機能の実装（開発中）
-            document.getElementById('search-results-count').textContent = '検索結果: 0件';
-        }
-
-        // エラーから復旧
-        function recoverFromError() {
-            hideErrorInUI();
-            // 必要に応じて追加の復旧処理
-            location.reload();
-        }
-
-        // ヘルパー関数
-        function getScenarioDisplayName(scenario) {
-            if (scenario.startsWith('scenario_')) {
-                return `カスタム${scenario.slice(-4)}`;
-            }
-            return scenario.replace('scenario', 'シナリオ');
-        }
-
-        function getStatusIcon(status) {
-            const icons = {
-                '検討中': '🔍',
-                '見送り': '🙅‍♂️',
-                '見逃し': '😅',
-                '指値逆指値中': '🎯',
-                '保持中': '💼',
-                '完了': '✅'
-            };
-            return icons[status] || '🔍';
+                const historyContainer = safeGetElement('storage-history');
+                if (!historyContainer) return;
+                
+                if (data.length === 0) {
+                    historyContainer.innerHTML = '<p style="color: #666; text-align: center; margin: 20px 0;">履歴がありません</p>';
+                    return;
+                }
+                
+                const historyHTML = data.map(item => `
+                    <div class="history-item">
+                        <strong>${item.id}</strong><br>
+                        <small>更新: ${new Date(item.updated_at).toLocaleString('ja-JP')}</small>
+                    </div>
+                `).join('');
+                
+                historyContainer.innerHTML = historyHTML;
+                console.log('History refreshed');
+                
+            }, '履歴の更新に失敗しました');
         }
 
         // UI表示関数
-        function showLoading(message = 'Loading...') {
-            isLoading = true;
-            // ローディング表示の実装
-            console.log('Loading:', message);
+        function showLoading() {
+            const loading = safeGetElement('loading');
+            if (loading) {
+                loading.style.display = 'block';
+            }
         }
 
         function hideLoading() {
-            isLoading = false;
-            // ローディング非表示の実装
+            const loading = safeGetElement('loading');
+            if (loading) {
+                loading.style.display = 'none';
+            }
         }
 
-        function showSuccessInUI(message) {
+        function showError(message) {
+            console.error('Error:', message);
+            const errorElement = safeGetElement('error-message');
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+                setTimeout(() => {
+                    errorElement.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        function showSuccess(message) {
             console.log('Success:', message);
-            // 成功メッセージの表示実装
+            const successElement = safeGetElement('success-message');
+            if (successElement) {
+                successElement.textContent = message;
+                successElement.style.display = 'block';
+                setTimeout(() => {
+                    successElement.style.display = 'none';
+                }, 3000);
+            }
         }
 
-        function showErrorInUI(message, error = null) {
-            console.error('Error:', message, error);
-            
-            const errorBar = document.getElementById('error-bar');
-            const errorMessage = document.getElementById('error-message');
-            
-            errorMessage.textContent = message;
-            errorBar.style.display = 'block';
-            
-            // 5秒後に自動で非表示
-            setTimeout(() => {
-                hideErrorInUI();
-            }, 5000);
-        }
-
-        function hideErrorInUI() {
-            document.getElementById('error-bar').style.display = 'none';
-        }
-
-        // ページ読み込み時の初期化
+        // 初期化実行
         document.addEventListener('DOMContentLoaded', initialize);
+        
+        console.log('FX Analysis System loaded successfully');
     </script>
 </body>
 </html>
