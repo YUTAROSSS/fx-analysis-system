@@ -211,6 +211,74 @@
         window.addEventListener('load', function() {
             addResult('初期化完了', 'Supabaseクライアントが初期化されました。テストボタンをクリックして接続を確認してください。', 'info');
         });
+        <!-- 既存のボタンの下に1行追加 -->
+<button onclick="restoreMainData()">メインデータ復元</button>
+// 既存のスクリプトの最後に追加
+async function restoreMainData() {
+    try {
+        addResult('メインデータ復元開始', 'システムに必要なメインデータを作成中...', 'info');
+        
+        const mainData = {
+            scenarios: {
+                "USDJPY": ["scenario1", "scenario2", "scenario3"],
+                "EURUSD": ["scenario1", "scenario2"],
+                "GBPUSD": ["scenario1", "scenario2", "scenario3", "scenario4"],
+                "AUDUSD": ["scenario1", "scenario2"],
+                "SILVER": ["scenario1", "scenario2"],
+                "GOLD": ["scenario1"]
+            },
+            currencies: ["USDJPY", "EURUSD", "GBPUSD", "AUDUSD", "SILVER", "GOLD"],
+            currentCurrency: "USDJPY",
+            currentScenario: "scenario1",
+            images: {
+                "USDJPY": {
+                    "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/USDJPY.jpeg"],
+                    "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/USDJPY2.jpeg"],
+                    "scenario3": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/USDJPY3.jpeg"]
+                },
+                "EURUSD": {
+                    "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/EURUSD.jpeg"],
+                    "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/EURUSD2.jpeg"]
+                },
+                "GBPUSD": {
+                    "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD.jpeg"],
+                    "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD2.jpeg"],
+                    "scenario3": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD3.jpeg"],
+                    "scenario4": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD4.jpeg"]
+                },
+                "AUDUSD": {
+                    "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/AUDUSD.jpeg"],
+                    "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/AUDUSD2.jpeg"]
+                },
+                "SILVER": {
+                    "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/SILVER.jpeg"],
+                    "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/SILVER2.jpeg"]
+                },
+                "GOLD": {
+                    "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GOLD.png"]
+                }
+            }
+        };
+
+        const { error } = await supabase
+            .from('fx_analysis_data')
+            .upsert([{
+                id: 'main',
+                data: mainData,
+                images: {},
+                updated_at: new Date().toISOString()
+            }]);
+
+        if (error) {
+            addResult('メインデータ復元 - エラー', `エラー詳細:\n${JSON.stringify(error, null, 2)}`, 'error');
+        } else {
+            addResult('メインデータ復元 - 成功', 'メインデータが正常に作成されました！\n\n次に「詳細確認」ボタンを押して、id: "main" のデータが存在することを確認してください。', 'success');
+        }
+    } catch (err) {
+        addResult('メインデータ復元 - 例外', `JavaScript例外:\n${err.message}`, 'error');
+    }
+}
+
     </script>
 </body>
 </html>
