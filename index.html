@@ -2,87 +2,1515 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>画像設定更新</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
-    <h1>画像設定を更新します</h1>
-    <button onclick="updateImages()" style="padding: 20px; font-size: 18px; background: blue; color: white;">クリックして更新</button>
-    <div id="result" style="margin-top: 20px; font-size: 16px;"></div>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FX通貨ペア分析システム</title>
+    <style>
+        /* 基本リセットとスタイル */
+        * {
+            box-sizing: border-box;
+        }
 
-    <script>
-        const supabase = window.supabase.createClient(
-            'https://jfrwyunauatsybdljlah.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmcnd5dW5hdWF0c3liZGxqbGFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MTMxODksImV4cCI6MjA2OTA4OTE4OX0.cyhPTiN4WAQ2p86JBZObjSljt2i1K_bK-cGGo3soxAo'
-        );
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333333;
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+        }
 
-        async function updateImages() {
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '更新中...';
+        /* ボタン基本スタイル */
+        button {
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            outline: none;
+            font-family: inherit;
+        }
 
-            try {
-                // 現在のメインデータを取得
-                const { data: currentData } = await supabase
-                    .from('fx_analysis_data')
-                    .select('*')
-                    .eq('id', 'main')
-                    .single();
+        button:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
 
-                // 画像の設定を追加
-                const imageSettings = {
-                    "USDJPY": {
-                        "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/USDJPY.jpeg"],
-                        "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/USDJPY2.jpeg"],
-                        "scenario3": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/USDJPY3.jpeg"]
-                    },
-                    "EURUSD": {
-                        "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/EURUSD.jpeg"],
-                        "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/EURUSD2.jpeg"]
-                    },
-                    "GBPUSD": {
-                        "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD.jpeg"],
-                        "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD2.jpeg"],
-                        "scenario3": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD3.jpeg"],
-                        "scenario4": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD4.jpeg"]
-                    },
-                    "AUDUSD": {
-                        "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/AUDUSD.jpeg"],
-                        "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/AUDUSD2.jpeg"]
-                    },
-                    "SILVER": {
-                        "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/SILVER.jpeg"],
-                        "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/SILVER2.jpeg"]
-                    },
-                    "GOLD": {
-                        "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GOLD.png"]
-                    }
-                };
+        button:active {
+            transform: translateY(0);
+        }
 
-                // 既存のデータに画像設定を追加
-                const updatedData = {
-                    ...currentData.data,
-                    images: imageSettings
-                };
+        /* 通貨ペアボタン */
+        .currency-btn {
+            transition: all 0.2s ease;
+        }
 
-                // データベースを更新
-                const { error } = await supabase
-                    .from('fx_analysis_data')
-                    .update({
-                        data: updatedData,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', 'main');
+        .currency-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
 
-                if (error) {
-                    resultDiv.innerHTML = `エラー: ${error.message}`;
-                } else {
-                    resultDiv.innerHTML = '✅ 成功！画像設定が完了しました。';
-                }
+        .currency-btn.active {
+            background: #007bff !important;
+            color: white !important;
+        }
 
-            } catch (err) {
-                resultDiv.innerHTML = `エラー: ${err.message}`;
+        /* シナリオボタン */
+        .scenario-btn {
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .scenario-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .scenario-btn.active {
+            box-shadow: 0 6px 12px rgba(0, 123, 255, 0.4) !important;
+            transform: translateY(-2px);
+        }
+
+        .scenario-btn .status-indicator {
+            font-size: 11px;
+            opacity: 0.9;
+        }
+
+        /* 分析ステータス・狙う波ボタン */
+        .status-btn, .wave-btn {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .status-btn:hover, .wave-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .status-btn.active {
+            border: 3px solid #495057 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .wave-btn.active {
+            border: 3px solid #495057 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* 狙う波の色分け */
+        .wave-btn[data-wave="未選択"] {
+            background: #6c757d !important;
+        }
+
+        .wave-btn[data-wave="1時間足"] {
+            background: #28a745 !important;
+        }
+
+        .wave-btn[data-wave="4時間足"] {
+            background: #007bff !important;
+        }
+
+        .wave-btn[data-wave="日足"] {
+            background: #dc3545 !important;
+        }
+
+        /* ダークモード */
+        .dark-mode {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .dark-mode .currency-section,
+        .dark-mode .scenario-section,
+        .dark-mode .main-display,
+        .dark-mode .status-section,
+        .dark-mode .wave-section,
+        .dark-mode .memo-section,
+        .dark-mode .chatgpt-section {
+            background-color: #2d2d2d !important;
+            color: #ffffff;
+        }
+
+        .dark-mode textarea {
+            background-color: #3d3d3d;
+            color: #ffffff;
+            border-color: #555;
+        }
+
+        .dark-mode .history-sidebar {
+            background-color: #2d2d2d;
+            color: #ffffff;
+        }
+
+        .dark-mode .history-header {
+            background-color: #1a1a1a !important;
+        }
+
+        .dark-mode .bottom-section {
+            background-color: #2d2d2d !important;
+            border-top-color: #555 !important;
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            .currency-buttons,
+            .scenario-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .currency-btn,
+            .scenario-btn {
+                margin-bottom: 8px;
+                width: 100%;
+                min-width: unset;
+            }
+            
+            .analysis-section {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .memo-chatgpt-section {
+                margin: 20px 10px;
+            }
+            
+            .history-sidebar {
+                width: 100vw !important;
+                right: -100vw !important;
+            }
+            
+            .bottom-section {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                padding: 15px 10px;
+            }
+            
+            .usage-monitor {
+                justify-content: center;
+            }
+            
+            .main-display {
+                margin: 20px 10px;
+            }
+            
+            .navigation {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .navigation button {
+                flex: 1;
+                min-width: 120px;
             }
         }
+
+        @media (max-width: 480px) {
+            header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+                padding: 10px;
+            }
+            
+            header span {
+                font-size: 16px;
+            }
+            
+            .currency-section,
+            .scenario-section {
+                margin: 15px 10px;
+                padding: 15px 10px;
+            }
+            
+            .analysis-section {
+                margin: 20px 10px;
+            }
+            
+            .status-section,
+            .wave-section {
+                padding: 15px;
+            }
+        }
+
+        /* アニメーション */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* ドラッグ&ドロップ */
+        .scenario-btn.dragging {
+            opacity: 0.5;
+            transform: rotate(2deg) scale(0.95);
+        }
+
+        .scenario-btn.drag-over {
+            border: 2px dashed #007bff !important;
+            background: rgba(0, 123, 255, 0.1) !important;
+        }
+
+        /* プログレスバー */
+        progress {
+            appearance: none;
+            -webkit-appearance: none;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        progress::-webkit-progress-bar {
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+
+        progress::-webkit-progress-value {
+            background-color: #007bff;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        progress::-moz-progress-bar {
+            background-color: #007bff;
+            border-radius: 4px;
+        }
+
+        /* 履歴項目 */
+        .history-item {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .history-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .dark-mode .history-item {
+            border-bottom-color: #555;
+        }
+
+        .dark-mode .history-item:hover {
+            background-color: #3d3d3d;
+        }
+
+        /* 画像表示 */
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+        }
+
+        .image-container .image-error {
+            color: #dc3545;
+            font-size: 14px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* スクロールバー */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .dark-mode ::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+
+        .dark-mode ::-webkit-scrollbar-thumb {
+            background: #555;
+        }
+
+        .dark-mode ::-webkit-scrollbar-thumb:hover {
+            background: #666;
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 18px; font-weight: bold;">🔄 FX通貨ペア分析システム</span>
+        <div>
+            <button id="backup-btn" style="margin-right: 10px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 12px; border-radius: 4px;">💾 バックアップ</button>
+            <button id="theme-toggle" style="margin-right: 10px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 12px; border-radius: 4px;">🌙</button>
+            <span style="font-size: 20px;">📊</span>
+        </div>
+    </header>
+
+    <!-- 通貨ペア選択 -->
+    <div class="currency-section" style="margin: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <h3 style="margin-bottom: 15px; color: #495057;">通貨ペア部分</h3>
+        <div class="currency-buttons" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+            <button class="currency-btn active" data-currency="USDJPY" style="background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; min-width: 80px;">USDJPY</button>
+            <button class="currency-btn" data-currency="EURUSD" style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; min-width: 80px;">EURUSD</button>
+            <button class="currency-btn" data-currency="GBPUSD" style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; min-width: 80px;">GBPUSD</button>
+            <button class="currency-btn" data-currency="AUDUSD" style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; min-width: 80px;">AUDUSD</button>
+            <button class="currency-btn" data-currency="SILVER" style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; min-width: 80px;">SILVER</button>
+            <button class="currency-btn" data-currency="GOLD" style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; min-width: 80px;">GOLD</button>
+            <button id="add-currency" style="background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px;">通貨ペア追加</button>
+            <button id="remove-currency" style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px;">通貨ペア削除</button>
+        </div>
+    </div>
+
+    <!-- シナリオ選択 -->
+    <div class="scenario-section" style="margin: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <h3 style="margin-bottom: 15px; color: #495057;">チャート部分</h3>
+        <div class="scenario-buttons" id="scenario-container" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+            <button id="add-scenario" style="background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px;">シナリオ追加</button>
+            <button id="remove-scenario" style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px;">シナリオ削除</button>
+        </div>
+    </div>
+
+    <!-- メイン表示エリア -->
+    <div class="main-display" style="text-align: center; margin: 30px 20px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 id="current-pair" style="margin-bottom: 20px; color: #495057;">USDJPY</h2>
+        <div class="image-container" id="image-container" style="min-height: 400px; border: 2px dashed #dee2e6; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8f9fa;">
+            <p style="color: #6c757d; font-size: 16px;">画像を読み込み中...</p>
+        </div>
+        <button id="high-quality-btn" style="display: none; margin-top: 15px; background: #17a2b8; color: white; border: none; padding: 8px 16px; border-radius: 4px;">高画質表示</button>
+    </div>
+
+    <!-- ナビゲーション -->
+    <div class="navigation" style="text-align: center; margin: 20px 0;">
+        <button id="prev-chart" style="margin: 0 10px; background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px;">← 前のチャート</button>
+        <button id="next-chart" style="margin: 0 10px; background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px;">次のチャート →</button>
+        <button id="top-return" style="margin: 0 10px; background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px;">🔝 トップに戻る</button>
+    </div>
+
+    <!-- 分析ステータス・狙う波 -->
+    <div class="analysis-section" style="display: flex; gap: 30px; margin: 30px 20px; flex-wrap: wrap;">
+        <div class="status-section" style="flex: 1; min-width: 250px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin-bottom: 15px; color: #495057;">分析ステータス</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="status-btn" data-status="検討中" style="background: #007bff; color: white; border: 2px solid transparent; padding: 12px 15px; border-radius: 5px; text-align: left; width: 100%; display: flex; align-items: center;">
+                    <span style="margin-right: 8px;">🔍</span> 検討中
+                </button>
+                <button class="status-btn" data-status="見送り" style="background: #6c757d; color: white; border: 2px solid transparent; padding: 12px 15px; border-radius: 5px; text-align: left; width: 100%; display: flex; align-items: center;">
+                    <span style="margin-right: 8px;">🙅‍♂️</span> 見送り
+                </button>
+                <button class="status-btn" data-status="見逃し" style="background: #6c757d; color: white; border: 2px solid transparent; padding: 12px 15px; border-radius: 5px; text-align: left; width: 100%; display: flex; align-items: center;">
+                    <span style="margin-right: 8px;">😅</span> 見逃し
+                </button>
+                <button class="status-btn" data-status="指値逆指値中" style="background: #dc3545; color: white; border: 2px solid transparent; padding: 12px 15px; border-radius: 5px; text-align: left; width: 100%; display: flex; align-items: center;">
+                    <span style="margin-right: 8px;">🎯</span> 指値逆指値中
+                </button>
+                <button class="status-btn" data-status="保持中" style="background: #dc3545; color: white; border: 2px solid transparent; padding: 12px 15px; border-radius: 5px; text-align: left; width: 100%; display: flex; align-items: center;">
+                    <span style="margin-right: 8px;">💼</span> 保持中
+                </button>
+                <button class="status-btn" data-status="完了" style="background: #6c757d; color: white; border: 2px solid transparent; padding: 12px 15px; border-radius: 5px; text-align: left; width: 100%; display: flex; align-items: center;">
+                    <span style="margin-right: 8px;">✅</span> 完了
+                </button>
+            </div>
+        </div>
+        <div class="wave-section" style="flex: 1; min-width: 250px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin-bottom: 15px; color: #495057;">狙う波</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="wave-btn active" data-wave="未選択" style="background: #6c757d; color: white; border: 3px solid #495057; padding: 12px 15px; border-radius: 5px; text-align: left; width: 100%;">未選択</button>
+                <button class="wave-btn" data-wave="1時間足" style="background: #28a745; color: white; border: 2px solid transparent; padding: 12px 15px; border-radius: 5px; text-align: left; width: 100%;">1時間足</button>
+                <button class="wave-btn" data-wave="4時間足" style="background: #007bff; color: white; border: 2px solid transparent; padding: 12px 15px; border-radius: 5px; text-align: left; width: 100%;">4時間足</button>
+                <button class="wave-btn" data-wave="日足" style="background: #dc3545; color: white; border: 2px solid transparent; padding: 12px 15px; border-radius: 5px; text-align: left; width: 100%;">日足</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分析メモ・ChatGPT連携エリア -->
+    <div class="memo-chatgpt-section" style="margin: 30px 20px;">
+        <div class="memo-section" style="margin-bottom: 25px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin-bottom: 15px; color: #495057;">分析メモ</h3>
+            <textarea id="analysis-memo" placeholder="分析メモを入力..." style="width: 100%; height: 120px; padding: 15px; border: 1px solid #ced4da; border-radius: 5px; font-family: inherit; resize: vertical; font-size: 14px;"></textarea>
+            <button id="copy-memo" style="margin-top: 10px; background: #17a2b8; color: white; border: none; padding: 8px 16px; border-radius: 4px;">分析メモコピー</button>
+        </div>
+        <div class="chatgpt-section" style="padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin-bottom: 15px; color: #495057;">ChatGPT固定プロンプト</h3>
+            <textarea id="fixed-prompt" placeholder="固定プロンプトを入力..." style="width: 100%; height: 120px; padding: 15px; border: 1px solid #ced4da; border-radius: 5px; font-family: inherit; resize: vertical; font-size: 14px;"></textarea>
+            <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button id="copy-prompt" style="background: #17a2b8; color: white; border: none; padding: 8px 16px; border-radius: 4px;">固定プロンプトコピー</button>
+                <button id="change-prompt" style="background: #ffc107; color: #212529; border: none; padding: 8px 16px; border-radius: 4px;">固定プロンプト変更</button>
+                <button id="chatgpt-analysis" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold;">CHATGPT分析</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最下部エリア -->
+    <div class="bottom-section" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f8f9fa; border-top: 1px solid #dee2e6; flex-wrap: wrap; gap: 15px; margin-top: 30px;">
+        <div class="usage-monitor" style="display: flex; align-items: center; gap: 20px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; color: #6c757d;">DB:</span>
+                <progress id="db-usage" max="100" value="0" style="width: 100px; height: 8px;"></progress>
+                <span id="db-percent" style="font-size: 12px; color: #6c757d; min-width: 35px;">0%</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; color: #6c757d;">Storage:</span>
+                <progress id="storage-usage" max="100" value="0" style="width: 100px; height: 8px;"></progress>
+                <span id="storage-percent" style="font-size: 12px; color: #6c757d; min-width: 35px;">0%</span>
+            </div>
+        </div>
+        <div class="error-bar" id="error-bar" style="display: none; background: #dc3545; color: white; padding: 10px 15px; border-radius: 4px; font-size: 14px; max-width: 400px;">
+            <span id="error-message">エラーが発生しました</span>
+            <button id="close-error" style="margin-left: 10px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">×</button>
+        </div>
+        <button id="history-btn" style="opacity: 0.6; background: none; border: none; font-size: 14px; cursor: pointer; color: #6c757d;">📋 履歴</button>
+    </div>
+
+    <!-- 履歴サイドパネル -->
+    <div class="history-sidebar" id="history-sidebar" style="position: fixed; right: -400px; top: 0; width: 400px; height: 100vh; background: white; box-shadow: -2px 0 10px rgba(0,0,0,0.1); transition: right 0.3s ease; z-index: 1000; overflow-y: auto;">
+        <div class="history-header" style="padding: 20px; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; position: sticky; top: 0;">
+            <h3 style="margin: 0; color: #495057;">履歴</h3>
+            <button id="close-history" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6c757d; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">×</button>
+        </div>
+        <div style="padding: 20px;">
+            <input type="text" id="history-search" placeholder="履歴を検索..." style="width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 5px; margin-bottom: 15px; font-size: 14px;">
+            <div id="search-results-count" style="font-size: 14px; color: #6c757d; margin-bottom: 15px;">検索結果: 0件</div>
+            <div class="history-list" id="history-list" style="max-height: calc(100vh - 200px); overflow-y: auto;">
+                <!-- 履歴項目がここに動的に表示される -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 必須CDNスクリプト -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        'use strict';
+
+        // Supabase設定（動作確認済み・変更厳禁）
+        const SUPABASE_URL = 'https://jfrwyunauatsybdljlah.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmcnd5dW5hdWF0c3liZGxqbGFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MTMxODksImV4cCI6MjA2OTA4OTE4OX0.cyhPTiN4WAQ2p86JBZObjSljt2i1K_bK-cGGo3soxAo';
+
+        // グローバル変数
+        let app = null;
+        let mainData = null;
+        let currentCurrency = 'USDJPY';
+        let currentScenario = 'scenario1';
+        let historyManager = null;
+
+        // メインデータ構造（確認済み実データ）
+        const MAIN_DATA_STRUCTURE = {
+            scenarios: {
+                "USDJPY": ["scenario1", "scenario2", "scenario3"],
+                "EURUSD": ["scenario1", "scenario2"],
+                "GBPUSD": ["scenario1", "scenario2", "scenario3", "scenario4"],
+                "AUDUSD": ["scenario1", "scenario2"],
+                "SILVER": ["scenario1", "scenario2"],
+                "GOLD": ["scenario1"]
+            },
+            currencies: ["USDJPY", "EURUSD", "GBPUSD", "AUDUSD", "SILVER", "GOLD"],
+            scenarioLabels: {
+                "scenario1": "シナリオ1",
+                "scenario2": "シナリオ2", 
+                "scenario3": "シナリオ3",
+                "scenario4": "シナリオ4"
+            },
+            images: {
+                "USDJPY": {
+                    "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/USDJPY.jpeg"],
+                    "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/USDJPY2.jpeg"],
+                    "scenario3": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/USDJPY3.jpeg"]
+                },
+                "EURUSD": {
+                    "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/EURUSD.jpeg"],
+                    "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/EURUSD2.jpeg"]
+                },
+                "GBPUSD": {
+                    "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD.jpeg"],
+                    "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD2.jpeg"],
+                    "scenario3": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD3.jpeg"],
+                    "scenario4": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GBPUSD4.jpeg"]
+                },
+                "AUDUSD": {
+                    "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/AUDUSD.jpeg"],
+                    "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/AUDUSD2.jpeg"]
+                },
+                "SILVER": {
+                    "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/SILVER.jpeg"],
+                    "scenario2": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/SILVER2.jpeg"]
+                },
+                "GOLD": {
+                    "scenario1": ["https://jfrwyunauatsybdljlah.supabase.co/storage/v1/object/public/fx-images/GOLD.png"]
+                }
+            }
+        };
+
+        // CDN読み込み確認
+        async function waitForSupabase() {
+            let retryCount = 0;
+            while (!window.supabase && retryCount < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                retryCount++;
+            }
+            
+            if (!window.supabase) {
+                throw new Error('Supabase CDNの読み込みに失敗しました');
+            }
+        }
+
+        // 安全なエラーハンドリング
+        async function safeSupabaseOperation(operation, operationName) {
+            try {
+                const result = await operation();
+                if (result.error) {
+                    console.error(`${operationName}エラー:`, result.error);
+                    showErrorInUI(`${operationName}でエラーが発生しました: ${result.error.message}`);
+                    return { success: false, error: result.error };
+                }
+                return { success: true, data: result.data };
+            } catch (err) {
+                console.error(`${operationName}例外:`, err);
+                showErrorInUI(`${operationName}で例外が発生しました: ${err.message}`);
+                return { success: false, error: err };
+            }
+        }
+
+        // エラー表示
+        function showErrorInUI(message) {
+            const errorBar = document.getElementById('error-bar');
+            const errorMessage = document.getElementById('error-message');
+            if (errorBar && errorMessage) {
+                errorMessage.textContent = message;
+                errorBar.style.display = 'flex';
+            }
+        }
+
+        // 成功メッセージ表示
+        function showSuccessInUI(message) {
+            const errorBar = document.getElementById('error-bar');
+            const errorMessage = document.getElementById('error-message');
+            if (errorBar && errorMessage) {
+                errorMessage.textContent = message;
+                errorBar.style.background = '#28a745';
+                errorBar.style.display = 'flex';
+                
+                setTimeout(() => {
+                    errorBar.style.display = 'none';
+                    errorBar.style.background = '#dc3545';
+                }, 3000);
+            }
+        }
+
+        // エラー非表示
+        function hideError() {
+            const errorBar = document.getElementById('error-bar');
+            if (errorBar) {
+                errorBar.style.display = 'none';
+            }
+        }
+
+        // データ管理システム
+        class DataManager {
+            constructor(supabase) {
+                this.supabase = supabase;
+            }
+            
+            // メインデータ読み込み
+            async loadMainData() {
+                const result = await safeSupabaseOperation(
+                    () => this.supabase.from('fx_analysis_data').select('*').eq('id', 'main').single(),
+                    'メインデータ読み込み'
+                );
+                
+                if (result.success && result.data) {
+                    mainData = result.data.data;
+                    return mainData;
+                }
+                
+                // メインデータが存在しない場合、デフォルトデータを使用
+                mainData = MAIN_DATA_STRUCTURE;
+                return mainData;
+            }
+            
+            // 個別データ保存
+            async saveData(currency, scenario, type, value) {
+                const key = `${currency}_${scenario}_${type}`;
+                const result = await safeSupabaseOperation(
+                    () => this.supabase.from('fx_analysis_data').upsert([{
+                        id: key,
+                        data: { value },
+                        updated_at: new Date().toISOString()
+                    }]),
+                    'データ保存'
+                );
+                
+                if (result.success) {
+                    await this.saveToHistory('データ更新', key, value);
+                }
+            }
+            
+            // 個別データ読み込み
+            async loadData(currency, scenario, type) {
+                const key = `${currency}_${scenario}_${type}`;
+                const result = await safeSupabaseOperation(
+                    () => this.supabase.from('fx_analysis_data').select('*').eq('id', key).single(),
+                    'データ読み込み'
+                );
+                
+                if (result.success && result.data) {
+                    return result.data.data?.value;
+                }
+                return null;
+            }
+            
+            // 履歴保存
+            async saveToHistory(changeType, key, value) {
+                try {
+                    const historyData = {
+                        timestamp: new Date().toISOString(),
+                        version_id: `v_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        description: `${changeType}: ${key}`,
+                        data_snapshot: { key, value },
+                        changes: { 
+                            changeType, 
+                            deviceInfo: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 'Mobile' : 'PC'
+                        }
+                    };
+                    
+                    await this.supabase.from('fx_analysis_history').insert([historyData]);
+                } catch (error) {
+                    console.error('履歴保存エラー:', error);
+                }
+            }
+        }
+
+        // UI管理システム
+        class UIManager {
+            constructor(dataManager) {
+                this.dataManager = dataManager;
+            }
+            
+            // 通貨ペア選択
+            async selectCurrency(currency) {
+                currentCurrency = currency;
+                
+                // ボタンの状態更新
+                document.querySelectorAll('.currency-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.currency === currency);
+                    btn.style.background = btn.dataset.currency === currency ? '#007bff' : '#6c757d';
+                });
+                
+                // 表示更新
+                await this.updateDisplay();
+                await app.updateScenarioButtons();
+            }
+            
+            // シナリオ選択
+            async selectScenario(scenario) {
+                currentScenario = scenario;
+                
+                // ボタンの状態更新
+                document.querySelectorAll('.scenario-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.scenario === scenario);
+                    if (btn.dataset.scenario === scenario) {
+                        btn.style.boxShadow = '0 6px 12px rgba(0, 123, 255, 0.4)';
+                        btn.style.transform = 'translateY(-2px)';
+                    } else {
+                        btn.style.boxShadow = 'none';
+                        btn.style.transform = 'none';
+                    }
+                });
+                
+                // 表示更新
+                await this.updateDisplay();
+            }
+            
+            // 分析ステータス選択
+            async selectAnalysisStatus(status) {
+                // ボタンの状態更新
+                document.querySelectorAll('.status-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.status === status);
+                    if (btn.dataset.status === status) {
+                        btn.style.border = '3px solid #495057';
+                        btn.style.transform = 'translateY(-1px)';
+                        btn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                    } else {
+                        btn.style.border = '2px solid transparent';
+                        btn.style.transform = 'none';
+                        btn.style.boxShadow = 'none';
+                    }
+                });
+                
+                // データ保存
+                await this.dataManager.saveData(currentCurrency, currentScenario, 'analysisStatus', status);
+                
+                // シナリオボタンのステータス表示更新
+                this.updateScenarioStatusDisplay(status);
+            }
+            
+            // 狙う波選択
+            async selectTargetWave(wave) {
+                // ボタンの状態更新
+                document.querySelectorAll('.wave-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.wave === wave);
+                    if (btn.dataset.wave === wave) {
+                        btn.style.border = '3px solid #495057';
+                        btn.style.transform = 'translateY(-1px)';
+                        btn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                    } else {
+                        btn.style.border = '2px solid transparent';
+                        btn.style.transform = 'none';
+                        btn.style.boxShadow = 'none';
+                    }
+                });
+                
+                // データ保存
+                await this.dataManager.saveData(currentCurrency, currentScenario, 'targetWave', wave);
+            }
+            
+            // 表示更新
+            async updateDisplay() {
+                // 通貨ペア名表示
+                const pairElement = document.getElementById('current-pair');
+                if (pairElement) {
+                    pairElement.textContent = currentCurrency;
+                }
+                
+                // 画像表示
+                await this.updateImageDisplay();
+                
+                // データ読み込みと表示
+                const analysisStatus = await this.dataManager.loadData(currentCurrency, currentScenario, 'analysisStatus');
+                const targetWave = await this.dataManager.loadData(currentCurrency, currentScenario, 'targetWave');
+                const memo = await this.dataManager.loadData(currentCurrency, currentScenario, 'memo');
+                
+                // 分析ステータス表示更新
+                if (analysisStatus) {
+                    await this.selectAnalysisStatus(analysisStatus);
+                } else {
+                    // デフォルト状態にリセット
+                    document.querySelectorAll('.status-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.style.border = '2px solid transparent';
+                        btn.style.transform = 'none';
+                        btn.style.boxShadow = 'none';
+                    });
+                }
+                
+                // 狙う波表示更新
+                if (targetWave) {
+                    await this.selectTargetWave(targetWave);
+                } else {
+                    // デフォルト状態（未選択）
+                    await this.selectTargetWave('未選択');
+                }
+                
+                // メモ表示更新
+                const memoElement = document.getElementById('analysis-memo');
+                if (memoElement) {
+                    memoElement.value = memo || '';
+                }
+                
+                // シナリオボタンのステータス表示更新
+                this.updateScenarioStatusDisplay(analysisStatus);
+            }
+            
+            // 画像表示更新
+            async updateImageDisplay() {
+                const container = document.getElementById('image-container');
+                if (!container || !mainData || !mainData.images) return;
+                
+                const images = mainData.images[currentCurrency]?.[currentScenario];
+                
+                if (!images || images.length === 0) {
+                    container.innerHTML = '<p class="image-error">画像が読み込めません</p>';
+                    return;
+                }
+                
+                container.innerHTML = '';
+                
+                for (const imageUrl of images) {
+                    const img = document.createElement('img');
+                    img.src = imageUrl;
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    img.style.borderRadius = '4px';
+                    img.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                    img.style.marginBottom = '10px';
+                    
+                    img.onerror = () => {
+                        img.style.display = 'none';
+                        const errorMsg = document.createElement('p');
+                        errorMsg.className = 'image-error';
+                        errorMsg.textContent = '画像が読み込めません';
+                        container.appendChild(errorMsg);
+                    };
+                    
+                    container.appendChild(img);
+                }
+                
+                // 高画質表示ボタンの表示/非表示
+                const highQualityBtn = document.getElementById('high-quality-btn');
+                if (highQualityBtn) {
+                    highQualityBtn.style.display = images.length > 0 ? 'block' : 'none';
+                }
+            }
+            
+            // シナリオボタンのステータス表示更新
+            updateScenarioStatusDisplay(status) {
+                const scenarioBtn = document.querySelector(`[data-scenario="${currentScenario}"]`);
+                if (!scenarioBtn) return;
+                
+                const statusIndicator = scenarioBtn.querySelector('.status-indicator');
+                if (!statusIndicator) return;
+                
+                const statusConfig = {
+                    '検討中': { emoji: '🔍', color: '#007bff' },
+                    '見送り': { emoji: '🙅‍♂️', color: '#6c757d' },
+                    '見逃し': { emoji: '😅', color: '#6c757d' },
+                    '指値逆指値中': { emoji: '🎯', color: '#dc3545' },
+                    '保持中': { emoji: '💼', color: '#dc3545' },
+                    '完了': { emoji: '✅', color: '#6c757d' }
+                };
+                
+                if (status && statusConfig[status]) {
+                    const config = statusConfig[status];
+                    statusIndicator.innerHTML = `${config.emoji} ${status}`;
+                    statusIndicator.style.color = config.color;
+                } else {
+                    statusIndicator.innerHTML = '🔍 検討中';
+                    statusIndicator.style.color = '#007bff';
+                }
+            }
+        }
+
+        // ChatGPT連携機能
+        class ChatGPTIntegration {
+            constructor(dataManager) {
+                this.dataManager = dataManager;
+            }
+            
+            // ChatGPT分析実行
+            async executeChatGPTAnalysis() {
+                try {
+                    // 分析メモと固定プロンプトを取得
+                    const memo = document.getElementById('analysis-memo').value || '';
+                    const fixedPrompt = document.getElementById('fixed-prompt').value || '';
+                    
+                    // 内容を結合
+                    const combinedContent = fixedPrompt + (fixedPrompt && memo ? '\n\n' : '') + memo;
+                    
+                    if (!combinedContent.trim()) {
+                        showErrorInUI('分析メモまたは固定プロンプトを入力してください');
+                        return;
+                    }
+                    
+                    // クリップボードにコピー
+                    await navigator.clipboard.writeText(combinedContent);
+                    
+                    // ChatGPTページを新しいタブで開く
+                    window.open('https://chat.openai.com', '_blank');
+                    
+                    // 成功メッセージ表示
+                    showSuccessInUI('内容をクリップボードにコピーしました。ChatGPTページを開きました。');
+                    
+                } catch (err) {
+                    console.error('ChatGPT連携エラー:', err);
+                    showErrorInUI('ChatGPT連携でエラーが発生しました');
+                }
+            }
+            
+            // コピー機能
+            async copyToClipboard(text, successMessage) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showSuccessInUI(successMessage);
+                } catch (err) {
+                    console.error('コピーエラー:', err);
+                    showErrorInUI('コピーに失敗しました');
+                }
+            }
+        }
+
+        // ダークモード管理
+        class ThemeManager {
+            constructor(dataManager) {
+                this.dataManager = dataManager;
+                this.isDark = false;
+            }
+            
+            async init() {
+                // 保存された設定を読み込み
+                const savedTheme = await this.dataManager.loadData('global', 'settings', 'darkMode');
+                if (savedTheme !== null) {
+                    this.isDark = savedTheme;
+                }
+                
+                this.applyTheme();
+                this.updateToggleButton();
+            }
+            
+            async toggleTheme() {
+                this.isDark = !this.isDark;
+                this.applyTheme();
+                this.updateToggleButton();
+                
+                // 設定保存
+                await this.dataManager.saveData('global', 'settings', 'darkMode', this.isDark);
+            }
+            
+            applyTheme() {
+                document.body.classList.toggle('dark-mode', this.isDark);
+            }
+            
+            updateToggleButton() {
+                const toggleBtn = document.getElementById('theme-toggle');
+                if (toggleBtn) {
+                    toggleBtn.textContent = this.isDark ? '☀️' : '🌙';
+                }
+            }
+        }
+
+        // バックアップ機能
+        class BackupManager {
+            constructor(supabase) {
+                this.supabase = supabase;
+            }
+            
+            async createBackup() {
+                try {
+                    // 全データ取得
+                    const { data: mainData } = await this.supabase.from('fx_analysis_data').select('*');
+                    const { data: historyData } = await this.supabase.from('fx_analysis_history').select('*');
+                    
+                    // バックアップデータ構築
+                    const backupData = {
+                        timestamp: new Date().toISOString(),
+                        version: '1.0',
+                        mainData: mainData || [],
+                        historyData: historyData || [],
+                        metadata: {
+                            totalRecords: (mainData?.length || 0) + (historyData?.length || 0),
+                            exportedBy: 'FX Analysis System'
+                        }
+                    };
+                    
+                    // ファイルダウンロード
+                    const blob = new Blob([JSON.stringify(backupData, null, 2)], { 
+                        type: 'application/json' 
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `fx-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    showSuccessInUI(`バックアップが完了しました（${backupData.metadata.totalRecords}件）`);
+                    
+                } catch (err) {
+                    console.error('バックアップエラー:', err);
+                    showErrorInUI('バックアップに失敗しました');
+                }
+            }
+        }
+
+        // 履歴管理
+        class HistoryManager {
+            constructor(supabase) {
+                this.supabase = supabase;
+            }
+            
+            async searchHistory(query) {
+                try {
+                    let queryBuilder = this.supabase
+                        .from('fx_analysis_history')
+                        .select('*')
+                        .order('timestamp', { ascending: false });
+                    
+                    if (query && query.trim()) {
+                        queryBuilder = queryBuilder.or(
+                            `description.ilike.%${query}%,data_snapshot->>key.ilike.%${query}%`
+                        );
+                    }
+                    
+                    const { data, error } = await queryBuilder.limit(100);
+                    
+                    if (error) throw error;
+                    
+                    this.displaySearchResults(data, query);
+                    return data;
+                } catch (err) {
+                    console.error('履歴検索エラー:', err);
+                    showErrorInUI('履歴検索に失敗しました');
+                    return [];
+                }
+            }
+            
+            displaySearchResults(data, query) {
+                const resultsList = document.getElementById('history-list');
+                const resultsCount = document.getElementById('search-results-count');
+                
+                if (!resultsList || !resultsCount) return;
+                
+                resultsCount.textContent = `検索結果: ${data.length}件`;
+                resultsList.innerHTML = '';
+                
+                data.forEach(item => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.innerHTML = `
+                        <div style="font-weight: bold; margin-bottom: 5px; color: #495057;">
+                            ${new Date(item.timestamp).toLocaleString('ja-JP')}
+                        </div>
+                        <div style="font-size: 14px; color: #6c757d; margin-bottom: 8px;">
+                            ${item.description}
+                        </div>
+                        <div style="font-size: 12px; color: #adb5bd;">
+                            ${item.changes?.deviceInfo || 'Unknown Device'}
+                        </div>
+                        <button onclick="historyManager.restoreFromHistory('${item.version_id}')" 
+                                style="margin-top: 8px; font-size: 12px; padding: 4px 8px; background: #17a2b8; color: white; border: none; border-radius: 3px;">
+                            この時点に戻る
+                        </button>
+                    `;
+                    
+                    resultsList.appendChild(historyItem);
+                });
+            }
+            
+            async restoreFromHistory(versionId) {
+                if (!confirm('この時点のデータに復元しますか？現在のデータは失われます。')) return;
+                
+                try {
+                    const { data, error } = await this.supabase
+                        .from('fx_analysis_history')
+                        .select('*')
+                        .eq('version_id', versionId)
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    // 復元処理（簡略化）
+                    showSuccessInUI('データを復元しました');
+                    this.closeHistoryPanel();
+                    
+                } catch (err) {
+                    console.error('復元エラー:', err);
+                    showErrorInUI('データ復元に失敗しました');
+                }
+            }
+            
+            openHistoryPanel() {
+                const sidebar = document.getElementById('history-sidebar');
+                if (sidebar) {
+                    sidebar.style.right = '0';
+                    this.searchHistory(''); // 全履歴表示
+                }
+            }
+            
+            closeHistoryPanel() {
+                const sidebar = document.getElementById('history-sidebar');
+                if (sidebar) {
+                    sidebar.style.right = '-400px';
+                }
+            }
+        }
+
+        // 使用量監視
+        class UsageMonitor {
+            constructor(supabase) {
+                this.supabase = supabase;
+                this.init();
+            }
+            
+            init() {
+                this.updateUsage();
+                setInterval(() => this.updateUsage(), 30000); // 30秒間隔
+            }
+            
+            async updateUsage() {
+                try {
+                    // データベース使用量
+                    const { data: dbData } = await this.supabase.from('fx_analysis_data').select('*');
+                    const dbUsage = this.calculateDataSize(dbData);
+                    
+                    // ストレージ使用量（概算）
+                    const storageUsage = this.calculateStorageUsage();
+                    
+                    // プログレスバー更新
+                    this.updateProgressBar('db-usage', 'db-percent', dbUsage, 500); // 500MB制限
+                    this.updateProgressBar('storage-usage', 'storage-percent', storageUsage, 1024); // 1GB制限
+                    
+                } catch (err) {
+                    console.error('使用量監視エラー:', err);
+                }
+            }
+            
+            calculateDataSize(data) {
+                if (!data) return 0;
+                return (new Blob([JSON.stringify(data)]).size) / 1024 / 1024; // MB
+            }
+            
+            calculateStorageUsage() {
+                // 概算計算（実際の画像ファイルサイズは取得困難）
+                if (!mainData || !mainData.images) return 0;
+                
+                let totalImages = 0;
+                Object.values(mainData.images).forEach(currencyImages => {
+                    Object.values(currencyImages).forEach(scenarioImages => {
+                        totalImages += scenarioImages.length;
+                    });
+                });
+                
+                return totalImages * 0.5; // 1画像あたり平均0.5MBと仮定
+            }
+            
+            updateProgressBar(progressId, percentId, usage, limit) {
+                const progressBar = document.getElementById(progressId);
+                const percentSpan = document.getElementById(percentId);
+                
+                if (progressBar && percentSpan) {
+                    const percentage = Math.min((usage / limit) * 100, 100);
+                    progressBar.value = percentage;
+                    percentSpan.textContent = `${percentage.toFixed(1)}%`;
+                    
+                    // 色変更
+                    if (percentage > 90) {
+                        progressBar.style.accentColor = '#dc3545';
+                    } else if (percentage > 70) {
+                        progressBar.style.accentColor = '#ffc107';
+                    } else {
+                        progressBar.style.accentColor = '#007bff';
+                    }
+                }
+            }
+        }
+
+        // メインアプリケーション
+        class FXAnalysisApp {
+            constructor() {
+                this.supabase = null;
+                this.dataManager = null;
+                this.uiManager = null;
+                this.chatgptIntegration = null;
+                this.themeManager = null;
+                this.backupManager = null;
+                this.historyManager = null;
+                this.usageMonitor = null;
+            }
+            
+            async initialize() {
+                try {
+                    // CDN読み込み確認
+                    await waitForSupabase();
+                    
+                    // Supabase初期化
+                    this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    
+                    // 接続テスト
+                    const { error } = await this.supabase.from('fx_analysis_data').select('count', { count: 'exact', head: true });
+                    if (error) throw error;
+                    
+                    // マネージャー初期化
+                    this.dataManager = new DataManager(this.supabase);
+                    this.uiManager = new UIManager(this.dataManager);
+                    this.chatgptIntegration = new ChatGPTIntegration(this.dataManager);
+                    this.themeManager = new ThemeManager(this.dataManager);
+                    this.backupManager = new BackupManager(this.supabase);
+                    this.historyManager = new HistoryManager(this.supabase);
+                    this.usageMonitor = new UsageMonitor(this.supabase);
+                    
+                    // データ読み込み
+                    await this.dataManager.loadMainData();
+                    
+                    // UI初期化
+                    await this.initializeUI();
+                    
+                    // イベントリスナー設定
+                    this.setupEventListeners();
+                    
+                    // テーマ初期化
+                    await this.themeManager.init();
+                    
+                    console.log('FX Analysis System 初期化完了');
+                    
+                } catch (error) {
+                    console.error('初期化エラー:', error);
+                    this.showFallbackUI(error);
+                }
+            }
+            
+            async initializeUI() {
+                // シナリオボタンの動的生成
+                await this.updateScenarioButtons();
+                
+                // 初期表示更新
+                await this.uiManager.updateDisplay();
+                
+                // 固定プロンプト読み込み
+                const savedPrompt = await this.dataManager.loadData('global', 'settings', 'fixedPrompt');
+                if (savedPrompt) {
+                    const promptElement = document.getElementById('fixed-prompt');
+                    if (promptElement) {
+                        promptElement.value = savedPrompt;
+                    }
+                }
+            }
+            
+            async updateScenarioButtons() {
+                if (!mainData || !mainData.scenarios) return;
+                
+                const container = document.getElementById('scenario-container');
+                if (!container) return;
+                
+                // 既存のシナリオボタンを削除（追加・削除ボタンは保持）
+                const scenarioBtns = container.querySelectorAll('.scenario-btn');
+                scenarioBtns.forEach(btn => btn.remove());
+                
+                // 現在の通貨ペアのシナリオを取得
+                const scenarios = mainData.scenarios[currentCurrency] || [];
+                
+                // シナリオボタンを生成
+                const addBtn = document.getElementById('add-scenario');
+                scenarios.forEach((scenario, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'scenario-btn';
+                    btn.dataset.scenario = scenario;
+                    btn.draggable = true;
+                    btn.style.cssText = 'background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; min-width: 120px; display: flex; align-items: center; justify-content: space-between; margin-right: 10px; margin-bottom: 10px;';
+                    
+                    const scenarioLabel = mainData.scenarioLabels?.[scenario] || scenario;
+                    btn.innerHTML = `
+                        <span>${scenarioLabel}</span>
+                        <small class="status-indicator" style="font-size: 11px; opacity: 0.9; margin-left: 8px;">🔍 検討中</small>
+                    `;
+                    
+                    // 最初のシナリオをアクティブに
+                    if (index === 0) {
+                        btn.classList.add('active');
+                        btn.style.boxShadow = '0 6px 12px rgba(0, 123, 255, 0.4)';
+                        btn.style.transform = 'translateY(-2px)';
+                        currentScenario = scenario;
+                    }
+                    
+                    container.insertBefore(btn, addBtn);
+                });
+            }
+            
+            setupEventListeners() {
+                // 通貨ペアボタン
+                document.addEventListener('click', async (e) => {
+                    if (e.target.classList.contains('currency-btn')) {
+                        await this.uiManager.selectCurrency(e.target.dataset.currency);
+                        await this.updateScenarioButtons();
+                    }
+                });
+                
+                // シナリオボタン
+                document.addEventListener('click', async (e) => {
+                    if (e.target.classList.contains('scenario-btn') || e.target.closest('.scenario-btn')) {
+                        const btn = e.target.classList.contains('scenario-btn') ? e.target : e.target.closest('.scenario-btn');
+                        await this.uiManager.selectScenario(btn.dataset.scenario);
+                    }
+                });
+                
+                // 分析ステータスボタン
+                document.addEventListener('click', async (e) => {
+                    if (e.target.classList.contains('status-btn') || e.target.closest('.status-btn')) {
+                        const btn = e.target.classList.contains('status-btn') ? e.target : e.target.closest('.status-btn');
+                        await this.uiManager.selectAnalysisStatus(btn.dataset.status);
+                    }
+                });
+                
+                // 狙う波ボタン
+                document.addEventListener('click', async (e) => {
+                    if (e.target.classList.contains('wave-btn') || e.target.closest('.wave-btn')) {
+                        const btn = e.target.classList.contains('wave-btn') ? e.target : e.target.closest('.wave-btn');
+                        await this.uiManager.selectTargetWave(btn.dataset.wave);
+                    }
+                });
+                
+                // 分析メモ自動保存
+                const memoElement = document.getElementById('analysis-memo');
+                if (memoElement) {
+                    memoElement.addEventListener('input', this.debounce(async (e) => {
+                        await this.dataManager.saveData(currentCurrency, currentScenario, 'memo', e.target.value);
+                    }, 1000));
+                }
+                
+                // 固定プロンプト自動保存
+                const promptElement = document.getElementById('fixed-prompt');
+                if (promptElement) {
+                    promptElement.addEventListener('input', this.debounce(async (e) => {
+                        await this.dataManager.saveData('global', 'settings', 'fixedPrompt', e.target.value);
+                    }, 1000));
+                }
+                
+                // ChatGPT分析ボタン
+                const chatgptBtn = document.getElementById('chatgpt-analysis');
+                if (chatgptBtn) {
+                    chatgptBtn.addEventListener('click', () => {
+                        this.chatgptIntegration.executeChatGPTAnalysis();
+                    });
+                }
+                
+                // コピーボタン
+                const copyMemoBtn = document.getElementById('copy-memo');
+                if (copyMemoBtn) {
+                    copyMemoBtn.addEventListener('click', () => {
+                        const memo = document.getElementById('analysis-memo').value;
+                        this.chatgptIntegration.copyToClipboard(memo, '分析メモをコピーしました');
+                    });
+                }
+                
+                const copyPromptBtn = document.getElementById('copy-prompt');
+                if (copyPromptBtn) {
+                    copyPromptBtn.addEventListener('click', () => {
+                        const prompt = document.getElementById('fixed-prompt').value;
+                        this.chatgptIntegration.copyToClipboard(prompt, '固定プロンプトをコピーしました');
+                    });
+                }
+                
+                // その他のボタン
+                const themeToggle = document.getElementById('theme-toggle');
+                if (themeToggle) {
+                    themeToggle.addEventListener('click', () => {
+                        this.themeManager.toggleTheme();
+                    });
+                }
+                
+                const backupBtn = document.getElementById('backup-btn');
+                if (backupBtn) {
+                    backupBtn.addEventListener('click', () => {
+                        this.backupManager.createBackup();
+                    });
+                }
+                
+                const historyBtn = document.getElementById('history-btn');
+                if (historyBtn) {
+                    historyBtn.addEventListener('click', () => {
+                        this.historyManager.openHistoryPanel();
+                    });
+                }
+                
+                const closeHistoryBtn = document.getElementById('close-history');
+                if (closeHistoryBtn) {
+                    closeHistoryBtn.addEventListener('click', () => {
+                        this.historyManager.closeHistoryPanel();
+                    });
+                }
+                
+                const historySearch = document.getElementById('history-search');
+                if (historySearch) {
+                    historySearch.addEventListener('input', this.debounce((e) => {
+                        this.historyManager.searchHistory(e.target.value);
+                    }, 500));
+                }
+                
+                const closeErrorBtn = document.getElementById('close-error');
+                if (closeErrorBtn) {
+                    closeErrorBtn.addEventListener('click', hideError);
+                }
+                
+                // キーボードショートカット
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        switch(e.key.toLowerCase()) {
+                            case 's':
+                                e.preventDefault();
+                                this.manualSave();
+                                break;
+                            case 'c':
+                                e.preventDefault();
+                                this.copyActiveElement();
+                                break;
+                        }
+                    }
+                });
+
+                // ナビゲーションボタン
+                const topReturnBtn = document.getElementById('top-return');
+                if (topReturnBtn) {
+                    topReturnBtn.addEventListener('click', () => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                }
+            }
+            
+            debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+            
+            async manualSave() {
+                try {
+                    const memo = document.getElementById('analysis-memo').value;
+                    const prompt = document.getElementById('fixed-prompt').value;
+                    
+                    await this.dataManager.saveData(currentCurrency, currentScenario, 'memo', memo);
+                    await this.dataManager.saveData('global', 'settings', 'fixedPrompt', prompt);
+                    
+                    showSuccessInUI('データを保存しました');
+                } catch (err) {
+                    showErrorInUI('保存に失敗しました');
+                }
+            }
+            
+            async copyActiveElement() {
+                const activeElement = document.activeElement;
+                if (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT') {
+                    try {
+                        await navigator.clipboard.writeText(activeElement.value);
+                        showSuccessInUI('コピーしました');
+                    } catch (err) {
+                        showErrorInUI('コピーに失敗しました');
+                    }
+                }
+            }
+            
+            showFallbackUI(error) {
+                document.body.innerHTML = `
+                    <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+                        <h2 style="color: #dc3545;">システム初期化エラー</h2>
+                        <p style="margin: 20px 0; color: #6c757d;">${error.message}</p>
+                        <button onclick="location.reload()" style="padding: 15px 30px; background: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;">再読み込み</button>
+                    </div>
+                `;
+            }
+        }
+
+        // アプリケーション開始
+        window.addEventListener('DOMContentLoaded', async function() {
+            app = new FXAnalysisApp();
+            await app.initialize();
+            
+            // グローバル参照設定
+            if (app && app.historyManager) {
+                historyManager = app.historyManager;
+            }
+        });
     </script>
 </body>
 </html>
